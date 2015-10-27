@@ -14,19 +14,24 @@ vo(run)(function(err, res) {
 
 // main task
 function * run() {
-	let links = yield getLinks('http://javbus.in');
-	//console.log(links);
-	//yield * getItemTiles(links);
-	for (let i = 0, l = links.length; i < l; i++) {
-		let magnets = yield * getItemMagnet(links[i]);
-		if (magnets) console.log(magnets);
+	let pageIndex = 1;
+	while (pageIndex) {
+		let links = yield getLinks('http://javbus.in/page/' + pageIndex);
+		if (links.length == 0) {
+			return yield nightmare.end();
+		}
+		while (links.length) {
+			let link = links.pop();
+			let magnets = yield * getItemMagnet(link);
+			if (magnets) console.log(magnets);
+		}
+		pageIndex++;
 	}
 	return yield nightmare.end();
 }
 
 // get item links in one page
 function getLinks(pageUrl) {
-	//console.log('getLinks...');
 	// get all item links in one page
 	let anchors = nightmare.goto(pageUrl).evaluate(function() {
 		var elems = document.querySelectorAll('#item-frame>a');
@@ -50,9 +55,11 @@ function * getItemMagnet(url) {
 		//magnets.push(a.getAttribute('href'));
 		//}
 		//return magnets;
+        
 		// only fetch the first magnet
 		var anchor = document.querySelector('#magnet-table>tr a[data-message=magnet]');
 		if (anchor) return anchor.getAttribute('href');
 		else return null;
 	});
 }
+
