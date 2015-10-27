@@ -9,6 +9,7 @@
   "author": "raawaa",
   "license": "ISC",
   "dependencies": {
+    "nightmare": "^2.0.7",
     "vo": "^1.0.3"
   }
 }
