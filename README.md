@@ -2,6 +2,10 @@
 
 ## Installation
 ```bash
+cd jav-scarpy
 npm install
-npm link
+```
+## Usage
+```bash
+    node index.js >magnet.txt
 ```

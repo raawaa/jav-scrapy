@@ -1,0 +1,78 @@
+getLinks...
+[ 'http://www.javbus.in/JJPP-040',
+  'http://www.javbus.in/JJPP-039',
+  'http://www.javbus.in/ASFB-161',
+  'http://www.javbus.in/ASFB-162',
+  'http://www.javbus.in/ASFB-163',
+  'http://www.javbus.in/AVKH-031',
+  'http://www.javbus.in/BLOR-056',
+  'http://www.javbus.in/BCPV-038',
+  'http://www.javbus.in/ANX-065',
+  'http://www.javbus.in/ABP-383',
+  'http://www.javbus.in/ABP-384',
+  'http://www.javbus.in/ABP-386',
+  'http://www.javbus.in/ABP-385',
+  'http://www.javbus.in/ABP-387',
+  'http://www.javbus.in/IDBD-673',
+  'http://www.javbus.in/IPZ-648',
+  'http://www.javbus.in/IPZ-646',
+  'http://www.javbus.in/BMW-111',
+  'http://www.javbus.in/BOMN-147',
+  'http://www.javbus.in/BMW-110',
+  'http://www.javbus.in/BOBB-281',
+  'http://www.javbus.in/GOMK-40',
+  'http://www.javbus.in/SCOP-093',
+  'http://www.javbus.in/ASW-019',
+  'http://www.javbus.in/ASW-020',
+  'http://www.javbus.in/MGHT-088',
+  'http://www.javbus.in/ASW-014',
+  'http://www.javbus.in/MOT-112',
+  'http://www.javbus.in/RBD-039',
+  'http://www.javbus.in/SIS-036',
+  'http://www.javbus.in/LOL-113',
+  'http://www.javbus.in/BUR-456',
+  'http://www.javbus.in/BUR-455',
+  'http://www.javbus.in/ISJ-008',
+  'http://www.javbus.in/BUR-457',
+  'http://www.javbus.in/LOL-112',
+  'http://www.javbus.in/LOL-114',
+  'http://www.javbus.in/FLAV-147',
+  'http://www.javbus.in/BIJN-085',
+  'http://www.javbus.in/LOVE-216',
+  'http://www.javbus.in/TBTB-035',
+  'http://www.javbus.in/RABS-018',
+  'http://www.javbus.in/IENE-613',
+  'http://www.javbus.in/NHDTA-736',
+  'http://www.javbus.in/IENE-615',
+  'http://www.javbus.in/IENE-616',
+  'http://www.javbus.in/IENE-614',
+  'http://www.javbus.in/NHDTA-739',
+  'http://www.javbus.in/HUNTA-068',
+  'http://www.javbus.in/NHDTA-738',
+  'http://www.javbus.in/HUNTA-072',
+  'http://www.javbus.in/INDI-038',
+  'http://www.javbus.in/SW-364',
+  'http://www.javbus.in/HAVD-912',
+  'http://www.javbus.in/SW-362',
+  'http://www.javbus.in/DASD-308',
+  'http://www.javbus.in/DASD-309',
+  'http://www.javbus.in/DANDY-448',
+  'http://www.javbus.in/PBD-307',
+  'http://www.javbus.in/TRE-030',
+  'http://www.javbus.in/MOT-114',
+  'http://www.javbus.in/MOT-113',
+  'http://www.javbus.in/YUM-1002' ]
+[ 'magnet:?xt=urn:btih:518FF3EF7F2F81F28A42FEDA86B5FB622B4212C4&dn=jjpp-040.avi' ]
+[ 'magnet:?xt=urn:btih:D351DC038B6F94985C49342A8BF3B91895A843BD&dn=jjpp-039.avi' ]
+[ 'magnet:?xt=urn:btih:9F243EBA16856249B3B855A1E7E21B6AEFD91117&dn=asfb-161.avi' ]
+[ 'magnet:?xt=urn:btih:01A59AB4A9D81B898106C1118F874856F028AD28&dn=asfb-162.avi' ]
+[ 'magnet:?xt=urn:btih:3BDC8F80DC5295ACD841E4D4687908FF3C0B0691&dn=asfb-163.avi' ]
+[ 'magnet:?xt=urn:btih:D360C6B59555F1CA1F847C69FB332582C0275ABB&dn=avkh-031.avi' ]
+[ 'magnet:?xt=urn:btih:FCB4AD3C18200905E6B8EBF1B9EFD302AD512D01&dn=blor-056.avi' ]
+[ 'magnet:?xt=urn:btih:F708DAEFDEEEAC96CF39FF6F0AD3F9E3B3B471CD&dn=bcpv-038.avi' ]
+[ 'magnet:?xt=urn:btih:F2148F73B33EBBC45D5B98F81D546340E22A909B&dn=anx-065.avi' ]
+[ 'magnet:?xt=urn:btih:45807AA6E4B3C01CE4B4FE9977F3C31B37ADC3B4&dn=ABP-383.avi',
+  'magnet:?xt=urn:btih:DB99A07455ABD22863C935B3CDD11DBD4FDAF86A&dn=1025-abp-383' ]
+[ 'magnet:?xt=urn:btih:9794F647BFC4BCAA3983A9626C7865DF5B8F6FC6&dn=ABP-384.avi',
+  'magnet:?xt=urn:btih:E351C20AACB80623DE4C229E5605F598125CC371&dn=1025-abp-384' ]
+[ 'magnet:?xt=urn:btih:C4BAAC13637C5ED7C3FD6924DEC5198CD128B397&dn=ABP-386' ]
