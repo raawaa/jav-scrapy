@@ -1,6 +1,6 @@
 #jav-scrapy
 
-jav-scrapy，一个爬取 AV 种子的小爬虫。
+jav-scrapy，一个爬取 AV 种子的小爬虫。目前只是雏形，将会不断完善。
 
 ## Prequisites
 
