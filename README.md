@@ -2,6 +2,10 @@
 
 jav-scrapy，一个爬取 AV 种子的小爬虫。
 
+## Prequisites
+
+- Node.js 4.2.1+
+
 ## Installation
 
 ```bash
