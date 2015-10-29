@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 'use strict';
 var vo = require('vo');
 var Nightmare = require('nightmare');
