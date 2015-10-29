@@ -4,6 +4,7 @@ var Nightmare = require('nightmare');
 var cheerio = require('cheerio');
 var request = require('superagent');
 var async = require('async');
+var colors = require('colors');
 
 var noop = function noop() {};
 
@@ -11,6 +12,8 @@ const baseUrl = 'http://www.javbus.in';
 var pageIndex = 1;
 
 var currentPageHtml = null;
+
+console.log('========== 获取资源站点：%s ==========');
 
 async.during(
 	pageExist,
@@ -38,7 +41,12 @@ function parseLinks(next) {
 	$('a.movie-box').each(function(i, elem) {
 		links.push($(this).attr('href'));
 	});
-	// console.log(links);
+    let fanhao = [];
+    links.forEach(function(link){
+        fanhao.push(link.split('/').pop());
+    });
+    console.log('正处理以下番号影片...'.red);
+    console.log(fanhao.toString().yellow)
 	next(null, links);
 }
 
@@ -51,6 +59,10 @@ function getMagnet(links, next) {
 			request
 				.get(link)
 				.end(function(err, res) {
+                    if(err){
+                        console.error('error in fetch url: %s', link);
+                        return callback(err);
+                    }
 					let $ = cheerio.load(res.text);
 					let script = $('script', 'body').eq(2).html();
 					let meta = parse(script);
@@ -82,7 +94,7 @@ function getMagnet(links, next) {
 		});
 
 	function parse(script) {
-		console.log(script);
+		//console.log(script);
 		let gid_r = /gid\s+=\s+(\d+)/g.exec(script);
 		let gid = gid_r[1];
 		let uc_r = /uc\s+=\s(\d+)/g.exec(script);
@@ -104,6 +116,7 @@ function pageExist(callback) {
 	// body...
 	let url = baseUrl + (pageIndex === 1 ? '' : '/page/' + pageIndex);
 	// console.log(url);
+    console.log('获取第%d页中的影片链接...'.red, pageIndex);
 	async.retry(3,
 		function(callback, result) {
 			request
