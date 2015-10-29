@@ -18,7 +18,7 @@ npm link # 使jav-scrapy全局可执行
 ## Usage
 
 ```bash
-jav # 获取磁力链接并打印至标准输出，可自己使用重定向保存到文本文件中
+jav --help # 使用方法请自行查看内置帮助
 ```
 
 ## Todo
