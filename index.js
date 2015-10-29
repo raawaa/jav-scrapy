@@ -5,116 +5,130 @@ var cheerio = require('cheerio');
 var request = require('superagent');
 var async = require('async');
 
+var noop = function noop() {};
+
 const baseUrl = 'http://www.javbus.in';
 var pageIndex = 1;
 
-async.during(
-	// test page exist
-	function(callback) {
-		let url = baseUrl + (pageIndex === 1 ? '' : '/page/' + pageIndex);
-		console.log(url);
-		async.retry(3,
-			function(callback, result) {
-				request
-					.get(url)
-					.accept('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
-					.set('Accept-Encoding', 'gzip, deflate')
-					.set('Connection', 'keep-alive')
-					.redirects(2)
-					.end(function(err, res) {
-						pageIndex++;
-						// console.log(res.status)
-						if (err) {
-							callback(err);
-						}
-						// console.log(res.header)
-						callback(null, res);
-					});
-			},
-			function(err, result) {
-				if (err) {
-					callback(err);
-				}
-				callback(null,result.ok);
+var currentPageHtml = null;
 
-			});
-	},
+async.during(
+	pageExist,
 	// when page exist
 	function(callback) {
-		console.log('page!');
-		callback(null);
+		let pageTasks = [parseLinks, getMagnet];
+
+		async.waterfall(
+			pageTasks,
+			function(err, result) {
+				if (err) return callback(err);
+				callback(null);
+			});
 	},
+	// FINALLY
 	function(err) {
-		if (err) throw err;
+		//if (err) throw err;
 	});
 
-// var singlePage = vo(getPage, getPageLinks)(baseUrl + (pageIndex === 1 ? '' : '/page/' + pageIndex), function(err, res) {
-// 	if (err) throw err;
-// 	getItems(res);
-// });
-function scrapOnePage() {
 
-}
-
-function getPage(url, next) {
-	request.get(url).redirects(3).end(function(err, res) {
-		if (err) {
-			return next(err)
-		};
-		return next(null, res.text);
-	});
-}
-
-function getPageLinks(html) {
-	let $ = cheerio.load(html);
-	let anchors = $('#item-frame');
+function parseLinks(next) {
+	// console.log(currentPageHtml);
+	let $ = cheerio.load(currentPageHtml);
 	let links = [];
-	anchors.each(function(i, elem) {
-		let url = $(this).children('a').first().attr('href');
-		links.push(url);
+	$('a.movie-box').each(function(i, elem) {
+		links.push($(this).attr('href'));
 	});
-	return Promise.resolve(links);
+	// console.log(links);
+	next(null, links);
 }
 
-function getItems(links) {
-	async.mapLimit(links, 5, getItem, function(err, res) {
-		if (err) throw err;
-		let metas = parse(res);
-		async.forEachOfLimit(metas, 5, function(value, key, callback) {
-			request.get(baseUrl + "/ajax/uncledatoolsbyajax.php?gid=" + value.gid + "&lang=" + value.lang + "&img=" + value.img + "&uc=" + value.uc + "&floor=" + Math.floor(Math.random() * 1e3 + 1)).set('Referer', 'http://www.javbus.in/SCOP-094').end(function(err, res) {
-				let $ = cheerio.load(res.text);
-				let anchor = $('a[data-message="magnet"]').first().attr('href');
-				if (anchor) console.log(anchor);
+function getMagnet(links, next) {
+
+	async.forEachOfLimit(
+		links,
+		3,
+		function(link, index, callback) {
+			request
+				.get(link)
+				.end(function(err, res) {
+					let $ = cheerio.load(res.text);
+					let script = $('script', 'body').eq(2).html();
+					let meta = parse(script);
+					request
+						.get(baseUrl + "/ajax/uncledatoolsbyajax.php?gid=" + meta.gid + "&lang=" + meta.lang + "&img=" + meta.img + "&uc=" + meta.uc + "&floor=" + Math.floor(Math.random() * 1e3 + 1))
+						.set('Referer', 'http://www.javbus.in/SCOP-094')
+						.end(function(err, res) {
+							if (err) {
+								console.error('ajax magent-table error', err.message);
+								return callback(err);
+							};
+							// console.log(res.text);
+							let $ = cheerio.load(res.text);
+							let anchor = $('[onclick]').first().attr('onclick');
+							if (anchor) {
+								anchor = /\'(magnet:.+?)\'/g.exec(anchor)[1];
+								console.log(anchor);
+							}
+							callback(null);
+						});
+				});
+		},
+		function(err) {
+			if (err) {
+
+				return next(err);
+			};
+			next();
+		});
+
+	function parse(script) {
+		console.log(script);
+		let gid_r = /gid\s+=\s+(\d+)/g.exec(script);
+		let gid = gid_r[1];
+		let uc_r = /uc\s+=\s(\d+)/g.exec(script);
+		let uc = uc_r[1];
+		let img_r = /img\s+=\s+\'(\http:.+\.jpg)/g.exec(script);
+		let img = img_r[1];
+		return {
+			gid: gid,
+			img: img,
+			uc: uc,
+			lang: 'zh'
+		};
+	}
+}
+
+
+
+function pageExist(callback) {
+	// body...
+	let url = baseUrl + (pageIndex === 1 ? '' : '/page/' + pageIndex);
+	// console.log(url);
+	async.retry(3,
+		function(callback, result) {
+			request
+				.get(url)
+				.accept('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+				.set('Accept-Encoding', 'gzip, deflate')
+				.set('Connection', 'keep-alive')
+				.redirects(2)
+				.end(function(err, res) {
+					pageIndex++;
+					// console.log(res.status)
+					if (err) {
+						console.error('已抓取完所有页面,StatusCode:', err.status);
+						return callback(err);
+					}
+					currentPageHtml = res.text;
+					callback(null, res);
+				});
+		},
+		function(err, res) {
+			if (err) {
 				callback(err);
-			});
-		});
-	});
+			} else {
+				callback(null, res.ok);
+			}
 
-	function getItem(link, done) {
-		request.get(link).end(function(err, res) {
-			if (err) done(err);
-			let $ = cheerio.load(res.text);
-			let script = $('script', 'body').eq(3).html();
-			done(null, script);
 		});
-	}
-
-	function parse(scripts) {
-		var metas = [];
-		scripts.forEach(function(script) {
-			let gid_r = /gid\s+=\s+(\d+)/g.exec(script);
-			let gid = gid_r[1];
-			let uc_r = /uc\s+=\s(\d+)/g.exec(script);
-			let uc = uc_r[1];
-			let img_r = /img\s+=\s+\'(\http:.+\.jpg)/g.exec(script);
-			let img = img_r[1];
-			metas.push({
-				gid: gid,
-				img: img,
-				uc: uc,
-				lang: 'zh'
-			});
-		});
-		return metas;
-	}
 }
