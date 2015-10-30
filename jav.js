@@ -49,7 +49,7 @@ if (hasLimit) {
 }
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
-console.log('并行连接数：'.green, parallel.toString().green.bold, '      ', '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold,'秒');
+console.log('并行连接数：'.green, parallel.toString().green.bold, '      ', '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold,'秒'.green);
 console.log('磁链保存位置: '.green, output.green.bold);
 
 /****************************
