@@ -211,7 +211,7 @@ function pageExist(callback) {
 					if (err) {
 						if (err.status === 404) {
 							console.error('已抓取完所有页面,StatusCode:', err.status);
-							return callback(null);
+							return callback(err);
 						} else {
 							retryCount++;
 							console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
@@ -225,6 +225,9 @@ function pageExist(callback) {
 		},
 		function(err, res) {
 			retryCount = 3;
+            if(err && err.status === 404){
+                return callback(null,false);
+            }
 			if (err) {
 				return callback(err);
 			}
