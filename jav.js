@@ -26,18 +26,15 @@ program
 	.usage('[options]')
 	.option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
 	.option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000', 10000)
-	.option('-l,  --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0）', 0)
+	.option('-l,  --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0', 0)
 	.option('-o, --output <path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的magnets.txt文件', path.join(userHome, 'magnets.txt'))
 	.parse(process.argv);
 
-//if (program.parallel) {
 var parallel = parseInt(program.parallel);
 var timeout = parseInt(program.timeout);
 var count = parseInt(program.limit);
 var hasLimit = !(count === 0);
 
-console.log(program.output);
-//}
 
 if (hasLimit) {
 	debugger;
@@ -52,7 +49,8 @@ if (hasLimit) {
 }
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
-console.log('并行连接数：%d       连接超时设置：%d秒'.green.bold, parallel, timeout / 1000.0);
+console.log('并行连接数：'.green, parallel.toString().green.bold, '      ', '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold);
+console.log('磁链保存位置: '.green, program.output.green.bold);
 
 /****************************
  *****************************

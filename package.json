@@ -2,13 +2,13 @@
   "name": "jav-scarpy",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "jav.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "raawaa",
   "bin": {
-    "jav": "index.js"
+    "jav": "jav.js"
   },
   "license": "ISC",
   "dependencies": {
