@@ -9,10 +9,10 @@ jav-scrapy，一个爬取 AV 种子的小爬虫。目前只是雏形，将会不
 ## Installation
 
 ```bash
-git clone https://git.coding.net/raawaa/jav-scrapy.git
-cd jav-scrapy
-npm install # 安装npm包依赖
-npm link # 使jav-scrapy全局可执行
+$git clone https://git.coding.net/raawaa/jav-scrapy.git
+$cd jav-scrapy
+$npm install # 安装npm包依赖
+$npm link # 使jav-scrapy全局可执行
 ```
 
 ## Usage
