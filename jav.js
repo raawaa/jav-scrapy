@@ -34,7 +34,7 @@ var parallel = parseInt(program.parallel);
 var timeout = parseInt(program.timeout);
 var count = parseInt(program.limit);
 var hasLimit = !(count === 0);
-
+var output = program.output.replace(/['"]/g,'');
 
 if (hasLimit) {
 	debugger;
@@ -49,8 +49,8 @@ if (hasLimit) {
 }
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
-console.log('并行连接数：'.green, parallel.toString().green.bold, '      ', '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold);
-console.log('磁链保存位置: '.green, program.output.green.bold);
+console.log('并行连接数：'.green, parallel.toString().green.bold, '      ', '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold,'秒');
+console.log('磁链保存位置: '.green, output.green.bold);
 
 /****************************
  *****************************
@@ -134,17 +134,15 @@ function getMagnet(links, next) {
 							if (hasLimit && count < 1) {
 								return callback(new Error('limit'));
 							};
-							//console.log('bingo'.blue);
 							if (err) {
 								if (!progress) console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
 								return callback(null); // one magnet fetch fail, do not crash the whole task.
 							};
-							// console.log(res.text);
 							let $ = cheerio.load(res.text);
 							let anchor = $('[onclick]').first().attr('onclick');
 							if (anchor) {
 								anchor = /\'(magnet:.+?)\'/g.exec(anchor)[1];
-								fs.appendFile(program.output, anchor + '\r\n', function(err) {
+								fs.appendFile(output, anchor + '\r\n', function(err) {
 									if (err) {
 										throw err;
 										return callback(err);
