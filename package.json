@@ -20,6 +20,7 @@
     "progress": "^1.1.8",
     "superagent": "^1.4.0",
     "superagent-promise": "^1.0.3",
+    "user-home": "^2.0.0",
     "vo": "^1.0.3"
   }
 }

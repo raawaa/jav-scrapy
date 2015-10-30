@@ -9,6 +9,9 @@ var async = require('async');
 var colors = require('colors');
 var program = require('commander');
 var ProgressBar = require('progress');
+var userHome = require('user-home');
+var path = require('path');
+var fs = require('fs');
 
 var noop = function noop() {};
 
@@ -24,6 +27,7 @@ program
 	.option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
 	.option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000', 10000)
 	.option('-l,  --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0）', 0)
+	.option('-o, --output <path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的magnets.txt文件', path.join(userHome, 'magnets.txt'))
 	.parse(process.argv);
 
 //if (program.parallel) {
@@ -31,6 +35,8 @@ var parallel = parseInt(program.parallel);
 var timeout = parseInt(program.timeout);
 var count = parseInt(program.limit);
 var hasLimit = !(count === 0);
+
+console.log(program.output);
 //}
 
 if (hasLimit) {
@@ -114,7 +120,7 @@ function getMagnet(links, next) {
 						return callback(new Error('limit'));
 					};
 					if (err) {
-						if(!progress) console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
+						if (!progress) console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
 						return callback(null);
 					}
 					let $ = cheerio.load(res.text);
@@ -132,7 +138,7 @@ function getMagnet(links, next) {
 							};
 							//console.log('bingo'.blue);
 							if (err) {
-								if(!progress) console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
+								if (!progress) console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
 								return callback(null); // one magnet fetch fail, do not crash the whole task.
 							};
 							// console.log(res.text);
@@ -140,11 +146,18 @@ function getMagnet(links, next) {
 							let anchor = $('[onclick]').first().attr('onclick');
 							if (anchor) {
 								anchor = /\'(magnet:.+?)\'/g.exec(anchor)[1];
-								if(!progress) console.log(anchor.gray);
-								if (progress) {
-									progress.tick();
-								}
-								count--;
+								fs.appendFile(program.output, anchor + '\r\n', function(err) {
+									if (err) {
+										throw err;
+										return callback(err);
+									};
+									if (!progress) console.log(anchor.gray);
+									if (progress) {
+										progress.tick();
+									}
+									count--;
+								})
+
 							}
 							return callback(null);
 						});
