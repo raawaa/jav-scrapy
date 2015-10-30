@@ -8,6 +8,7 @@ var request = require('superagent');
 var async = require('async');
 var colors = require('colors');
 var program = require('commander');
+var ProgressBar = require('progress');
 
 var noop = function noop() {};
 
@@ -31,6 +32,18 @@ var timeout = parseInt(program.timeout);
 var count = parseInt(program.limit);
 var hasLimit = !(count === 0);
 //}
+
+if (hasLimit) {
+	debugger;
+	console.log();
+	var progress = new ProgressBar('总进度(:current/:total): [:bar]', {
+		total: parseInt(program.limit),
+		width: 50,
+		incomplete: '-'.gray,
+		complete: '='.bold
+
+	});
+}
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
 console.log('并行连接数：%d       连接超时设置：%d秒'.green.bold, parallel, timeout / 1000.0);
@@ -59,7 +72,7 @@ async.during(
 		if (err)
 			return console.log('抓取过程终止：%s', err.message);
 		if (hasLimit && count < 1)
-			console.log('已抓取%s个磁链，本次抓取完毕，等待未响应的异步请求...'.green.bold, program.limit);
+			console.log('已抓取%s个磁链，本次抓取完毕，等待其他爬虫回家...'.green.bold, program.limit);
 	});
 
 /****************************
@@ -101,7 +114,7 @@ function getMagnet(links, next) {
 						return callback(new Error('limit'));
 					};
 					if (err) {
-						console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
+						if(!progress) console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
 						return callback(null);
 					}
 					let $ = cheerio.load(res.text);
@@ -119,7 +132,7 @@ function getMagnet(links, next) {
 							};
 							//console.log('bingo'.blue);
 							if (err) {
-								console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
+								if(!progress) console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
 								return callback(null); // one magnet fetch fail, do not crash the whole task.
 							};
 							// console.log(res.text);
@@ -127,7 +140,10 @@ function getMagnet(links, next) {
 							let anchor = $('[onclick]').first().attr('onclick');
 							if (anchor) {
 								anchor = /\'(magnet:.+?)\'/g.exec(anchor)[1];
-								console.log(anchor.gray);
+								if(!progress) console.log(anchor.gray);
+								if (progress) {
+									progress.tick();
+								}
 								count--;
 							}
 							return callback(null);
