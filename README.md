@@ -2,6 +2,8 @@
 
 jav-scrapy，一个爬取 AV 磁力链接的小爬虫。
 
+![anim.gif](https://ooo.0o0.ooo/2015/10/31/56345cf140299.gif "anim.gif")
+
 ## Prequisites
 
 - Node.js 4.2.1+
