@@ -12,6 +12,7 @@ var ProgressBar = require('progress');
 var userHome = require('user-home');
 var path = require('path');
 var fs = require('fs');
+var mkdirp = require('mkdirp');
 
 var noop = function noop() {};
 
@@ -22,19 +23,27 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-    .version('0.2.1')
+    .version('0.3.0')
     .usage('[options]')
     .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
-    .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000', 10000)
+    .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000')
     .option('-l, --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0', 0)
     .option('-o, --output <path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的magnets.txt文件', path.join(userHome, 'magnets.txt'))
     .option('-s, --search <string>', '搜索关键词')
     .option('-b, --base <url>', '自定义baseUrl')
+    .option('-c, --cover <dir>', '只保存封面,至目录<dir>中')
     .parse(process.argv);
 
 
 var parallel = parseInt(program.parallel);
-var timeout = parseInt(program.timeout);
+
+// 如果是下载封面，调整连接超时为30秒
+if(program.cover && !program.timeout){
+    var timeout = 30000;
+}else{
+    var timeout = parseInt(program.timeout) || 10000;
+}
+
 var count = parseInt(program.limit);
 var hasLimit = !(count === 0);
 var output = program.output.replace(/['"]/g, '');
@@ -64,7 +73,7 @@ async.during(
     pageExist,
     // when page exist
     function(callback) {
-        let pageTasks = [parseLinks, getMagnets];
+        let pageTasks = [parseLinks, getItems];
 
         async.waterfall(
             pageTasks,
@@ -102,12 +111,14 @@ function parseLinks(next) {
     next(null, links);
 }
 
-function getMagnets(links, next) {
+function getItems(links, next) {
 
     async.forEachOfLimit(
-        links, parallel, getMagnet,
+        links,
+        parallel,
+        getItemPage,
         function(err) {
-            debugger;
+            console.log('getItems finished');
             if (err && err.message === 'limit') return next();
             if (err) {
                 throw err;
@@ -183,8 +194,9 @@ function parse(script) {
     };
 }
 
-function getMagnet(link, index, callback) {
+function getItemPage(link, index, callback) {
     // console.log('count: %d'.yellow, count);
+    debugger;
     request
         .get(link)
         .timeout(timeout)
@@ -193,41 +205,101 @@ function getMagnet(link, index, callback) {
                 return callback(new Error('limit'));
             };
             if (err) {
-                if (!progress) console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
+                if (!progress)
+                    console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
                 return callback(null);
-            }
-            let $ = cheerio.load(res.text);
-            let script = $('script', 'body').eq(2).html();
-            let meta = parse(script);
-            //console.log('fetch link: %S'.blue, link);
-            request.get(baseUrl + "/ajax/uncledatoolsbyajax.php?gid=" + meta.gid + "&lang=" + meta.lang + "&img=" + meta.img + "&uc=" + meta.uc + "&floor=" + Math.floor(Math.random() * 1e3 + 1)).set('Referer', 'http://www.javbus.in/SCOP-094').timeout(timeout).end(function(err, res) {
-                debugger;
-                if (hasLimit && count < 1) {
-                    return callback(new Error('limit'));
-                };
-                if (err) {
-                    if (!progress)
-                        console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
-                    return callback(null); // one magnet fetch fail, do not crash the whole task.
-                };
+            } else {
                 let $ = cheerio.load(res.text);
-                let anchor = $('[onclick]').first().attr('onclick');
-                if (anchor) {
-                    anchor = /\'(magnet:.+?)\'/g.exec(anchor)[1];
-                    fs.appendFile(output, anchor + '\r\n', function(err) {
-                        if (err) {
-                            throw err;
-                            return callback(err);
-                        };
-                        if (!progress) console.log(anchor.gray);
-                        if (progress) {
-                            progress.tick();
-                        }
-                        count--;
-                    })
-
+                let script = $('script', 'body').eq(2).html();
+                let meta = parse(script);
+                //console.log('fetch link: %S'.blue, link);
+                if (!program.cover) {
+                    getItemMagnet(link, meta, callback);
+                } else {
+                    mkdirp.sync(program.cover);
+                    getItemCover(link, meta, callback);
                 }
-                return callback(null);
-            });
+            }
         });
 }
+
+function getItemMagnet(link, meta, done) {
+    request.get(baseUrl + "/ajax/uncledatoolsbyajax.php?gid=" + meta.gid + "&lang=" + meta.lang + "&img=" + meta.img + "&uc=" + meta.uc + "&floor=" + Math.floor(Math.random() * 1e3 + 1))
+        .set('Referer', 'http://www.javbus.in/SCOP-094')
+        .timeout(timeout)
+        .end(function(err, res) {
+            if (hasLimit && count < 1) {
+                return done(new Error('limit'));
+            };
+            if (err) {
+                if (!progress)
+                    console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
+                return done(null); // one magnet fetch fail, do not crash the whole task.
+            };
+            let $ = cheerio.load(res.text);
+            let anchor = $('[onclick]').first().attr('onclick');
+            if (anchor) {
+                anchor = /\'(magnet:.+?)\'/g.exec(anchor)[1];
+                fs.appendFile(output, anchor + '\r\n', function(err) {
+                    if (err) {
+                        throw err;
+                        return done(err);
+                    };
+                    if (!progress) console.log(anchor.gray);
+                    if (progress) {
+                        progress.tick();
+                    }
+                    count--;
+                })
+
+            }
+            return done(null);
+        });
+}
+
+function getItemCover(link, meta, done) {
+    var fanhao = link.split('/').pop();
+    var filename = fanhao + '.jpg';
+    var fileFullPath = path.join(program.cover, filename);
+    var coverFileStream = fs.createWriteStream(fileFullPath);
+    var finished = false;
+    request.get(meta.img)
+        .timeout(timeout)
+        .on('end', function() {
+            debugger;
+            if (!finished) {
+                finished = true;
+                console.log('[Finished]'.green.bold, fileFullPath);
+                return done();
+            };
+        }) // .timeout(timeout)
+        .on('error', function(err) {
+            debugger;
+            if (!finished) {
+                finished = true;
+                console.error('[ Error  ]'.red.bold, fileFullPath, err.message.red);
+                return done();
+            };
+            // return done();
+            // if (finished) {
+            //     return done();
+            // }else{
+            //     finished = true;
+            // }
+        })
+        // .on('close', function() {
+        //     console.log(fanhao, 'read close');
+        // })
+        .pipe(coverFileStream);
+    // coverFileStream.on('finish', function() {
+    //     console.log(fanhao, 'write finished');
+    // });
+    // coverFileStream.on('error', function(err) {
+    //     console.log(fanhao, 'write error');
+    // });
+    // coverFileStream.on('unpipe', function(src) {
+    //     console.log('[Finished]'.green.bold, fileFullPath);
+        // return done();
+    // });
+}
+

@@ -32,6 +32,7 @@ $ npm link # 使jav-scrapy全局可执行
     -o, --output <path>   设置磁链抓取结果的保存位置，默认为当前用户的主目录下的magnets.txt文件
     -s, --search <string> 根据关键词抓取磁链,如ipz只抓取ipz开头的番号,ipz-634则只抓取该番号的磁链
     -b, --base <url>      设置抓取起始页
+    -c, --cover <dir>     只下载封面而不抓取磁链，封面保存在目录<dir>中。可配合--output之外的其他选项使用
 ```
 
 ## Todo

@@ -1,6 +1,6 @@
 {
   "name": "jav-scarpy",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "",
   "main": "jav.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "cheerio": "^0.19.0",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
+    "mkdirp": "^0.5.1",
     "nightmare": "^2.0.7",
     "progress": "^1.1.8",
     "superagent": "^1.4.0",
