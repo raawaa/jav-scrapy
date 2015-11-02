@@ -23,7 +23,7 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-    .version('0.3.0')
+    .version('0.3.1')
     .usage('[options]')
     .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
     .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000')
@@ -121,7 +121,6 @@ function getItems(links, next) {
         parallel,
         getItemPage,
         function(err) {
-            console.log('getItems finished');
             if (err && err.message === 'limit') return next();
             if (err) {
                 throw err;
@@ -151,6 +150,7 @@ function pageExist(callback) {
                 // .accept('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
                 // .set('Accept-Encoding', 'gzip, deflate')
                 // .set('Connection', 'keep-alive')
+                .set("Cookie",program.cover?"existmag=all":"existmag=mag")
                 .timeout(timeout).redirects(2)
                 .end(function(err, res) {
                     // console.log(res.status)
