@@ -251,7 +251,7 @@ function getItemMagnet(link, meta, done) {
             return done(err);
           };
           if (!progress) {
-            console.log('['.green.bold + fanhao.green.bold + ']'.green.bold + anchor);
+            console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
           }
           if (progress) {
             progress.tick();
