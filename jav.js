@@ -36,7 +36,6 @@ program
 
 
 var parallel = parseInt(program.parallel);
-
 var timeout = parseInt(program.timeout) || 10000;
 // 如果是下载封面，调整连接超时为30秒
 if (program.cover && !program.timeout) {
@@ -47,10 +46,11 @@ var count = parseInt(program.limit);
 var hasLimit = (count !== 0);
 var output = program.output.replace(/['"]/g, '');
 
+var progress;
 if (hasLimit) {
   debugger;
   console.log();
-  var progress = new ProgressBar('总进度(:current/:total): [:bar]', {
+  progress = new ProgressBar('总进度(:current/:total): [:bar]', {
     total: count,
     width: 50,
     incomplete: '-'.gray,
@@ -59,7 +59,8 @@ if (hasLimit) {
 }
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
-console.log('并行连接数：'.green, parallel.toString().green.bold, '      ', '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold, '秒'.green);
+console.log('并行连接数：'.green, parallel.toString().green.bold, '      ',
+  '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold, '秒'.green);
 if (!program.cover) {
   console.log('磁链保存位置: '.green, output.green.bold);
 } else {
@@ -85,7 +86,7 @@ async.during(
         callback(null);
       });
   },
-  // FINALLY
+  // page not exits or finished parsing
   function(err) {
     if (err) {
       return console.log('抓取过程终止：%s', err.message);
@@ -93,7 +94,8 @@ async.during(
     if (hasLimit && count < 1) {
       console.log('已抓取%s个磁链，本次抓取完毕，等待其他爬虫回家...'.green.bold, program.limit);
     }
-  });
+  }
+);
 
 /****************************
  *****************************
@@ -102,14 +104,11 @@ async.during(
  ****************************/
 
 function parseLinks(next) {
-  // console.log(currentPageHtml);
   let $ = cheerio.load(currentPageHtml);
-  let links = [];
+  let links = [], fanhao = [];
   $('a.movie-box').each(function(i, elem) {
-    links.push($(this).attr('href'));
-  });
-  let fanhao = [];
-  links.forEach(function(link) {
+    let link = $(this).attr('href');
+    links.push(link);
     fanhao.push(link.split('/').pop());
   });
   console.log('正处理以下番号影片...'.green);
@@ -151,11 +150,12 @@ function pageExist(callback) {
       request
         .get(url)
         .set("Cookie", program.cover ? "existmag=all" : "existmag=mag")
-        .timeout(timeout).redirects(2)
+        .timeout(timeout)
+        .redirects(2)
         .end(function(err, res) {
           if (err) {
             if (err.status === 404) {
-              console.error('已抓取完所有页面,StatusCode:', err.status);
+              console.error('已抓取完所有页面, StatusCode:', err.status);
               return callback(err);
             } else {
               retryCount++;
@@ -169,7 +169,6 @@ function pageExist(callback) {
         });
     },
     function(err, res) {
-      retryCount = 3;
       if (err && err.status === 404) {
         return callback(null, false);
       }
