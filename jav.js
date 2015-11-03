@@ -22,7 +22,7 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-  .version('0.3.2')
+  .version('0.3.3')
   .usage('[options]')
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
   .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000')
@@ -244,6 +244,7 @@ function getItemMagnet(link, meta, done) {
       // 若存在高清磁链，则优先选取高清磁链
       anchor = HDAnchor || anchor;
       if (anchor) {
+        mkdirp.sync(path.dirname(output)); // fix issue #3若若
         fs.appendFile(output, anchor + '\r\n', function(err) {
           if (err) {
             throw err;
