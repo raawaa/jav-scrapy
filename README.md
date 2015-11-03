@@ -1,6 +1,6 @@
 #jav-scrapy
 
-jav-scrapy，一个爬取 AV 磁力链接的小爬虫。
+一个可以爬取 AV 磁力链接或影片封面的小爬虫。
 
 ![anim.gif](https://ooo.0o0.ooo/2015/10/31/56345cf140299.gif "anim.gif")
 
@@ -14,7 +14,7 @@ jav-scrapy，一个爬取 AV 磁力链接的小爬虫。
 $ git clone https://git.coding.net/raawaa/jav-scrapy.git
 $ cd jav-scrapy
 $ npm install # 安装npm包依赖
-$ npm link # 使jav-scrapy全局可执行
+$ npm link    # 使jav-scrapy全局可执行
 ```
 
 ## Usage
@@ -24,15 +24,15 @@ $ npm link # 使jav-scrapy全局可执行
 
   Options:
 
-    -h, --help            output usage information
-    -V, --version         output the version number
-    -p, --parallel <num>  设置抓取并发连接数，默认值：2
-    -t, --timeout <num>   自定义连接超时时间(毫秒)。默认值：10000
-    -l, --limit <num>     设置抓取影片的数量上限，0为抓取全部影片。默认值：0
-    -o, --output <path>   设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件
-    -s, --search <string> 根据关键词抓取磁链,如 ipz 只抓取ipz开头的番号, ipz-634 则只抓取该番号的磁链
-    -b, --base <url>      设置抓取起始页
-    -c, --cover <dir>     只下载封面而不抓取磁链，封面保存在目录 `<dir>` 中。可配合 `--output` 之外的其他选项使用
+    -h, --help                output usage information
+    -V, --version             output the version number
+    -p, --parallel <num>      设置抓取并发连接数，默认值：2
+    -t, --timeout <num>       自定义连接超时时间(毫秒)。默认值：10000
+    -l, --limit <num>         设置抓取影片的数量上限，0为抓取全部影片。默认值：0
+    -o, --output <file_path>  设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件
+    -s, --search <string>     搜索关键词，可只抓取搜索结果的磁链或封面
+    -b, --base <url>          自定义抓取的起始页
+    -c, --cover <dir>         只抓取封面而不抓取磁链，并将封面图片文件保存至目录 <dir> 中。当 --output 选项存在时，此选项不起作用
 ```
 
 ### Examples
@@ -56,4 +56,5 @@ $ jav -b http://www.javbus.in/genre/28 -p 10 -o ~/magnets.txt
 
 ## Notes
 
-- Windows 用户注目，如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1)。
+- Windows 用户注目，如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1) 。
+- 若影片存在高清资源，则优先抓取高清磁链。
