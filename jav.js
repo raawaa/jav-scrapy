@@ -41,7 +41,7 @@ if (program.cover && !program.timeout) {
   timeout = 30000;
 }
 
-var count = parseInt(program.limit);
+var count = parseInt(program.limit), coverLeft = count;
 var hasLimit = (count !== 0);
 var output = program.output.replace(/['"]/g, '');
 
@@ -90,7 +90,7 @@ async.during(
     if (err) {
       return console.log('抓取过程终止：%s', err.message);
     }
-    if (hasLimit && count < 1) {
+    if (hasLimit && (count < 1 || coverLeft < 1)) {
       console.log('已抓取%s个磁链，本次抓取完毕，等待其他爬虫回家...'.green.bold, program.limit);
     }
   }
@@ -105,11 +105,20 @@ async.during(
 function parseLinks(next) {
   let $ = cheerio.load(currentPageHtml);
   let links = [], fanhao = [];
-  $('a.movie-box').each(function(i, elem) {
-    let link = $(this).attr('href');
-    links.push(link);
-    fanhao.push(link.split('/').pop());
-  });
+  let totalCoverCurPage = $('a.movie-box').length;
+  if(coverLeft > totalCoverCurPage) {
+    $('a.movie-box').each(function(i, elem) {
+      let link = $(this).attr('href');
+      links.push(link);
+      fanhao.push(link.split('/').pop());
+    });
+  } else {
+    $('a.movie-box').slice(0, coverLeft).each(function(i, elem) {
+      let link = $(this).attr('href');
+      links.push(link);
+      fanhao.push(link.split('/').pop());
+    });
+  }
   console.log('正处理以下番号影片...'.green);
   console.log(fanhao.toString().yellow)
   next(null, links);
@@ -135,7 +144,7 @@ function getItems(links, next) {
 }
 
 function pageExist(callback) {
-  if (hasLimit && count < 1) {
+  if (hasLimit && (count < 1 || coverLeft < 1)) {
     return callback();
   }
   var url = baseUrl + (pageIndex === 1 ? '' : ('/page/' + pageIndex));
@@ -196,7 +205,6 @@ function parse(script) {
 }
 
 function getItemPage(link, index, callback) {
-  debugger;
   request
     .get(link)
     .timeout(timeout)
@@ -212,7 +220,6 @@ function getItemPage(link, index, callback) {
         let $ = cheerio.load(res.text);
         let script = $('script', 'body').eq(2).html();
         let meta = parse(script);
-        //console.log('fetch link: %S'.blue, link);
         if (!program.cover) {
           getItemMagnet(link, meta, callback);
         } else {
@@ -274,7 +281,6 @@ function getItemCover(link, meta, done) {
   request.get(meta.img)
     .timeout(timeout)
     .on('end', function() {
-      debugger;
       if (!finished) {
         finished = true;
         console.log('[Finished]'.green.bold, fileFullPath);
@@ -290,4 +296,5 @@ function getItemCover(link, meta, done) {
       };
     })
     .pipe(coverFileStream);
+    coverLeft--;
 }
