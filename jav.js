@@ -41,7 +41,7 @@ if (program.cover && !program.timeout) {
   timeout = 30000;
 }
 
-var count = parseInt(program.limit);
+var count = parseInt(program.limit), coverLeft = count;
 var hasLimit = (count !== 0);
 var output = program.output.replace(/['"]/g, '');
 
@@ -90,7 +90,7 @@ async.during(
     if (err) {
       return console.log('抓取过程终止：%s', err.message);
     }
-    if (hasLimit && count < 1) {
+    if (hasLimit && (count < 1 || coverLeft < 1)) {
       console.log('已抓取%s个磁链，本次抓取完毕，等待其他爬虫回家...'.green.bold, program.limit);
     }
   }
@@ -105,11 +105,19 @@ async.during(
 function parseLinks(next) {
   let $ = cheerio.load(currentPageHtml);
   let links = [], fanhao = [];
-  $('a.movie-box').each(function(i, elem) {
+  let totalCoverCurPage = $('a.movie-box').length;
+  if(coverLeft > totalCoverCurPage) {
+    $('a.movie-box').each(link_fanhao_handler);
+  } else {
+    $('a.movie-box').slice(0, coverLeft).each(link_fanhao_handler);
+  }
+
+  function link_fanhao_handler(i, elem) {
     let link = $(this).attr('href');
     links.push(link);
     fanhao.push(link.split('/').pop());
-  });
+  }
+  
   console.log('正处理以下番号影片...'.green);
   console.log(fanhao.toString().yellow)
   next(null, links);
@@ -121,8 +129,10 @@ function getItems(links, next) {
     parallel,
     getItemPage,
     function(err) {
-      if (err && err.message === 'limit') return next();
       if (err) {
+        if(err.message === 'limit') {
+          return next();
+        }
         throw err;
         return next(err);
       };
@@ -133,7 +143,7 @@ function getItems(links, next) {
 }
 
 function pageExist(callback) {
-  if (hasLimit && count < 1) {
+  if (hasLimit && (count < 1 || coverLeft < 1)) {
     return callback();
   }
   var url = baseUrl + (pageIndex === 1 ? '' : ('/page/' + pageIndex));
@@ -142,6 +152,7 @@ function pageExist(callback) {
   } else if (program.base) {
     url = program.base + (pageIndex === 1 ? '' : ('/' + pageIndex));
   }
+
   console.log('获取第%d页中的影片链接 ( %s )...'.green, pageIndex, url);
   let retryCount = 1;
   async.retry(3,
@@ -155,23 +166,22 @@ function pageExist(callback) {
           if (err) {
             if (err.status === 404) {
               console.error('已抓取完所有页面, StatusCode:', err.status);
-              return callback(err);
             } else {
               retryCount++;
               console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
               console.error('...进行第%d次尝试...'.red, retryCount);
-              return callback(err);
             }
+            return callback(err);
           }
           currentPageHtml = res.text;
           callback(null, res);
         });
     },
     function(err, res) {
-      if (err && err.status === 404) {
-        return callback(null, false);
-      }
       if (err) {
+        if(err.status === 404) {
+            return callback(null, false);
+        }
         return callback(err);
       }
       callback(null, res.ok);
@@ -194,7 +204,6 @@ function parse(script) {
 }
 
 function getItemPage(link, index, callback) {
-  debugger;
   request
     .get(link)
     .timeout(timeout)
@@ -210,7 +219,6 @@ function getItemPage(link, index, callback) {
         let $ = cheerio.load(res.text);
         let script = $('script', 'body').eq(2).html();
         let meta = parse(script);
-        //console.log('fetch link: %S'.blue, link);
         if (!program.cover) {
           getItemMagnet(link, meta, callback);
         } else {
@@ -272,7 +280,6 @@ function getItemCover(link, meta, done) {
   request.get(meta.img)
     .timeout(timeout)
     .on('end', function() {
-      debugger;
       if (!finished) {
         finished = true;
         console.log('[Finished]'.green.bold, fileFullPath);
@@ -288,4 +295,5 @@ function getItemCover(link, meta, done) {
       };
     })
     .pipe(coverFileStream);
+    coverLeft--;
 }
