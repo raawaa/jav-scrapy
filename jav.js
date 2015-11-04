@@ -107,18 +107,17 @@ function parseLinks(next) {
   let links = [], fanhao = [];
   let totalCoverCurPage = $('a.movie-box').length;
   if(coverLeft > totalCoverCurPage) {
-    $('a.movie-box').each(function(i, elem) {
-      let link = $(this).attr('href');
-      links.push(link);
-      fanhao.push(link.split('/').pop());
-    });
+    $('a.movie-box').each(link_fanhao_handler);
   } else {
-    $('a.movie-box').slice(0, coverLeft).each(function(i, elem) {
-      let link = $(this).attr('href');
-      links.push(link);
-      fanhao.push(link.split('/').pop());
-    });
+    $('a.movie-box').slice(0, coverLeft).each(link_fanhao_handler);
   }
+
+  function link_fanhao_handler(i, elem) {
+    let link = $(this).attr('href');
+    links.push(link);
+    fanhao.push(link.split('/').pop());
+  }
+  
   console.log('正处理以下番号影片...'.green);
   console.log(fanhao.toString().yellow)
   next(null, links);
