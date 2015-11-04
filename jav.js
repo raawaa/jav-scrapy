@@ -121,8 +121,10 @@ function getItems(links, next) {
     parallel,
     getItemPage,
     function(err) {
-      if (err && err.message === 'limit') return next();
       if (err) {
+        if(err.message === 'limit') {
+          return next();
+        }
         throw err;
         return next(err);
       };
@@ -142,6 +144,7 @@ function pageExist(callback) {
   } else if (program.base) {
     url = program.base + (pageIndex === 1 ? '' : ('/' + pageIndex));
   }
+
   console.log('获取第%d页中的影片链接 ( %s )...'.green, pageIndex, url);
   let retryCount = 1;
   async.retry(3,
@@ -155,23 +158,22 @@ function pageExist(callback) {
           if (err) {
             if (err.status === 404) {
               console.error('已抓取完所有页面, StatusCode:', err.status);
-              return callback(err);
             } else {
               retryCount++;
               console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
               console.error('...进行第%d次尝试...'.red, retryCount);
-              return callback(err);
             }
+            return callback(err);
           }
           currentPageHtml = res.text;
           callback(null, res);
         });
     },
     function(err, res) {
-      if (err && err.status === 404) {
-        return callback(null, false);
-      }
       if (err) {
+        if(err.status === 404) {
+            return callback(null, false);
+        }
         return callback(err);
       }
       callback(null, res.ok);
