@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 'use strict';
-var vo = require('vo');
 var cheerio = require('cheerio');
 var request = require('superagent');
 var async = require('async');
@@ -41,7 +40,7 @@ if (program.cover && !program.timeout) {
   timeout = 30000;
 }
 
-var count = parseInt(program.limit), coverLeft = count;
+var count = parseInt(program.limit), coverLeft = count || 1000;
 var hasLimit = (count !== 0);
 var output = program.output.replace(/['"]/g, '');
 
@@ -75,10 +74,8 @@ async.during(
   pageExist,
   // when page exist
   function(callback) {
-    let pageTasks = [parseLinks, getItems];
-
     async.waterfall(
-      pageTasks,
+      [parseLinks, getItems],
       function(err, result) {
         pageIndex++;
         if (err) return callback(err);
@@ -92,9 +89,7 @@ async.during(
       return process.exit(1);
     }
     if (hasLimit && (count < 1 || coverLeft < 1)) {
-      console.log('已抓取%s个%s，本次抓取完毕'.green.bold,
-                  program.limit, 
-                  ( program.cover ? '封面' : '磁链' ));
+      console.log('已抓取%s个%s，本次抓取完毕'.green.bold, program.limit, ( program.cover ? '封面' : '磁链' ));
       return process.exit(0); // 不等待未完成的异步请求，直接结束进程
     }
   }
@@ -110,10 +105,14 @@ function parseLinks(next) {
   let $ = cheerio.load(currentPageHtml);
   let links = [], fanhao = [];
   let totalCoverCurPage = $('a.movie-box').length;
-  if(coverLeft > totalCoverCurPage) {
-    $('a.movie-box').each(link_fanhao_handler);
+  if(program.cover) {
+    if(coverLeft > totalCoverCurPage) {
+      $('a.movie-box').each(link_fanhao_handler);
+    } else {
+      $('a.movie-box').slice(0, coverLeft).each(link_fanhao_handler);
+    }
   } else {
-    $('a.movie-box').slice(0, coverLeft).each(link_fanhao_handler);
+    $('a.movie-box').each(link_fanhao_handler);
   }
 
   function link_fanhao_handler(i, elem) {
@@ -121,9 +120,8 @@ function parseLinks(next) {
     links.push(link);
     fanhao.push(link.split('/').pop());
   }
-  
-  console.log('正处理以下番号影片...'.green);
-  console.log(fanhao.toString().yellow)
+
+  console.log('正处理以下番号影片...\n'.green + fanhao.toString().yellow);
   next(null, links);
 }
 
@@ -235,12 +233,12 @@ function getItemPage(link, index, callback) {
 
 function getItemMagnet(link, meta, done) {
   request
-    .get( baseUrl 
-         + "/ajax/uncledatoolsbyajax.php?gid=" 
-         + meta.gid 
-         + "&lang=" + meta.lang 
-         + "&img=" + meta.img 
-         + "&uc=" + meta.uc 
+    .get( baseUrl
+         + "/ajax/uncledatoolsbyajax.php?gid="
+         + meta.gid
+         + "&lang=" + meta.lang
+         + "&img=" + meta.img
+         + "&uc=" + meta.uc
          + "&floor=" + Math.floor(Math.random() * 1e3 + 1) )
     .set('Referer', 'http://www.javbus.in/SCOP-094')
     .timeout(timeout)
@@ -275,7 +273,7 @@ function getItemMagnet(link, meta, done) {
             progress.tick();
           }
           count--;
-        })
+        });
       }
       return done(null);
     });
