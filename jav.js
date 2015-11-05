@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 'use strict';
-var vo = require('vo');
 var cheerio = require('cheerio');
 var request = require('superagent');
 var async = require('async');
@@ -117,7 +116,7 @@ function parseLinks(next) {
     links.push(link);
     fanhao.push(link.split('/').pop());
   }
-  
+
   console.log('正处理以下番号影片...'.green);
   console.log(fanhao.toString().yellow)
   next(null, links);
