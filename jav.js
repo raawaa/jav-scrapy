@@ -87,10 +87,14 @@ async.during(
   // page not exits or finished parsing
   function(err) {
     if (err) {
-      return console.log('抓取过程终止：%s', err.message);
+      console.log('抓取过程终止：%s', err.message);
+      return process.exit(1);
     }
     if (hasLimit && (count < 1 || coverLeft < 1)) {
-      console.log('已抓取%s个磁链，本次抓取完毕，等待其他爬虫回家...'.green.bold, program.limit);
+      console.log('已抓取%s个%s，本次抓取完毕'.green.bold,
+                  program.limit, 
+                  ( program.cover ? '封面' : '磁链' ));
+      return process.exit(0); // 不等待未完成的异步请求，直接结束进程
     }
   }
 );
@@ -230,7 +234,13 @@ function getItemPage(link, index, callback) {
 
 function getItemMagnet(link, meta, done) {
   request
-    .get(baseUrl + "/ajax/uncledatoolsbyajax.php?gid=" + meta.gid + "&lang=" + meta.lang + "&img=" + meta.img + "&uc=" + meta.uc + "&floor=" + Math.floor(Math.random() * 1e3 + 1))
+    .get( baseUrl 
+         + "/ajax/uncledatoolsbyajax.php?gid=" 
+         + meta.gid 
+         + "&lang=" + meta.lang 
+         + "&img=" + meta.img 
+         + "&uc=" + meta.uc 
+         + "&floor=" + Math.floor(Math.random() * 1e3 + 1) )
     .set('Referer', 'http://www.javbus.in/SCOP-094')
     .timeout(timeout)
     .end(function(err, res) {

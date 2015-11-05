@@ -58,3 +58,7 @@ $ jav -b http://www.javbus.in/genre/28 -p 10 -o ~/magnets.txt
 
 - Windows 用户注目，如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1) 。
 - 若影片存在高清资源，则优先抓取高清磁链。
+
+## Contributors
+
+- [@qiusli](https://github.com/qiusli)
