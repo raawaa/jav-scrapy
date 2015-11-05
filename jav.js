@@ -256,9 +256,10 @@ function getItemMagnet(link, meta, done) {
             return done(err);
           };
             console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
+            return done(); // 只有当appendFile完成异步回调时，getItemMagnet才能算done，保证了在抓取下一页前，本页的所有磁链都已抓取完成
         });
       }
-      return done(null);
+      //return done(null); 对done的调用在appendFile之外的同步代码中，导致appendFile完成异步回调前就结束了控制流
     });
 }
 
@@ -278,7 +279,6 @@ function getItemCover(link, meta, done) {
       };
     })
     .on('error', function(err) {
-      debugger;
       if (!finished) {
         finished = true;
         console.error(( '[' + fanhao + ']' ).red.bold.inverse, err.message.red);
