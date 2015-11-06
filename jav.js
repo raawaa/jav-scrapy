@@ -106,6 +106,9 @@ function parseLinks(next) {
   } else {
     $('a.movie-box').each(link_fanhao_handler);
   }
+  if(program.search && links.length == 1) {
+    targetFound = true;
+  }
 
   function link_fanhao_handler(i, elem) {
     let link = $(this).attr('href');
@@ -179,9 +182,6 @@ function pageExist(callback) {
             return callback(null, false);
         }
         return callback(err);
-      }
-      if(program.search) {
-          targetFound = true;
       }
       callback(null, res.ok);
     });
