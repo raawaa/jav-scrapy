@@ -180,7 +180,9 @@ function pageExist(callback) {
         }
         return callback(err);
       }
-      targetFound = true;
+      if(program.search) {
+          targetFound = true;
+      }
       callback(null, res.ok);
     });
 }
