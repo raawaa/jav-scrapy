@@ -82,8 +82,10 @@ async.during(
                  ( program.cover ? '封面' : '磁链' ),
                  errorCount,
                  ( program.cover ? '封面' : '磁链' ));
-      return process.exit(0); // 不等待未完成的异步请求，直接结束进程
+    }else{
+      console.log('抓取完毕，其中%d个%s抓取失败'.green.bold, errorCount, ( program.cover ? '封面' : '磁链' ));
     }
+    return process.exit(0); // 不等待未完成的异步请求，直接结束进程
   }
 );
 
