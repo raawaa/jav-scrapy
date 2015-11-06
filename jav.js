@@ -265,8 +265,9 @@ function getItemMagnet(link, meta, done) {
             console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
             return done(); // 只有当appendFile完成异步回调时，getItemMagnet才能算done，保证了在抓取下一页前，本页的所有磁链都已抓取完成
         });
+      }else{
+        return done(null);
       }
-      //return done(null); 对done的调用在appendFile之外的同步代码中，导致appendFile完成异步回调前就结束了控制流
     });
 }
 

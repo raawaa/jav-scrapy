@@ -25,6 +25,6 @@
     "commander": "^2.9.0",
     "mkdirp": "^0.5.1",
     "superagent": "^1.4.0",
-    "user-home": "^2.0.0",
+    "user-home": "^2.0.0"
   }
 }
