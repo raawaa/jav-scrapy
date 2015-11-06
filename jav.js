@@ -40,7 +40,7 @@ if (program.cover && !program.timeout) {
 }
 
 var count = parseInt(program.limit);
-var hasLimit = (count !== 0);
+var hasLimit = (count !== 0), targetFound = false;
 var output = program.output.replace(/['"]/g, '');
 var errorCount = 0;
 
@@ -78,7 +78,7 @@ async.during(
     }
     if (hasLimit && (count < 1)) {
       console.log('已尝试抓取%s个%s，其中%d个%s抓取失败，本次抓取完毕'.green.bold,
-                 program.limit, 
+                 program.limit,
                  ( program.cover ? '封面' : '磁链' ),
                  errorCount,
                  ( program.cover ? '封面' : '磁链' ));
@@ -137,7 +137,7 @@ function getItems(links, next) {
 }
 
 function pageExist(callback) {
-  if (hasLimit && (count < 1)) {
+  if (hasLimit && (count < 1) || targetFound) {
     return callback();
   }
   var url = baseUrl + (pageIndex === 1 ? '' : ('/page/' + pageIndex));
@@ -145,9 +145,11 @@ function pageExist(callback) {
     url = baseUrl + searchUrl + '/' + program.search + (pageIndex === 1 ? '' : ('/' + pageIndex));
   } else if (program.base) {
     url = program.base + (pageIndex === 1 ? '' : ('/' + pageIndex));
+  } else {
+    // 只在没有指定搜索条件时显示
+    console.log('获取第%d页中的影片链接 ( %s )...'.green, pageIndex, url);
   }
 
-  console.log('获取第%d页中的影片链接 ( %s )...'.green, pageIndex, url);
   let retryCount = 1;
   async.retry(3,
     function(callback, result) {
@@ -177,6 +179,9 @@ function pageExist(callback) {
             return callback(null, false);
         }
         return callback(err);
+      }
+      if(program.search) {
+          targetFound = true;
       }
       callback(null, res.ok);
     });
