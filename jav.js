@@ -6,7 +6,6 @@ var request = require('superagent');
 var async = require('async');
 var colors = require('colors');
 var program = require('commander');
-var ProgressBar = require('progress');
 var userHome = require('user-home');
 var path = require('path');
 var fs = require('fs');
@@ -40,21 +39,10 @@ if (program.cover && !program.timeout) {
   timeout = 30000;
 }
 
-var count = parseInt(program.limit), coverLeft = count || 1000;
-var hasLimit = (count !== 0);
+var count = parseInt(program.limit);
+var hasLimit = (count !== 0), targetFound = false;
 var output = program.output.replace(/['"]/g, '');
-
-var progress;
-if (hasLimit) {
-  debugger;
-  console.log();
-  progress = new ProgressBar('总进度(:current/:total): [:bar]', {
-    total: count,
-    width: 50,
-    incomplete: '-'.gray,
-    complete: '='.bold
-  });
-}
+var errorCount = 0;
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
 console.log('并行连接数：'.green, parallel.toString().green.bold, '      ',
@@ -88,8 +76,12 @@ async.during(
       console.log('抓取过程终止：%s', err.message);
       return process.exit(1);
     }
-    if (hasLimit && (count < 1 || coverLeft < 1)) {
-      console.log('已抓取%s个%s，本次抓取完毕'.green.bold, program.limit, ( program.cover ? '封面' : '磁链' ));
+    if (hasLimit && (count < 1)) {
+      console.log('已尝试抓取%s个%s，其中%d个%s抓取失败，本次抓取完毕'.green.bold,
+                 program.limit,
+                 ( program.cover ? '封面' : '磁链' ),
+                 errorCount,
+                 ( program.cover ? '封面' : '磁链' ));
       return process.exit(0); // 不等待未完成的异步请求，直接结束进程
     }
   }
@@ -104,12 +96,12 @@ async.during(
 function parseLinks(next) {
   let $ = cheerio.load(currentPageHtml);
   let links = [], fanhao = [];
-  let totalCoverCurPage = $('a.movie-box').length;
-  if(program.cover) {
-    if(coverLeft > totalCoverCurPage) {
+  let totalCountCurPage = $('a.movie-box').length;
+  if(hasLimit) {
+    if(count > totalCountCurPage) {
       $('a.movie-box').each(link_fanhao_handler);
     } else {
-      $('a.movie-box').slice(0, coverLeft).each(link_fanhao_handler);
+      $('a.movie-box').slice(0, count).each(link_fanhao_handler);
     }
   } else {
     $('a.movie-box').each(link_fanhao_handler);
@@ -145,7 +137,7 @@ function getItems(links, next) {
 }
 
 function pageExist(callback) {
-  if (hasLimit && (count < 1 || coverLeft < 1)) {
+  if (hasLimit && (count < 1) || targetFound) {
     return callback();
   }
   var url = baseUrl + (pageIndex === 1 ? '' : ('/page/' + pageIndex));
@@ -153,9 +145,11 @@ function pageExist(callback) {
     url = baseUrl + searchUrl + '/' + program.search + (pageIndex === 1 ? '' : ('/' + pageIndex));
   } else if (program.base) {
     url = program.base + (pageIndex === 1 ? '' : ('/' + pageIndex));
+  } else {
+    // 只在没有指定搜索条件时显示
+    console.log('获取第%d页中的影片链接 ( %s )...'.green, pageIndex, url);
   }
 
-  console.log('获取第%d页中的影片链接 ( %s )...'.green, pageIndex, url);
   let retryCount = 1;
   async.retry(3,
     function(callback, result) {
@@ -186,6 +180,7 @@ function pageExist(callback) {
         }
         return callback(err);
       }
+      targetFound = true;
       callback(null, res.ok);
     });
 }
@@ -210,12 +205,9 @@ function getItemPage(link, index, callback) {
     .get(link)
     .timeout(timeout)
     .end(function(err, res) {
-      if (hasLimit && count < 1) {
-        return callback(new Error('limit'));
-      };
       if (err) {
-        if (!progress)
-          console.error('番号%s页面获取失败：%s'.red, link.split('/').pop(), err.message);
+        console.error( ( '[' + link.split('/').pop() + ']' ).red.bold.inverse + ' ' + err.message.red)
+        errorCount++;
         return callback(null);
       } else {
         let $ = cheerio.load(res.text);
@@ -229,6 +221,9 @@ function getItemPage(link, index, callback) {
         }
       }
     });
+    if(hasLimit){
+      count--;
+    }
 }
 
 function getItemMagnet(link, meta, done) {
@@ -244,12 +239,9 @@ function getItemMagnet(link, meta, done) {
     .timeout(timeout)
     .end(function(err, res) {
       let fanhao = link.split('/').pop();
-      if (hasLimit && count < 1) {
-        return done(new Error('limit'));
-      };
       if (err) {
-        if (!progress)
-          console.error('番号%s磁链获取失败: %s'.red, link.split('/').pop(), err.message);
+        console.error( ( '[' + fanhao + ']' ).red.bold.inverse + ' ' + err.message.red)
+        errorCount++;
         return done(null); // one magnet fetch fail, do not crash the whole task.
       };
       let $ = cheerio.load(res.text);
@@ -260,22 +252,17 @@ function getItemMagnet(link, meta, done) {
       // 若存在高清磁链，则优先选取高清磁链
       anchor = HDAnchor || anchor;
       if (anchor) {
-        mkdirp.sync(path.dirname(output)); // fix issue #3若若
+        mkdirp.sync(path.dirname(output)); // fix issue #3
         fs.appendFile(output, anchor + '\r\n', function(err) {
           if (err) {
             throw err;
             return done(err);
           };
-          if (!progress) {
             console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
-          }
-          if (progress) {
-            progress.tick();
-          }
-          count--;
+            return done(); // 只有当appendFile完成异步回调时，getItemMagnet才能算done，保证了在抓取下一页前，本页的所有磁链都已抓取完成
         });
       }
-      return done(null);
+      //return done(null); 对done的调用在appendFile之外的同步代码中，导致appendFile完成异步回调前就结束了控制流
     });
 }
 
@@ -290,18 +277,17 @@ function getItemCover(link, meta, done) {
     .on('end', function() {
       if (!finished) {
         finished = true;
-        console.log('[Finished]'.green.bold, fileFullPath);
+        console.error(( '[' + fanhao + ']' ).green.bold.inverse, fileFullPath);
         return done();
       };
     })
     .on('error', function(err) {
-      debugger;
       if (!finished) {
         finished = true;
-        console.error('[ Error  ]'.red.bold, fileFullPath, err.message.red);
+        console.error(( '[' + fanhao + ']' ).red.bold.inverse, err.message.red);
+        errorCount++;
         return done();
       };
     })
     .pipe(coverFileStream);
-    coverLeft--;
 }
