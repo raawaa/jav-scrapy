@@ -25,7 +25,7 @@ program
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
   .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000')
   .option('-l, --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0', 0)
-  .option('-o, --output <file_path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件', path.join(userHome, 'magnets.txt'))
+  .option('-o, --output <file_path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件', path.join(userHome, 'magnets', 'magnets.txt'))
   .option('-s, --search <string>', '搜索关键词，可只抓取搜索结果的磁链或封面')
   .option('-b, --base <url>', '自定义抓取的起始页')
   .option('-c, --cover <dir>', '只抓取封面而不抓取磁链，并将封面图片文件保存至目录 <dir> 中。当 --output 选项存在时，此选项不起作用')
@@ -219,8 +219,8 @@ function getItemPage(link, index, callback) {
         let meta = parse(script);
         if (!program.cover) {
           getItemMagnet(link, meta, callback);
+          getItemCover(link, meta, callback);
         } else {
-          mkdirp.sync(program.cover);
           getItemCover(link, meta, callback);
         }
       }
@@ -274,7 +274,8 @@ function getItemMagnet(link, meta, done) {
 function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
   var filename = fanhao + '.jpg';
-  var fileFullPath = path.join(program.cover, filename);
+  var fileFullPath = path.join(userHome, "magnets", fanhao, filename);
+  mkdirp.sync(path.join(userHome, "magnets", fanhao));
   var coverFileStream = fs.createWriteStream(fileFullPath);
   var finished = false;
   request.get(meta.img)
