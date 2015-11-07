@@ -4,18 +4,16 @@
 var cheerio = require('cheerio');
 var request = require('superagent');
 var async = require('async');
-var colors = require('colors');
+require('colors');
 var program = require('commander');
 var userHome = require('user-home');
 var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 
-var noop = function noop() {};
-
 // global var
 const baseUrl = 'http://www.javbus.in';
-const searchUrl = '/search'
+const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
 
@@ -55,7 +53,7 @@ async.during(
   function(callback) {
     async.waterfall(
       [parseLinks, getItems],
-      function(err, result) {
+      function(err) {
         pageIndex++;
         if (err) return callback(err);
         callback(null);
@@ -99,7 +97,7 @@ function parseLinks(next) {
     targetFound = true;
   }
 
-  function link_fanhao_handler(i, elem) {
+  function link_fanhao_handler() {
     let link = $(this).attr('href');
     links.push(link);
     fanhao.push(link.split('/').pop());
@@ -120,8 +118,7 @@ function getItems(links, next) {
           return next();
         }
         throw err;
-        return next(err);
-      };
+      }
       console.log('===== 第%d页处理完毕 ====='.green, pageIndex);
       console.log();
       return next();
@@ -144,10 +141,10 @@ function pageExist(callback) {
 
   let retryCount = 1;
   async.retry(3,
-    function(callback, result) {
+    function(callback) {
       request
         .get(url)
-        .set("Cookie", program.cover ? "existmag=all" : "existmag=mag")
+        .set('Cookie', program.cover ? 'existmag=all' : 'existmag=mag')
         .timeout(timeout)
         .redirects(2)
         .end(function(err, res) {
@@ -168,7 +165,7 @@ function pageExist(callback) {
     function(err, res) {
       if (err) {
         if(err.status === 404) {
-            return callback(null, false);
+          return callback(null, false);
         }
         return callback(err);
       }
@@ -197,39 +194,38 @@ function getItemPage(link, index, callback) {
     .timeout(timeout)
     .end(function(err, res) {
       if (err) {
-        console.error( ( '[' + link.split('/').pop() + ']' ).red.bold.inverse + ' ' + err.message.red)
+        console.error( ( '[' + link.split('/').pop() + ']' ).red.bold.inverse + ' ' + err.message.red);
         errorCount++;
         return callback(null);
-      } else {
-        let $ = cheerio.load(res.text);
-        let script = $('script', 'body').eq(2).html();
-        let meta = parse(script);
-        getItemMagnet(link, meta, callback);
-      }
+      } 
+      let $ = cheerio.load(res.text);
+      let script = $('script', 'body').eq(2).html();
+      let meta = parse(script);
+      getItemMagnet(link, meta, callback);
     });
-    if(hasLimit){
-      count--;
-    }
+  if(hasLimit){
+    count--;
+  }
 }
 
 function getItemMagnet(link, meta, done) {
   request
     .get( baseUrl
-         + "/ajax/uncledatoolsbyajax.php?gid="
+         + '/ajax/uncledatoolsbyajax.php?gid='
          + meta.gid
-         + "&lang=" + meta.lang
-         + "&img=" + meta.img
-         + "&uc=" + meta.uc
-         + "&floor=" + Math.floor(Math.random() * 1e3 + 1) )
+         + '&lang=' + meta.lang
+         + '&img=' + meta.img
+         + '&uc=' + meta.uc
+         + '&floor=' + Math.floor(Math.random() * 1e3 + 1) )
     .set('Referer', 'http://www.javbus.in/SCOP-094')
     .timeout(timeout)
     .end(function(err, res) {
       let fanhao = link.split('/').pop();
       if (err) {
-        console.error( ( '[' + fanhao + ']' ).red.bold.inverse + ' ' + err.message.red)
+        console.error( ( '[' + fanhao + ']' ).red.bold.inverse + ' ' + err.message.red);
         errorCount++;
         return done(null); // one magnet fetch fail, do not crash the whole task.
-      };
+      }
       let $ = cheerio.load(res.text);
       // 尝试解析高清磁链
       let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
@@ -239,10 +235,9 @@ function getItemMagnet(link, meta, done) {
       anchor = HDAnchor || anchor;
       if (anchor) {
         mkdirp.sync(path.join(output, fanhao));
-        fs.writeFile(path.join(output, fanhao, fanhao + ".txt"), anchor + '\r\n', function(err) {
+        fs.writeFile(path.join(output, fanhao, fanhao + '.txt'), anchor + '\r\n', function(err) {
           if (err) {
             throw err;
-            return done(err);
           }
           console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
           getItemCover(link, meta, done);
@@ -266,7 +261,7 @@ function getItemCover(link, meta, done) {
         finished = true;
         console.error(( '[' + fanhao + ']' ).green.bold.inverse, fileFullPath);
         return done();
-      };
+      }
     })
     .on('error', function(err) {
       if (!finished) {
@@ -274,7 +269,7 @@ function getItemCover(link, meta, done) {
         console.error(( '[' + fanhao + ']' ).red.bold.inverse, err.message.red);
         errorCount++;
         return done();
-      };
+      }
     })
     .pipe(coverFileStream);
 }
