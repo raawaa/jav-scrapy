@@ -239,7 +239,7 @@ function getItemMagnet(link, meta, done) {
           if (err) {
             throw err;
           }
-          console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
+          console.log( ( '[' + fanhao + ']' ).green.bold.inverse + '[磁链]'.yellow.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ), anchor);
           getItemCover(link, meta, done);
         });
       }else{
@@ -260,14 +260,14 @@ function getItemCover(link, meta, done) {
     .on('end', function() {
       if (!finished) {
         finished = true;
-        console.error(( '[' + fanhao + ']' ).green.bold.inverse, fileFullPath);
+        console.error(( '[' + fanhao + ']' ).green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
         return done();
       }
     })
     .on('error', function(err) {
       if (!finished) {
         finished = true;
-        console.error(( '[' + fanhao + ']' ).red.bold.inverse, err.message.red);
+        console.error(( '[' + fanhao + ']' ).red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
         errorCount++;
         return done();
       }
