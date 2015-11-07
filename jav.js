@@ -25,19 +25,14 @@ program
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
   .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000')
   .option('-l, --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0', 0)
-  .option('-o, --output <file_path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件', path.join(userHome, 'magnets.txt'))
+  .option('-o, --output <file_path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件', path.join(userHome, 'magnets'))
   .option('-s, --search <string>', '搜索关键词，可只抓取搜索结果的磁链或封面')
   .option('-b, --base <url>', '自定义抓取的起始页')
-  .option('-c, --cover <dir>', '只抓取封面而不抓取磁链，并将封面图片文件保存至目录 <dir> 中。当 --output 选项存在时，此选项不起作用')
   .parse(process.argv);
 
 
 var parallel = parseInt(program.parallel);
-var timeout = parseInt(program.timeout) || 10000;
-// 如果是下载封面，调整连接超时为30秒
-if (program.cover && !program.timeout) {
-  timeout = 30000;
-}
+var timeout = parseInt(program.timeout) || 30000;
 
 var count = parseInt(program.limit);
 var hasLimit = (count !== 0), targetFound = false;
@@ -47,11 +42,7 @@ var errorCount = 0;
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
 console.log('并行连接数：'.green, parallel.toString().green.bold, '      ',
   '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold, '秒'.green);
-if (!program.cover) {
-  console.log('磁链保存位置: '.green, output.green.bold);
-} else {
-  console.log('封面保存位置: '.green, path.normalize(program.cover).green.bold);
-}
+console.log('磁链保存位置: '.green, output.green.bold);
 
 /****************************
  *****************************
@@ -77,11 +68,7 @@ async.during(
       return process.exit(1);
     }
     if (hasLimit && (count < 1)) {
-      console.log('已尝试抓取%s个%s，其中%d个%s抓取失败，本次抓取完毕'.green.bold,
-                 program.limit,
-                 ( program.cover ? '封面' : '磁链' ),
-                 errorCount,
-                 ( program.cover ? '封面' : '磁链' ));
+      console.log('已尝试抓取%s个，其中%d个抓取失败，本次抓取完毕'.green.bold, program.limit, errorCount);
     }else{
       console.log('抓取完毕，其中%d个%s抓取失败'.green.bold, errorCount, ( program.cover ? '封面' : '磁链' ));
     }
@@ -217,12 +204,7 @@ function getItemPage(link, index, callback) {
         let $ = cheerio.load(res.text);
         let script = $('script', 'body').eq(2).html();
         let meta = parse(script);
-        if (!program.cover) {
-          getItemMagnet(link, meta, callback);
-        } else {
-          mkdirp.sync(program.cover);
-          getItemCover(link, meta, callback);
-        }
+        getItemMagnet(link, meta, callback);
       }
     });
     if(hasLimit){
@@ -256,14 +238,14 @@ function getItemMagnet(link, meta, done) {
       // 若存在高清磁链，则优先选取高清磁链
       anchor = HDAnchor || anchor;
       if (anchor) {
-        mkdirp.sync(path.dirname(output)); // fix issue #3
-        fs.appendFile(output, anchor + '\r\n', function(err) {
+        mkdirp.sync(path.join(output, fanhao));
+        fs.writeFile(path.join(output, fanhao, fanhao + ".txt"), anchor + '\r\n', function(err) {
           if (err) {
             throw err;
             return done(err);
-          };
-            console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
-            return done(); // 只有当appendFile完成异步回调时，getItemMagnet才能算done，保证了在抓取下一页前，本页的所有磁链都已抓取完成
+          }
+          console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
+          getItemCover(link, meta, done);
         });
       }else{
         return done(null);
@@ -274,7 +256,7 @@ function getItemMagnet(link, meta, done) {
 function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
   var filename = fanhao + '.jpg';
-  var fileFullPath = path.join(program.cover, filename);
+  var fileFullPath = path.join(output, fanhao, filename);
   var coverFileStream = fs.createWriteStream(fileFullPath);
   var finished = false;
   request.get(meta.img)
