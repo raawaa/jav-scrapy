@@ -18,12 +18,12 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-  .version('0.3.3')
+  .version('0.4.0')
   .usage('[options]')
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
-  .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：10000')
+  .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
   .option('-l, --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0', 0)
-  .option('-o, --output <file_path>', '设置磁链抓取结果的保存位置，默认为当前用户的主目录下的 magnets.txt 文件', path.join(userHome, 'magnets'))
+  .option('-o, --output <file_path>', '设置磁链和封面抓取结果的保存位置，默认为当前用户的主目录下的 magnets 文件夹', path.join(userHome, 'magnets'))
   .option('-s, --search <string>', '搜索关键词，可只抓取搜索结果的磁链或封面')
   .option('-b, --base <url>', '自定义抓取的起始页')
   .parse(process.argv);
@@ -66,9 +66,9 @@ async.during(
       return process.exit(1);
     }
     if (hasLimit && (count < 1)) {
-      console.log('已尝试抓取%s个，其中%d个抓取失败，本次抓取完毕'.green.bold, program.limit, errorCount);
+      console.log('已尝试抓取%s部影片，本次抓取完毕'.green.bold, program.limit);
     }else{
-      console.log('抓取完毕，其中%d个%s抓取失败'.green.bold, errorCount, ( program.cover ? '封面' : '磁链' ));
+      console.log('抓取完毕'.green.bold);
     }
     return process.exit(0); // 不等待未完成的异步请求，直接结束进程
   }
@@ -144,7 +144,7 @@ function pageExist(callback) {
     function(callback) {
       request
         .get(url)
-        .set('Cookie', program.cover ? 'existmag=all' : 'existmag=mag')
+        .set('Cookie', 'existmag=mag') // 仅抓取有磁链的影片
         .timeout(timeout)
         .redirects(2)
         .end(function(err, res) {
@@ -243,6 +243,7 @@ function getItemMagnet(link, meta, done) {
           getItemCover(link, meta, done);
         });
       }else{
+        getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
         return done(null);
       }
     });
