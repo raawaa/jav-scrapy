@@ -219,7 +219,6 @@ function getItemPage(link, index, callback) {
         let meta = parse(script);
         if (!program.cover) {
           getItemMagnet(link, meta, callback);
-          getItemCover(link, meta, callback);
         } else {
           getItemCover(link, meta, callback);
         }
@@ -256,14 +255,17 @@ function getItemMagnet(link, meta, done) {
       // 若存在高清磁链，则优先选取高清磁链
       anchor = HDAnchor || anchor;
       if (anchor) {
-        mkdirp.sync(path.dirname(output)); // fix issue #3
-        fs.appendFile(output, anchor + '\r\n', function(err) {
+        // mkdirp.sync(path.dirname(output)); // fix issue #3
+        mkdirp.sync(path.join(userHome, "magnets", fanhao));
+        // console.log("PATH IS ===>>> " + p);
+        fs.writeFile(path.join(userHome, "magnets", fanhao, fanhao + ".txt"), anchor + '\r\n', function(err) {
           if (err) {
             throw err;
             return done(err);
           };
             console.log( ( '[' + fanhao + ']' ).green.bold.inverse + ( HDAnchor ? '[HD]'.blue.bold.inverse : '' ) + ' ' + anchor);
-            return done(); // 只有当appendFile完成异步回调时，getItemMagnet才能算done，保证了在抓取下一页前，本页的所有磁链都已抓取完成
+            getItemCover(link, meta, done);
+            // return done(); // 只有当appendFile完成异步回调时，getItemMagnet才能算done，保证了在抓取下一页前，本页的所有磁链都已抓取完成
         });
       }else{
         return done(null);
@@ -275,7 +277,6 @@ function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
   var filename = fanhao + '.jpg';
   var fileFullPath = path.join(userHome, "magnets", fanhao, filename);
-  mkdirp.sync(path.join(userHome, "magnets", fanhao));
   var coverFileStream = fs.createWriteStream(fileFullPath);
   var finished = false;
   request.get(meta.img)
