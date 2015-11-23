@@ -32,6 +32,7 @@ $ npm link    # 使jav-scrapy全局可执行
     -o, --output <file_path>  设置磁链和封面抓取结果的保存位置，默认为当前用户的主目录下的 magnets 文件夹
     -s, --search <string>     搜索关键词，可只抓取搜索结果的磁链或封面
     -b, --base <url>          自定义抓取的起始页
+    -x, --proxy <url>         设置代理，例：-x http://127.0.0.1:8087
 ```
 
 ### Examples
@@ -49,6 +50,9 @@ $ jav -s ipz-634 -o /path/to/folder
 
 # 抓取「连裤袜」主题的所有影片
 $ jav -b http://www.javbus.in/genre/28
+
+# 使用代理
+$ jav -x http://127.0.0.1:8087
 ```
 
 ## Notes
