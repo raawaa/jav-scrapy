@@ -244,7 +244,7 @@ function getItemMagnet(link, meta, done) {
         });
       }else{
         getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
-        return done(null);
+        //return done(null);
       }
     });
 }
@@ -253,6 +253,7 @@ function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
   var filename = fanhao + '.jpg';
   var fileFullPath = path.join(output, fanhao, filename);
+  mkdirp.sync(path.join(output, fanhao));
   var coverFileStream = fs.createWriteStream(fileFullPath);
   var finished = false;
   request.get(meta.img)
