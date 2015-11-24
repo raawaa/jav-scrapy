@@ -19,7 +19,7 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-  .version('0.5.0')
+  .version('0.5.1')
   .usage('[options]')
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
   .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
@@ -64,6 +64,9 @@ console.log('代理服务器: '.green, (proxy ? proxy : '无').green.bold);
  **** MAIN LOOP START ! ******
  ****************************
  ****************************/
+
+mkdirp.sync(output);
+
 async.during(
   pageExist,
   // when page exist
