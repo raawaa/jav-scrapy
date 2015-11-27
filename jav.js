@@ -152,7 +152,7 @@ function pageExist(callback) {
   }
   var url = baseUrl + (pageIndex === 1 ? '' : ('/page/' + pageIndex));
   if (program.search) {
-    url = baseUrl + searchUrl + '/' + program.search + (pageIndex === 1 ? '' : ('/' + pageIndex));
+    url = baseUrl + searchUrl + '/' + encodeURI(program.search) + (pageIndex === 1 ? '' : ('/' + pageIndex));
   } else if (program.base) {
     url = program.base + (pageIndex === 1 ? '' : ('/' + pageIndex));
   } else {
