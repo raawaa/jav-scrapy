@@ -19,7 +19,7 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-  .version('0.5.1')
+  .version('0.6.0')
   .usage('[options]')
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
   .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
@@ -152,7 +152,7 @@ function pageExist(callback) {
   }
   var url = baseUrl + (pageIndex === 1 ? '' : ('/page/' + pageIndex));
   if (program.search) {
-    url = baseUrl + searchUrl + '/' + program.search + (pageIndex === 1 ? '' : ('/' + pageIndex));
+    url = baseUrl + searchUrl + '/' + encodeURI(program.search) + (pageIndex === 1 ? '' : ('/' + pageIndex));
   } else if (program.base) {
     url = program.base + (pageIndex === 1 ? '' : ('/' + pageIndex));
   } else {
@@ -211,78 +211,102 @@ function parse(script) {
 }
 
 function getItemPage(link, index, callback) {
-  request
-    .get(link, function(err, res, body) {
-      if (err) {
-        console.error(('[' + link.split('/').pop() + ']').red.bold.inverse + ' ' + err.message.red);
-        errorCount++;
-        return callback(null);
-      }
-      let $ = cheerio.load(body);
-      let script = $('script', 'body').eq(2).html();
-      let meta = parse(script);
-      getItemMagnet(link, meta, callback);
-    });
+  let fanhao = link.split('/').pop();
+  let coverFilePath = path.join(output, fanhao + '.jpg');
+  let magnetFilePath = path.join(output, fanhao + '.txt');
   if (hasLimit) {
     count--;
+  }
+  try {
+    fs.accessSync(coverFilePath, fs.F_OK);
+    fs.accessSync(magnetFilePath, fs.F_OK);
+    console.log(('[' + fanhao + ']').yellow.bold.inverse + ' ' + 'Alreday fetched, SKIP!'.yellow);
+    return callback();
+  } catch (e) {
+    request
+      .get(link, function(err, res, body) {
+        if (err) {
+          console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
+          errorCount++;
+          return callback(null);
+        }
+        let $ = cheerio.load(body);
+        let script = $('script', 'body').eq(2).html();
+        let meta = parse(script);
+        getItemMagnet(link, meta, callback);
+      });
   }
 }
 
 function getItemMagnet(link, meta, done) {
-  request
-    .get(baseUrl + '/ajax/uncledatoolsbyajax.php?gid=' + meta.gid + '&lang=' + meta.lang + '&img=' + meta.img + '&uc=' + meta.uc + '&floor=' + Math.floor(Math.random() * 1e3 + 1),
-      function(err, res, body) {
-        let fanhao = link.split('/').pop();
-        if (err) {
-          console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
-          errorCount++;
-          return done(null); // one magnet fetch fail, do not crash the whole task.
-        }
-        let $ = cheerio.load(body);
-        // 尝试解析高清磁链
-        let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
-        // 尝试解析普通磁链
-        let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
-        // 若存在高清磁链，则优先选取高清磁链
-        anchor = HDAnchor || anchor;
-        if (anchor) {
-          // mkdirp.sync(path.join(output, fanhao));
-          fs.writeFile(path.join(output, fanhao + '.txt'), anchor + '\r\n', function(err) {
+  let fanhao = link.split('/').pop();
+  let magnetFilePath = path.join(output, fanhao + '.txt');
+  fs.access(magnetFilePath, fs.F_OK, function(err) {
+    if (err) {
+      request
+        .get(baseUrl + '/ajax/uncledatoolsbyajax.php?gid=' + meta.gid + '&lang=' + meta.lang + '&img=' + meta.img + '&uc=' + meta.uc + '&floor=' + Math.floor(Math.random() * 1e3 + 1),
+          function(err, res, body) {
             if (err) {
-              throw err;
+              console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
+              errorCount++;
+              return done(null); // one magnet fetch fail, do not crash the whole task.
             }
-            console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (HDAnchor ? '[HD]'.blue.bold.inverse : ''), anchor);
-            getItemCover(link, meta, done);
+            let $ = cheerio.load(body);
+            // 尝试解析高清磁链
+            let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
+            // 尝试解析普通磁链
+            let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
+            // 若存在高清磁链，则优先选取高清磁链
+            anchor = HDAnchor || anchor;
+            if (anchor) { // magnet file not exists
+              fs.writeFile(magnetFilePath, anchor + '\r\n',
+                function(err) {
+                  if (err) {
+                    throw err;
+                  }
+                  console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (HDAnchor ? '[HD]'.blue.bold.inverse : ''), anchor);
+                  getItemCover(link, meta, done);
+                });
+            } else {
+              getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
+            }
           });
-        } else {
-          getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
-          //return done(null);
-        }
-      });
+    } else {
+      console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse, 'file already exists, skip!'.yellow);
+      getItemCover(link, meta, done);
+    }
+  })
 }
 
 function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
   var filename = fanhao + '.jpg';
   var fileFullPath = path.join(output, filename);
-  // mkdirp.sync(path.join(output, fanhao));
-  var coverFileStream = fs.createWriteStream(fileFullPath);
-  var finished = false;
-  request.get(meta.img)
-    .on('end', function() {
-      if (!finished) {
-        finished = true;
-        console.error(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
-        return done();
-      }
-    })
-    .on('error', function(err) {
-      if (!finished) {
-        finished = true;
-        console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
-        errorCount++;
-        return done();
-      }
-    })
-    .pipe(coverFileStream);
+  fs.access(fileFullPath, fs.F_OK, function(err) {
+    if (err) {
+      var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
+      var finished = false;
+      request.get(meta.img)
+        .on('end', function() {
+          if (!finished) {
+            fs.renameSync(fileFullPath + '.part', fileFullPath);
+            finished = true;
+            console.error(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
+            return done();
+          }
+        })
+        .on('error', function(err) {
+          if (!finished) {
+            finished = true;
+            console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
+            errorCount++;
+            return done();
+          }
+        })
+        .pipe(coverFileStream);
+    } else {
+      console.log(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
+      return done();
+    }
+  })
 }
