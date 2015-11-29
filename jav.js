@@ -19,7 +19,7 @@ var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-  .version('0.5.1')
+  .version('0.6.0')
   .usage('[options]')
   .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
   .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
@@ -276,7 +276,6 @@ function getItemMagnet(link, meta, done) {
       getItemCover(link, meta, done);
     }
   })
-
 }
 
 function getItemCover(link, meta, done) {
@@ -310,7 +309,4 @@ function getItemCover(link, meta, done) {
       return done();
     }
   })
-
-
-
 }
