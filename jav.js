@@ -39,7 +39,7 @@ request = request.defaults({
   timeout: timeout,
   headers: {
     'Referer': 'http://www.javbus.in',
-    'Cookie': 'existmag=mag'
+    'Cookie': 'existmag=all'
   }
 });
 if (proxy) {
@@ -165,7 +165,7 @@ function pageExist(callback) {
     function(callback) {
       let options = {
         headers: {
-          'Cookie': 'existmag=mag'
+          'Cookie': 'existmag=all'
         }
       }
       request
@@ -258,6 +258,9 @@ function getItemPage(link, index, callback) {
             meta.actress.push($e.find("a").text());
           }
         });
+        // 提取片名
+        meta.title = $("h3").text();
+
         getItemMagnet(link, meta, callback);
       });
   }
@@ -267,7 +270,7 @@ function getItemMagnet(link, meta, done) {
   let fanhao = link.split('/').pop();
   let itemOutput = output + "/" + fanhao
   mkdirp.sync(itemOutput);
-  let magnetFilePath = path.join(itemOutput, fanhao + '.txt');
+  let magnetFilePath = path.join(itemOutput, fanhao + '.json');
   fs.access(magnetFilePath, fs.F_OK, function(err) {
     if (err) {
       request
@@ -286,20 +289,19 @@ function getItemMagnet(link, meta, done) {
             // 若存在高清磁链，则优先选取高清磁链
             anchor = HDAnchor || anchor;
 
-            // 再加上一些影片信息
-            anchor += "\n发行日期:" + meta.date;
-            anchor += "\n系列:" + meta.series;
-            anchor += "\n类别:";
+            // // 再加上一些影片信息
+            let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + meta.anchor + "\",\n\t\"category\":[\n\t\t";
             for (var i = 0; i < meta.category.length; i++) {
-              anchor += " " + meta.category[i];
+              jsonText += i == 0 ?  "\"" + meta.category[i] + "\"" : ",\n\t\t\"" + meta.category[i] + "\"";
             }
-            anchor += "\n演员:";
+            jsonText += "\n\t],\n\t\"actress\":[\n\t\t";
             for (var i = 0; i < meta.actress.length; i++) {
-              anchor += " " + meta.actress[i];
+              jsonText += i == 0 ?  "\"" + meta.actress[i] + "\"" : ",\n\t\t\"" + meta.actress[i] + "\"";
             }
+            jsonText += "\n\t]\n}";
 
-            if (anchor) { // magnet file not exists
-              fs.writeFile(magnetFilePath, anchor + '\r\n',
+            if (jsonText) { // magnet file not exists
+              fs.writeFile(magnetFilePath, jsonText + '\r\n',
                 function(err) {
                   if (err) {
                     throw err;
