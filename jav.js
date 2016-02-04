@@ -200,7 +200,7 @@ function parse(script) {
   let gid = gid_r[1];
   let uc_r = /uc\s+=\s(\d+)/g.exec(script);
   let uc = uc_r[1];
-  let img_r = /img\s+=\s+\'(\http:.+\.jpg)/g.exec(script);
+  let img_r = /img\s+=\s+\'(\http.+\.jpg)/g.exec(script);
   let img = img_r[1];
   return {
     gid: gid,
