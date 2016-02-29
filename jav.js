@@ -13,7 +13,7 @@ var mkdirp = require('mkdirp');
 
 // global var
 
-const baseUrl = 'http://www.javbus.me';
+const baseUrl = 'https://www.javbus.me';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
