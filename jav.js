@@ -13,7 +13,7 @@ var mkdirp = require('mkdirp');
 
 // global var
 
-const baseUrl = 'http://www.javbus.me';
+const baseUrl = 'https://www.javbus.me';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
@@ -39,7 +39,7 @@ request = request.defaults({
   timeout: timeout,
   headers: {
     'Referer': 'http://www.javbus.in',
-    'Cookie': 'existmag=mag'
+    'Cookie': 'existmag=all'
   }
 });
 if (proxy) {
@@ -165,7 +165,7 @@ function pageExist(callback) {
     function(callback) {
       let options = {
         headers: {
-          'Cookie': 'existmag=mag'
+          'Cookie': 'existmag=all'
         }
       }
       request
@@ -200,7 +200,7 @@ function parse(script) {
   let gid = gid_r[1];
   let uc_r = /uc\s+=\s(\d+)/g.exec(script);
   let uc = uc_r[1];
-  let img_r = /img\s+=\s+\'(\http:.+\.jpg)/g.exec(script);
+  let img_r = /img\s+=\s+\'(\http.+\.jpg)/g.exec(script);
   let img = img_r[1];
   return {
     gid: gid,
@@ -233,6 +233,34 @@ function getItemPage(link, index, callback) {
         let $ = cheerio.load(body);
         let script = $('script', 'body').eq(2).html();
         let meta = parse(script);
+        
+        $("div.col-md-3 > p").each(function(i, e){
+          let text = $(e).text();
+          if(text.includes("發行日期:")){
+            meta.date = text.replace("發行日期: ", "");
+          }else if(text.includes("系列:")){
+            meta.series = text.replace("系列:", "");
+          }else if(text.includes("類別:")){
+            meta.category = [];
+            $("div.col-md-3 > p > span.genre").each(function(idx, span){
+              let $span = $(span);
+              if(!$span.attr("onmouseover")){
+                meta.category.push($span.text());
+              }
+            });
+          }
+        });
+        // 提取演员
+        meta.actress = [];
+        $("span.genre").each(function(i, e){
+          let $e = $(e);
+          if($e.attr("onmouseover")){
+            meta.actress.push($e.find("a").text());
+          }
+        });
+        // 提取片名
+        meta.title = $("h3").text();
+
         getItemMagnet(link, meta, callback);
       });
   }
@@ -240,7 +268,9 @@ function getItemPage(link, index, callback) {
 
 function getItemMagnet(link, meta, done) {
   let fanhao = link.split('/').pop();
-  let magnetFilePath = path.join(output, fanhao + '.txt');
+  let itemOutput = output + "/" + fanhao
+  mkdirp.sync(itemOutput);
+  let magnetFilePath = path.join(itemOutput, fanhao + '.json');
   fs.access(magnetFilePath, fs.F_OK, function(err) {
     if (err) {
       request
@@ -258,8 +288,28 @@ function getItemMagnet(link, meta, done) {
             let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
             // 若存在高清磁链，则优先选取高清磁链
             anchor = HDAnchor || anchor;
-            if (anchor) { // magnet file not exists
-              fs.writeFile(magnetFilePath, anchor + '\r\n',
+            // 将磁链单独存入文本文件以方便下载
+            if (anchor) {
+              fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), anchor,function(err){
+                if (err) {
+                  throw err;
+                }
+              });
+            }
+
+            // // 再加上一些影片信息
+            let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + anchor + "\",\n\t\"category\":[\n\t\t";
+            for (var i = 0; i < meta.category.length; i++) {
+              jsonText += i == 0 ?  "\"" + meta.category[i] + "\"" : ",\n\t\t\"" + meta.category[i] + "\"";
+            }
+            jsonText += "\n\t],\n\t\"actress\":[\n\t\t";
+            for (var i = 0; i < meta.actress.length; i++) {
+              jsonText += i == 0 ?  "\"" + meta.actress[i] + "\"" : ",\n\t\t\"" + meta.actress[i] + "\"";
+            }
+            jsonText += "\n\t]\n}";
+
+            if (jsonText) { // magnet file not exists
+              fs.writeFile(magnetFilePath, jsonText + '\r\n',
                 function(err) {
                   if (err) {
                     throw err;
@@ -280,8 +330,10 @@ function getItemMagnet(link, meta, done) {
 
 function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
-  var filename = fanhao + '.jpg';
-  var fileFullPath = path.join(output, filename);
+  var filename = fanhao + 'l.jpg';
+  let itemOutput = output + "/" + fanhao
+  mkdirp.sync(itemOutput);
+  var fileFullPath = path.join(itemOutput, filename);
   fs.access(fileFullPath, fs.F_OK, function(err) {
     if (err) {
       var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
@@ -292,7 +344,7 @@ function getItemCover(link, meta, done) {
             fs.renameSync(fileFullPath + '.part', fileFullPath);
             finished = true;
             console.error(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
-            return done();
+            getItemSmallCover(link, meta, done);
           }
         })
         .on('error', function(err) {
@@ -300,12 +352,52 @@ function getItemCover(link, meta, done) {
             finished = true;
             console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
             errorCount++;
-            return done();
+            getItemSmallCover(link, meta, done);
           }
         })
         .pipe(coverFileStream);
     } else {
       console.log(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
+      getItemSmallCover(link, meta, done);
+    }
+  })
+}
+
+// 获取封面小图
+function getItemSmallCover(link, meta, done) {
+  // 大图地址：
+  // https://pics.javbus.info/cover/5cfb_b.jpg
+  // 小图地址:
+  // https://pics.javbus.info/thumb/5cfb.jpg
+  var fanhao = link.split('/').pop();
+  var filename = fanhao + 's.jpg';
+  let itemOutput = output + "/" + fanhao
+  mkdirp.sync(itemOutput);
+  var fileFullPath = path.join(itemOutput, filename);
+  fs.access(fileFullPath, fs.F_OK, function(err) {
+    if (err) {
+      var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
+      var finished = false;
+      request.get(meta.img.replace("cover", "thumb").replace("_b", ""))
+        .on('end', function() {
+          if (!finished) {
+            fs.renameSync(fileFullPath + '.part', fileFullPath);
+            finished = true;
+            console.error(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, fileFullPath);
+            return done();
+          }
+        })
+        .on('error', function(err) {
+          if (!finished) {
+            finished = true;
+            console.error(('[' + fanhao + ']').red.bold.inverse + '[小封面]'.yellow.inverse, err.message.red);
+            errorCount++;
+            return done();
+          }
+        })
+        .pipe(coverFileStream);
+    } else {
+      console.log(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
       return done();
     }
   })
