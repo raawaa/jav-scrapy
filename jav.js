@@ -290,7 +290,7 @@ function getItemMagnet(link, meta, done) {
             anchor = HDAnchor || anchor;
 
             // // 再加上一些影片信息
-            let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + meta.anchor + "\",\n\t\"category\":[\n\t\t";
+            let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + anchor + "\",\n\t\"category\":[\n\t\t";
             for (var i = 0; i < meta.category.length; i++) {
               jsonText += i == 0 ?  "\"" + meta.category[i] + "\"" : ",\n\t\t\"" + meta.category[i] + "\"";
             }
