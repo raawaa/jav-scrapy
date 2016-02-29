@@ -288,6 +288,14 @@ function getItemMagnet(link, meta, done) {
             let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
             // 若存在高清磁链，则优先选取高清磁链
             anchor = HDAnchor || anchor;
+            // 将磁链单独存入文本文件以方便下载
+            if (anchor) {
+              fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), anchor,function(err){
+                if (err) {
+                  throw err;
+                }
+              });
+            }
 
             // // 再加上一些影片信息
             let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + anchor + "\",\n\t\"category\":[\n\t\t";
