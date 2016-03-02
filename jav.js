@@ -76,7 +76,7 @@ async.during(
       function(err) {
         pageIndex++;
         if (err) return callback(err);
-        callback(null);
+        return callback(null);
       });
   },
   // page not exits or finished parsing
@@ -167,7 +167,7 @@ function pageExist(callback) {
         headers: {
           'Cookie': 'existmag=all'
         }
-      }
+      };
       request
         .get(url, function(err, res, body) {
           if (err) {
@@ -181,7 +181,7 @@ function pageExist(callback) {
             return callback(err);
           }
           currentPageHtml = body;
-          callback(null, res);
+          return callback(null, res);
         });
     },
     function(err, res) {
@@ -191,7 +191,7 @@ function pageExist(callback) {
         }
         return callback(err);
       }
-      callback(null, res.statusCode == 200);
+      return callback(null, res.statusCode == 200);
     });
 }
 
@@ -261,14 +261,14 @@ function getItemPage(link, index, callback) {
         // 提取片名
         meta.title = $("h3").text();
 
-        getItemMagnet(link, meta, callback);
+        return getItemMagnet(link, meta, callback);
       });
   }
 }
 
 function getItemMagnet(link, meta, done) {
   let fanhao = link.split('/').pop();
-  let itemOutput = output + "/" + fanhao
+  let itemOutput = output + "/" + fanhao;
   mkdirp.sync(itemOutput);
   let magnetFilePath = path.join(itemOutput, fanhao + '.json');
   fs.access(magnetFilePath, fs.F_OK, function(err) {
@@ -331,7 +331,7 @@ function getItemMagnet(link, meta, done) {
 function getItemCover(link, meta, done) {
   var fanhao = link.split('/').pop();
   var filename = fanhao + 'l.jpg';
-  let itemOutput = output + "/" + fanhao
+  let itemOutput = output + "/" + fanhao;
   mkdirp.sync(itemOutput);
   var fileFullPath = path.join(itemOutput, filename);
   fs.access(fileFullPath, fs.F_OK, function(err) {
@@ -360,7 +360,7 @@ function getItemCover(link, meta, done) {
       console.log(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
       getItemSmallCover(link, meta, done);
     }
-  })
+  });
 }
 
 // 获取封面小图
@@ -371,7 +371,7 @@ function getItemSmallCover(link, meta, done) {
   // https://pics.javbus.info/thumb/5cfb.jpg
   var fanhao = link.split('/').pop();
   var filename = fanhao + 's.jpg';
-  let itemOutput = output + "/" + fanhao
+  let itemOutput = output + "/" + fanhao;
   mkdirp.sync(itemOutput);
   var fileFullPath = path.join(itemOutput, filename);
   fs.access(fileFullPath, fs.F_OK, function(err) {
@@ -383,7 +383,9 @@ function getItemSmallCover(link, meta, done) {
           if (!finished) {
             fs.renameSync(fileFullPath + '.part', fileFullPath);
             finished = true;
-            console.error(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, fileFullPath);
+            console.log(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, fileFullPath);
+            return done();
+          }else{
             return done();
           }
         })
@@ -400,5 +402,5 @@ function getItemSmallCover(link, meta, done) {
       console.log(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
       return done();
     }
-  })
+  });
 }
