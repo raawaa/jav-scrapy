@@ -236,12 +236,12 @@ function getItemPage(link, index, callback) {
         
         $("div.col-md-3 > p").each(function(i, e){
           let text = $(e).text();
+          meta.category = [];
           if(text.includes("發行日期:")){
             meta.date = text.replace("發行日期: ", "");
           }else if(text.includes("系列:")){
             meta.series = text.replace("系列:", "");
           }else if(text.includes("類別:")){
-            meta.category = [];
             $("div.col-md-3 > p > span.genre").each(function(idx, span){
               let $span = $(span);
               if(!$span.attr("onmouseover")){
