@@ -13,7 +13,7 @@ var mkdirp = require('mkdirp');
 
 // global var
 
-const baseUrl = 'https://www.javbus.me';
+const baseUrl = 'https://www.javbus2.com';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
@@ -231,7 +231,7 @@ function getItemPage(link, index, callback) {
           return callback(null);
         }
         let $ = cheerio.load(body);
-        let script = $('script', 'body').eq(2).html();
+        let script = $('script', 'body').eq(3).html();
         let meta = parse(script);
         
         $("div.col-md-3 > p").each(function(i, e){
