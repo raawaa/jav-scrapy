@@ -341,7 +341,12 @@ function getItemCover(link, meta, done) {
       request.get(meta.img)
         .on('end', function() {
           if (!finished) {
-            fs.renameSync(fileFullPath + '.part', fileFullPath);
+            try{
+              fs.renameSync(fileFullPath + '.part', fileFullPath);
+            }
+            catch (e) {
+              console.log( fileFullPath )
+            }
             finished = true;
             console.error(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
             getItemSmallCover(link, meta, done);
@@ -381,7 +386,12 @@ function getItemSmallCover(link, meta, done) {
       request.get(meta.img.replace("cover", "thumb").replace("_b", ""))
         .on('end', function() {
           if (!finished) {
-            fs.renameSync(fileFullPath + '.part', fileFullPath);
+            try{
+              fs.renameSync(fileFullPath + '.part', fileFullPath);
+            }
+            catch (e) {
+              console.log( fileFullPath )
+            }
             finished = true;
             console.error(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, fileFullPath);
             return done();
