@@ -39,7 +39,7 @@ var proxy = process.env.http_proxy || program.proxy;
 request = request.defaults({
     timeout: timeout,
     headers: {
-        'Referer': 'http://www.javbus2.pw',
+        'Referer': 'http://www.javbus2.pw'
     }
 });
 if (proxy) {
@@ -51,7 +51,6 @@ var count = parseInt(program.limit);
 var hasLimit = (count !== 0),
     targetFound = false;
 var output = program.output.replace(/['"]/g, '');
-var errorCount = 0;
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
 console.log('并行连接数：'.green, parallel.toString().green.bold, '      ',
@@ -60,10 +59,10 @@ console.log('磁链保存位置: '.green, output.green.bold);
 console.log('代理服务器: '.green, (proxy ? proxy : '无').green.bold);
 
 /****************************
-*****************************
-**** MAIN LOOP START ! ******
-****************************
-****************************/
+ *****************************
+ **** MAIN LOOP START ! ******
+ ****************************
+ ****************************/
 
 mkdirp.sync(output);
 
@@ -76,7 +75,7 @@ async.during(
             function (err) {
                 pageIndex++;
                 if (err) return callback(err);
-                callback(null);
+                return callback(null);
             });
     },
     // page not exits or finished parsing
@@ -95,10 +94,10 @@ async.during(
 );
 
 /****************************
-*****************************
-**** MAIN LOOP END ! ******
-****************************
-****************************/
+ *****************************
+ **** MAIN LOOP END ! ******
+ ****************************
+ ****************************/
 
 function parseLinks(next) {
     let $ = cheerio.load(currentPageHtml);
@@ -177,7 +176,7 @@ function pageExist(callback) {
                         return callback(err);
                     }
                     currentPageHtml = body;
-                    callback(null, res);
+                    return callback(null, res);
                 });
         },
         function (err, res) {
@@ -187,16 +186,17 @@ function pageExist(callback) {
                 }
                 return callback(err);
             }
-            callback(null, res.statusCode == 200);
+            return callback(null, res.statusCode == 200);
         });
 }
+
 
 function parse(script) {
     let gid_r = /gid\s+=\s+(\d+)/g.exec(script);
     let gid = gid_r[1];
     let uc_r = /uc\s+=\s(\d+)/g.exec(script);
     let uc = uc_r[1];
-    let img_r = /img\s+=\s+\'(\http.+\.jpg)/g.exec(script);
+    let img_r = /img\s+=\s+'(http.+\.jpg)/g.exec(script);
     let img = img_r[1];
     return {
         gid: gid,
@@ -223,24 +223,23 @@ function getItemPage(link, index, callback) {
             .get(link, function (err, res, body) {
                 if (err) {
                     console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
-                    errorCount++;
                     return callback(null);
                 }
                 let $ = cheerio.load(body);
                 let script = $('script', 'body').eq(2).html();
                 let meta = parse(script);
 
-                $("div.col-md-3 > p").each(function (i, e) {
+                $('div.col-md-3 > p').each(function (i, e) {
                     let text = $(e).text();
                     meta.category = [];
-                    if (text.includes("發行日期:")) {
-                        meta.date = text.replace("發行日期: ", "");
-                    } else if (text.includes("系列:")) {
-                        meta.series = text.replace("系列:", "");
-                    } else if (text.includes("類別:")) {
-                        $("div.col-md-3 > p > span.genre").each(function (idx, span) {
+                    if (text.includes('發行日期:')) {
+                        meta.date = text.replace('發行日期: ', '');
+                    } else if (text.includes('系列:')) {
+                        meta.series = text.replace('系列:', '');
+                    } else if (text.includes('類別:')) {
+                        $('div.col-md-3 > p > span.genre').each(function (idx, span) {
                             let $span = $(span);
-                            if (!$span.attr("onmouseover")) {
+                            if (!$span.attr('onmouseover')) {
                                 meta.category.push($span.text());
                             }
                         });
@@ -248,24 +247,24 @@ function getItemPage(link, index, callback) {
                 });
                 // 提取演员
                 meta.actress = [];
-                $("span.genre").each(function (i, e) {
+                $('span.genre').each(function (i, e) {
                     let $e = $(e);
-                    if ($e.attr("onmouseover")) {
-                        meta.actress.push($e.find("a").text());
+                    if ($e.attr('onmouseover')) {
+                        meta.actress.push($e.find('a').text());
                     }
                 });
                 // 提取片名
-                meta.title = $("h3").text();
+                meta.title = $('h3').text();
 
                 getItemMagnet(link, meta, callback);
 
                 // 所有截图link
-                var snapshots = []
+                var snapshots = [];
                 $('a.sample-box').each(function (i, e) {
                     let $e = $(e);
 
-                    snapshots.push($e.attr("href"))
-                })
+                    snapshots.push($e.attr('href'));
+                });
                 getSnapshots(link, snapshots);
             });
     }
@@ -274,18 +273,18 @@ function getItemPage(link, index, callback) {
 function getSnapshots(link, snapshots) {
     // https://pics.dmm.co.jp/digital/video/118abp00454/118abp00454jp-1.jpg
     for (var i = 0; i < snapshots.length; i++) {
-        getSnapshot(link, snapshots[i])
+        getSnapshot(link, snapshots[i]);
     }
-    console.log('截图下载完毕:' + link)
+    console.log('截图下载完毕:' + link);
 }
 
 function getSnapshot(link, snahpshotLink) {
     let fanhao = link.split('/').pop();
-    let itemOutput = output + "/" + fanhao
+    let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
 
     let snapshotName = snahpshotLink.split('/').pop();
-    let fileFullPath = path.join(itemOutput, snapshotName)
+    let fileFullPath = path.join(itemOutput, snapshotName);
     fs.access(fileFullPath, fs.F_OK, function (err) {
         if (err) {
             var snapshotFileStream = fs.createWriteStream(fileFullPath + '.part');
@@ -302,19 +301,18 @@ function getSnapshot(link, snahpshotLink) {
                     if (!finished) {
                         finished = true;
                         // console.error(('[' + fanhao + ']').red.bold.inverse + '[截图]'.yellow.inverse, err.message.red);
-                        errorCount++;
                     }
                 })
                 .pipe(snapshotFileStream);
         } else {
             // console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, 'file already exists, skip!'.yellow);
         }
-    })
+    });
 }
 
 function getItemMagnet(link, meta, done) {
     let fanhao = link.split('/').pop();
-    let itemOutput = output + "/" + fanhao
+    let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
     let magnetFilePath = path.join(itemOutput, fanhao + '.json');
     fs.access(magnetFilePath, fs.F_OK, function (err) {
@@ -324,7 +322,6 @@ function getItemMagnet(link, meta, done) {
                     function (err, res, body) {
                         if (err) {
                             console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
-                            errorCount++;
                             return done(null); // one magnet fetch fail, do not crash the whole task.
                         }
                         let $ = cheerio.load(body);
@@ -344,15 +341,15 @@ function getItemMagnet(link, meta, done) {
                         }
 
                         // // 再加上一些影片信息
-                        let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + anchor + "\",\n\t\"category\":[\n\t\t";
-                        for (var i = 0; i < meta.category.length; i++) {
-                            jsonText += i == 0 ? "\"" + meta.category[i] + "\"" : ",\n\t\t\"" + meta.category[i] + "\"";
+                        let jsonText = '{\n\t"title":"' + meta.title + '",\n\t"date":"' + meta.date + '",\n\t"series":"' + meta.series + '",\n\t"anchor":"' + anchor + '",\n\t"category":[\n\t\t';
+                        for (let i = 0; i < meta.category.length; i++) {
+                            jsonText += i == 0 ? '"' + meta.category[i] + '"' : ',\n\t\t"' + meta.category[i] + '"';
                         }
-                        jsonText += "\n\t],\n\t\"actress\":[\n\t\t";
-                        for (var i = 0; i < meta.actress.length; i++) {
-                            jsonText += i == 0 ? "\"" + meta.actress[i] + "\"" : ",\n\t\t\"" + meta.actress[i] + "\"";
+                        jsonText += '\n\t],\n\t"actress":[\n\t\t';
+                        for (let i = 0; i < meta.actress.length; i++) {
+                            jsonText += i == 0 ? '"' + meta.actress[i] + '"' : ',\n\t\t"' + meta.actress[i] + '"';
                         }
-                        jsonText += "\n\t]\n}";
+                        jsonText += '\n\t]\n}';
 
                         if (jsonText) { // magnet file not exists
                             fs.writeFile(magnetFilePath, jsonText + '\r\n',
@@ -371,13 +368,13 @@ function getItemMagnet(link, meta, done) {
             console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse, 'file already exists, skip!'.yellow);
             getItemCover(link, meta, done);
         }
-    })
+    });
 }
 
 function getItemCover(link, meta, done) {
     var fanhao = link.split('/').pop();
     var filename = fanhao + 'l.jpg';
-    let itemOutput = output + "/" + fanhao
+    let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
     var fileFullPath = path.join(itemOutput, filename);
     fs.access(fileFullPath, fs.F_OK, function (err) {
@@ -398,7 +395,6 @@ function getItemCover(link, meta, done) {
                     if (!finished) {
                         finished = true;
                         console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
-                        errorCount++;
                         // getItemSmallCover(link, meta, done);
                         return done();
                     }
@@ -409,7 +405,7 @@ function getItemCover(link, meta, done) {
             // getItemSmallCover(link, meta, done);
             return done();
         }
-    })
+    });
 }
 
 // 获取封面小图
@@ -420,14 +416,14 @@ function getItemSmallCover(link, meta, done) {
     // https://pics.javbus.info/thumb/5cfb.jpg
     var fanhao = link.split('/').pop();
     var filename = fanhao + 's.jpg';
-    let itemOutput = output + "/" + fanhao
+    let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
     var fileFullPath = path.join(itemOutput, filename);
     fs.access(fileFullPath, fs.F_OK, function (err) {
         if (err) {
             var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
             var finished = false;
-            request.get(meta.img.replace("cover", "thumb").replace("_b", ""))
+            request.get(meta.img.replace('cover', 'thumb').replace('_b', ''))
                 .on('end', function () {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
@@ -440,7 +436,6 @@ function getItemSmallCover(link, meta, done) {
                     if (!finished) {
                         finished = true;
                         console.error(('[' + fanhao + ']').red.bold.inverse + '[小封面]'.yellow.inverse, err.message.red);
-                        errorCount++;
                         return done();
                     }
                 })
@@ -449,5 +444,5 @@ function getItemSmallCover(link, meta, done) {
             console.log(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
             return done();
         }
-    })
+    });
 }
