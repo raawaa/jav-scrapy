@@ -55,7 +55,7 @@ var errorCount = 0;
 
 console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
 console.log('并行连接数：'.green, parallel.toString().green.bold, '      ',
-            '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold, '秒'.green);
+    '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold, '秒'.green);
 console.log('磁链保存位置: '.green, output.green.bold);
 console.log('代理服务器: '.green, (proxy ? proxy : '无').green.bold);
 
@@ -162,33 +162,33 @@ function pageExist(callback) {
 
     let retryCount = 1;
     async.retry(3,
-                function (callback) {
-                    let options = program.nomag ? {url:url,headers: {'Cookie': 'existmag=all'}}:{url:url};
-                    request
-                        .get(options, function (err, res, body) {
-                            if (err) {
-                                if (err.status === 404) {
-                                    console.error('已抓取完所有页面, StatusCode:', err.status);
-                                } else {
-                                    retryCount++;
-                                    console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
-                                    console.error('...进行第%d次尝试...'.red, retryCount);
-                                }
-                                return callback(err);
-                            }
-                            currentPageHtml = body;
-                            callback(null, res);
-                        });
-                },
-                function (err, res) {
+        function (callback) {
+            let options = program.nomag ? { url: url, headers: { 'Cookie': 'existmag=all' } } : { url: url };
+            request
+                .get(options, function (err, res, body) {
                     if (err) {
                         if (err.status === 404) {
-                            return callback(null, false);
+                            console.error('已抓取完所有页面, StatusCode:', err.status);
+                        } else {
+                            retryCount++;
+                            console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
+                            console.error('...进行第%d次尝试...'.red, retryCount);
                         }
                         return callback(err);
                     }
-                    callback(null, res.statusCode == 200);
+                    currentPageHtml = body;
+                    callback(null, res);
                 });
+        },
+        function (err, res) {
+            if (err) {
+                if (err.status === 404) {
+                    return callback(null, false);
+                }
+                return callback(err);
+            }
+            callback(null, res.statusCode == 200);
+        });
 }
 
 function parse(script) {
@@ -273,7 +273,7 @@ function getItemPage(link, index, callback) {
 
 function getSnapshots(link, snapshots) {
     // https://pics.dmm.co.jp/digital/video/118abp00454/118abp00454jp-1.jpg
-    for (var i = 0; i < snapshots.length; i++){
+    for (var i = 0; i < snapshots.length; i++) {
         getSnapshot(link, snapshots[i])
     }
     console.log('截图下载完毕:' + link)
@@ -321,52 +321,52 @@ function getItemMagnet(link, meta, done) {
         if (err) {
             request
                 .get(baseUrl + '/ajax/uncledatoolsbyajax.php?gid=' + meta.gid + '&lang=' + meta.lang + '&img=' + meta.img + '&uc=' + meta.uc + '&floor=' + Math.floor(Math.random() * 1e3 + 1),
-                     function (err, res, body) {
-                         if (err) {
-                             console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
-                             errorCount++;
-                             return done(null); // one magnet fetch fail, do not crash the whole task.
-                         }
-                         let $ = cheerio.load(body);
-                         // 尝试解析高清磁链
-                         let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
-                         // 尝试解析普通磁链
-                         let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
-                         // 若存在高清磁链，则优先选取高清磁链
-                         anchor = HDAnchor || anchor;
-                         // 将磁链单独存入文本文件以方便下载
-                         if (anchor) {
-                             fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), anchor, function (err) {
-                                 if (err) {
-                                     throw err;
-                                 }
-                             });
-                         }
+                    function (err, res, body) {
+                        if (err) {
+                            console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
+                            errorCount++;
+                            return done(null); // one magnet fetch fail, do not crash the whole task.
+                        }
+                        let $ = cheerio.load(body);
+                        // 尝试解析高清磁链
+                        let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
+                        // 尝试解析普通磁链
+                        let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
+                        // 若存在高清磁链，则优先选取高清磁链
+                        anchor = HDAnchor || anchor;
+                        // 将磁链单独存入文本文件以方便下载
+                        if (anchor) {
+                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), anchor, function (err) {
+                                if (err) {
+                                    throw err;
+                                }
+                            });
+                        }
 
-                         // // 再加上一些影片信息
-                         let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + anchor + "\",\n\t\"category\":[\n\t\t";
-                         for (var i = 0; i < meta.category.length; i++) {
-                             jsonText += i == 0 ? "\"" + meta.category[i] + "\"" : ",\n\t\t\"" + meta.category[i] + "\"";
-                         }
-                         jsonText += "\n\t],\n\t\"actress\":[\n\t\t";
-                         for (var i = 0; i < meta.actress.length; i++) {
-                             jsonText += i == 0 ? "\"" + meta.actress[i] + "\"" : ",\n\t\t\"" + meta.actress[i] + "\"";
-                         }
-                         jsonText += "\n\t]\n}";
+                        // // 再加上一些影片信息
+                        let jsonText = "{\n\t\"title\":\"" + meta.title + "\",\n\t\"date\":\"" + meta.date + "\",\n\t\"series\":\"" + meta.series + "\",\n\t\"anchor\":\"" + anchor + "\",\n\t\"category\":[\n\t\t";
+                        for (var i = 0; i < meta.category.length; i++) {
+                            jsonText += i == 0 ? "\"" + meta.category[i] + "\"" : ",\n\t\t\"" + meta.category[i] + "\"";
+                        }
+                        jsonText += "\n\t],\n\t\"actress\":[\n\t\t";
+                        for (var i = 0; i < meta.actress.length; i++) {
+                            jsonText += i == 0 ? "\"" + meta.actress[i] + "\"" : ",\n\t\t\"" + meta.actress[i] + "\"";
+                        }
+                        jsonText += "\n\t]\n}";
 
-                         if (jsonText) { // magnet file not exists
-                             fs.writeFile(magnetFilePath, jsonText + '\r\n',
-                                          function (err) {
-                                              if (err) {
-                                                  throw err;
-                                              }
-                                              console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (HDAnchor ? '[HD]'.blue.bold.inverse : ''), anchor);
-                                              getItemCover(link, meta, done);
-                                          });
-                         } else {
-                             getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
-                         }
-                     });
+                        if (jsonText) { // magnet file not exists
+                            fs.writeFile(magnetFilePath, jsonText + '\r\n',
+                                function (err) {
+                                    if (err) {
+                                        throw err;
+                                    }
+                                    console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (HDAnchor ? '[HD]'.blue.bold.inverse : ''), anchor);
+                                    getItemCover(link, meta, done);
+                                });
+                        } else {
+                            getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
+                        }
+                    });
         } else {
             console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse, 'file already exists, skip!'.yellow);
             getItemCover(link, meta, done);
