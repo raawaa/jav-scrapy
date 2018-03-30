@@ -1,4 +1,4 @@
-#jav-scrapy
+# jav-scrapy
 
 一个可以爬取 AV 磁力链接或影片封面的小爬虫。
 
@@ -33,6 +33,7 @@ $ npm link    # 使jav-scrapy全局可执行
     -s, --search <string>     搜索关键词，可只抓取搜索结果的磁链或封面
     -b, --base <url>          自定义抓取的起始页
     -x, --proxy <url>         设置代理，例：-x http://127.0.0.1:8087
+    -n, --nomag               是否抓取尚无磁链的影片
 ```
 
 ### Examples
