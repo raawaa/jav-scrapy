@@ -14,7 +14,7 @@ const _ = require('lodash');
 
 // global var
 
-const VERSION = '0.8.0';
+const VERSION = require('./package.json').version;
 const baseUrl = 'https://www.javbus2.pw';
 const searchUrl = '/search';
 var pageIndex = 1;

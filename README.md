@@ -14,7 +14,7 @@
 $ git clone https://git.coding.net/raawaa/jav-scrapy.git
 $ cd jav-scrapy
 $ npm install # 安装npm包依赖
-$ npm link    # 使jav-scrapy全局可执行
+$ sudo npm link    # 使jav-scrapy全局可执行
 ```
 
 ## Usage
