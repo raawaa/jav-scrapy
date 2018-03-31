@@ -23,6 +23,7 @@
     "cheerio": "^0.19.0",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
+    "lodash": "^4.17.5",
     "mkdirp": "^0.5.1",
     "request": "^2.67.0",
     "user-home": "^2.0.0"

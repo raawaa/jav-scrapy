@@ -10,16 +10,18 @@ var userHome = require('user-home');
 var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+const _ = require('lodash');
 
 // global var
 
+const VERSION = '0.8.0';
 const baseUrl = 'https://www.javbus2.pw';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
 
 program
-    .version('0.7.0')
+    .version(VERSION)
     .usage('[options]')
     .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2', 2)
     .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
@@ -311,6 +313,29 @@ function getSnapshot(link, snahpshotLink) {
 }
 
 function getItemMagnet(link, meta, done) {
+
+    function text2size(text) {
+        let re = /([0-9.]+)([GMTK]B)/i;
+        let found = _.trim(text).match(re);
+        if (found) {
+            let num = found[1];
+            let unit;
+            switch (found[2]) {
+                case 'GB':
+                    unit = 1000;
+                    break;
+                case 'MB':
+                    unit = 1;
+                    break;
+                default:
+                    unit = 0;
+                    break;
+            }
+            return num * unit;
+        } else {
+            return 0;
+        }
+    }
     let fanhao = link.split('/').pop();
     let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
@@ -324,16 +349,26 @@ function getItemMagnet(link, meta, done) {
                             console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
                             return done(null); // one magnet fetch fail, do not crash the whole task.
                         }
-                        let $ = cheerio.load(body);
-                        // 尝试解析高清磁链
-                        let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
-                        // 尝试解析普通磁链
-                        let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
-                        // 若存在高清磁链，则优先选取高清磁链
-                        anchor = HDAnchor || anchor;
-                        // 将磁链单独存入文本文件以方便下载
-                        if (anchor) {
-                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), anchor, function (err) {
+                        const $ = cheerio.load(body);
+                        const mag_sizes = $('tr').map(function readMagnetAndSize(i, e) {
+                            let anchorInSecondTableCell = $(e).children('td').eq(1).children('a');
+                            return {
+                                magnet: anchorInSecondTableCell.attr('href'),
+                                size: text2size(anchorInSecondTableCell.text()),
+                                sizeText: _.trim(anchorInSecondTableCell.text())
+                            };
+                        }).get();
+                        // // 尝试解析高清磁链
+                        // let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
+                        // // 尝试解析普通磁链
+                        // let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
+                        // // 若存在高清磁链，则优先选取高清磁链
+                        // anchor = HDAnchor || anchor;
+                        // // 将磁链单独存入文本文件以方便下载
+                        let largest = null;
+                        if (mag_sizes) {
+                            largest = _.orderBy(mag_sizes, 'size', 'desc')[0];
+                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), largest.magnet, function (err) {
                                 if (err) {
                                     throw err;
                                 }
@@ -341,7 +376,7 @@ function getItemMagnet(link, meta, done) {
                         }
 
                         // // 再加上一些影片信息
-                        let jsonText = '{\n\t"title":"' + meta.title + '",\n\t"date":"' + meta.date + '",\n\t"series":"' + meta.series + '",\n\t"anchor":"' + anchor + '",\n\t"category":[\n\t\t';
+                        let jsonText = '{\n\t"title":"' + meta.title + '",\n\t"date":"' + meta.date + '",\n\t"series":"' + meta.series + '",\n\t"anchor":"' + largest.magnet + '",\n\t"category":[\n\t\t';
                         for (let i = 0; i < meta.category.length; i++) {
                             jsonText += i == 0 ? '"' + meta.category[i] + '"' : ',\n\t\t"' + meta.category[i] + '"';
                         }
@@ -357,7 +392,7 @@ function getItemMagnet(link, meta, done) {
                                     if (err) {
                                         throw err;
                                     }
-                                    console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (HDAnchor ? '[HD]'.blue.bold.inverse : ''), anchor);
+                                    console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (`[${largest.sizeText}]`.blue.bold.inverse), largest.magnet);
                                     getItemCover(link, meta, done);
                                 });
                         } else {
