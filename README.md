@@ -13,8 +13,8 @@
 ```bash
 $ git clone https://git.coding.net/raawaa/jav-scrapy.git
 $ cd jav-scrapy
-$ yarn install # 安装npm包依赖
-$ sudo yarn link    # 使jav-scrapy全局可执行
+$ npm install # 安装npm包依赖
+$ sudo npm link    # 使jav-scrapy全局可执行
 ```
 
 ## Usage
