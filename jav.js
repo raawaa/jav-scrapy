@@ -31,6 +31,7 @@ program
     .option('-b, --base <url>', '自定义抓取的起始页')
     .option('-x, --proxy <url>', '使用代理服务器, 例：-x http://127.0.0.1:8087')
     .option('-n, --nomag', '是否抓取尚无磁链的影片')
+    .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .parse(process.argv);
 
 
@@ -277,7 +278,7 @@ function getSnapshots(link, snapshots) {
     for (var i = 0; i < snapshots.length; i++) {
         getSnapshot(link, snapshots[i]);
     }
-    console.log('截图下载完毕:' + link);
+    // console.log('截图下载完毕:' + link);
 }
 
 function getSnapshot(link, snahpshotLink) {
@@ -296,18 +297,18 @@ function getSnapshot(link, snahpshotLink) {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
                         finished = true;
-                        // console.error(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, fileFullPath);
+                        console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, fileFullPath);
                     }
                 })
                 .on('error', function (err) {
                     if (!finished) {
                         finished = true;
-                        // console.error(('[' + fanhao + ']').red.bold.inverse + '[截图]'.yellow.inverse, err.message.red);
+                        console.error(('[' + fanhao + ']').red.bold.inverse + '[截图]'.yellow.inverse, err.message.red);
                     }
                 })
                 .pipe(snapshotFileStream);
         } else {
-            // console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, 'file already exists, skip!'.yellow);
         }
     });
 }
@@ -340,6 +341,13 @@ function getItemMagnet(link, meta, done) {
     let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
     let magnetFilePath = path.join(itemOutput, fanhao + '.json');
+    let jsonInfo = {
+        title: meta.title,
+        data: meta.date,
+        series: meta.series,
+        category: meta.category,
+        actress: meta.actress
+    };
     fs.access(magnetFilePath, fs.F_OK, function (err) {
         if (err) {
             request
@@ -350,57 +358,41 @@ function getItemMagnet(link, meta, done) {
                             return done(null); // one magnet fetch fail, do not crash the whole task.
                         }
                         const $ = cheerio.load(body);
-                        const mag_sizes = $('tr').map(function readMagnetAndSize(i, e) {
-                            let anchorInSecondTableCell = $(e).children('td').eq(1).children('a');
-                            return {
-                                magnet: anchorInSecondTableCell.attr('href'),
-                                size: text2size(anchorInSecondTableCell.text()),
-                                sizeText: _.trim(anchorInSecondTableCell.text())
-                            };
-                        }).get();
-                        // // 尝试解析高清磁链
-                        // let HDAnchor = $('a[title="包含高清HD的磁力連結"]').parent().attr('href');
-                        // // 尝试解析普通磁链
-                        // let anchor = $('a[title="滑鼠右鍵點擊並選擇【複製連結網址】"]').attr('href');
-                        // // 若存在高清磁链，则优先选取高清磁链
-                        // anchor = HDAnchor || anchor;
-                        // // 将磁链单独存入文本文件以方便下载
-                        let largest = null;
-                        if (mag_sizes) {
-                            largest = _.orderBy(mag_sizes, 'size', 'desc')[0];
-                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), largest.magnet, function (err) {
+                        if ($('tr').eq(0).children('td').eq(1).children('a').text()) {
+                            let mag_sizes = $('tr').map(function readMagnetAndSize(i, e) {
+                                let anchorInSecondTableCell = $(e).children('td').eq(1).children('a');
+                                return {
+                                    magnet: anchorInSecondTableCell.attr('href'),
+                                    size: text2size(anchorInSecondTableCell.text()),
+                                    sizeText: _.trim(anchorInSecondTableCell.text())
+                                };
+                            }).get();
+                            mag_sizes = _.orderBy(mag_sizes, 'size', 'desc');
+                            const magOrdered = _.map(mag_sizes, x => x.magnet);
+
+                            jsonInfo.magnets = program.allmag ? magOrdered : _.slice(magOrdered, 0, 1);
+                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), jsonInfo.magnets.toString().replace(',', '\n'), function (err) {
                                 if (err) {
                                     throw err;
                                 }
+                                console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse);
+                                console.log(jsonInfo.magnets);
                             });
+
                         }
 
-                        // // 再加上一些影片信息
-                        let jsonText = '{\n\t"title":"' + meta.title + '",\n\t"date":"' + meta.date + '",\n\t"series":"' + meta.series + '",\n\t"anchor":"' + largest.magnet + '",\n\t"category":[\n\t\t';
-                        for (let i = 0; i < meta.category.length; i++) {
-                            jsonText += i == 0 ? '"' + meta.category[i] + '"' : ',\n\t\t"' + meta.category[i] + '"';
-                        }
-                        jsonText += '\n\t],\n\t"actress":[\n\t\t';
-                        for (let i = 0; i < meta.actress.length; i++) {
-                            jsonText += i == 0 ? '"' + meta.actress[i] + '"' : ',\n\t\t"' + meta.actress[i] + '"';
-                        }
-                        jsonText += '\n\t]\n}';
+                        fs.writeFile(magnetFilePath, JSON.stringify(jsonInfo, '', 4),
+                            function (err) {
+                                if (err) {
+                                    throw err;
+                                }
+                                console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse + '影片信息已抓取');
+                                getItemCover(link, meta, done);
+                            });
 
-                        if (jsonText) { // magnet file not exists
-                            fs.writeFile(magnetFilePath, jsonText + '\r\n',
-                                function (err) {
-                                    if (err) {
-                                        throw err;
-                                    }
-                                    console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse + (`[${largest.sizeText}]`.blue.bold.inverse), largest.magnet);
-                                    getItemCover(link, meta, done);
-                                });
-                        } else {
-                            getItemCover(link, meta, done); // 若尚未有磁链则仅抓取封面
-                        }
                     });
         } else {
-            console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse, 'file already exists, skip!'.yellow);
             getItemCover(link, meta, done);
         }
     });
