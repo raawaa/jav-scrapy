@@ -358,7 +358,7 @@ function getItemMagnet(link, meta, done) {
                             return done(null); // one magnet fetch fail, do not crash the whole task.
                         }
                         const $ = cheerio.load(body);
-                        if ($('tr').eq(0).children('td').eq(1).children('a').text()) {
+                        if ($('tr').eq(-1).children('td').eq(1).children('a').text()) {
                             let mag_sizes = $('tr').map(function readMagnetAndSize(i, e) {
                                 let anchorInSecondTableCell = $(e).children('td').eq(1).children('a');
                                 return {
