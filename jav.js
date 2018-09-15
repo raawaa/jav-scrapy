@@ -218,8 +218,8 @@ function parse(script) {
 
 function getItemPage(link, index, callback) {
     let fanhao = link.split('/').pop();
-    let coverFilePath = path.join(output, fanhao + '.jpg');
-    let magnetFilePath = path.join(output, fanhao + '.txt');
+    let coverFilePath = path.join(output + '.jpg');//封面保存位置去掉子文件夹
+    let magnetFilePath = path.join(output + '.txt');//信息保存位置去掉子文件夹
     if (hasLimit) {
         count--;
     }
@@ -227,7 +227,7 @@ function getItemPage(link, index, callback) {
         fs.accessSync(coverFilePath, fs.F_OK);
         fs.accessSync(magnetFilePath, fs.F_OK);
         console.log(('[' + fanhao + ']').yellow.bold.inverse + ' ' + 'Alreday fetched, SKIP!'.yellow);
-        return callback();
+        return callback();//已有时不再抓取
     } catch (e) {
         request
             .get(link, function (err, res, body) {
@@ -280,6 +280,7 @@ function getItemPage(link, index, callback) {
     }
 }
 
+//下载截图，存储位置未动，仍在名为番号的子文件夹，方便独立打包压缩
 function getSnapshots(link, snapshots) {
     // https://pics.dmm.co.jp/digital/video/118abp00454/118abp00454jp-1.jpg
     for (var i = 0; i < snapshots.length; i++) {
@@ -292,7 +293,6 @@ function getSnapshot(link, snahpshotLink) {
     let fanhao = link.split('/').pop();
     let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
-
     let snapshotName = snahpshotLink.split('/').pop();
     let fileFullPath = path.join(itemOutput, snapshotName);
     fs.access(fileFullPath, fs.F_OK, function (err) {
@@ -321,7 +321,6 @@ function getSnapshot(link, snahpshotLink) {
 }
 
 function getItemMagnet(link, meta, done) {
-
     function text2size(text) {
         let re = /([0-9.]+)([GMTK]B)/i;
         let found = _.trim(text).match(re);
@@ -345,16 +344,16 @@ function getItemMagnet(link, meta, done) {
         }
     }
     let fanhao = link.split('/').pop();
-    let itemOutput = output + '/' + fanhao;
-    mkdirp.sync(itemOutput);
-    let magnetFilePath = path.join(itemOutput, fanhao + '.json');
+    let itemOutput = output + '/' + 'fanhao';  //itemOutput为子文件夹，后面我没用
+    mkdirp.sync(output); //改为output
+    let magnetFilePath = path.join(output, fanhao + '.json'); //改为output使json信息文件都存放于output下（无子文件夹）
     let jsonInfo = {
         title: meta.title,
         data: meta.date,
         series: meta.series,
         category: meta.category,
         actress: meta.actress
-    };
+    }; //获取信息
     fs.access(magnetFilePath, fs.F_OK, function (err) {
         if (err) {
             request
@@ -376,19 +375,16 @@ function getItemMagnet(link, meta, done) {
                             }).get();
                             mag_sizes = _.orderBy(mag_sizes, 'size', 'desc');
                             const magOrdered = _.map(mag_sizes, x => x.magnet);
-
                             jsonInfo.magnets = program.allmag ? magOrdered : _.slice(magOrdered, 0, 1);
-                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), jsonInfo.magnets.toString().replace(',', '\n'), function (err) {
+                            fs.writeFile(path.join(output, fanhao + '-magnet.txt'), jsonInfo.magnets.toString().replace(',', '\n'), function (err) { // 写入磁链txt，都存放于output下（无子文件夹）
                                 if (err) {
                                     throw err;
                                 }
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse);
                                 console.log(jsonInfo.magnets);
                             });
-
                         }
-
-                        fs.writeFile(magnetFilePath, JSON.stringify(jsonInfo, '', 4),
+                        fs.writeFile(magnetFilePath, JSON.stringify(jsonInfo, '', 4), // 写入json信息文件
                             function (err) {
                                 if (err) {
                                     throw err;
@@ -396,7 +392,6 @@ function getItemMagnet(link, meta, done) {
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse + '影片信息已抓取');
                                 getItemCover(link, meta, done);
                             });
-
                     });
         } else {
             console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse, 'file already exists, skip!'.yellow);
@@ -407,10 +402,22 @@ function getItemMagnet(link, meta, done) {
 
 function getItemCover(link, meta, done) {
     var fanhao = link.split('/').pop();
-    var filename = fanhao + 'l.jpg';
-    let itemOutput = output + '/' + fanhao;
-    mkdirp.sync(itemOutput);
-    var fileFullPath = path.join(itemOutput, filename);
+    var temptitle = meta.title;
+    var tempactress = meta.actress;
+    var tempdate = meta.date
+    var stitle = temptitle.substring(0, 200);//防止标题过长
+    var oktitle = stitle.replace(/[\\\/\*\?\:\"\|\<\>]/g, ' ');
+    var oktitle1 = oktitle.replace("[email protected]    ![CDATA[   !function(t,e,r,n,c,a,p){try{t=document.currentScript  function(){for" , ' '); // 防止文本出错
+    var stractress = tempactress.toString();//使演员信息变为字符串
+    var sactress = stractress.substring(0, 100);//防止演员过长
+    var okactress = sactress.replace(/[\\\/\*\?\:\"\|\<\>]/g, ' ');
+    var okactress1 = okactress.replace("[email protected]    ![CDATA[   !function(t,e,r,n,c,a,p){try{t=document.currentScript  function(){for" , ' '); // 防止文本出错
+    var sdate = tempdate.substring(2);
+    var okdate = sdate.replace(/[\-]/g, '');
+    var filename = oktitle1 + ' -' + okactress1 + '['+ okdate + '].jpg';//图片命名为标题 - 演员[日期].jpg
+    let itemOutput = output + '/' + 'fanhao'; //itemOutput为子文件夹，后面我没用
+    mkdirp.sync(output); //改为output
+    var fileFullPath = path.join(output, filename);//图片保存位置改为output
     fs.access(fileFullPath, fs.F_OK, function (err) {
         if (err) {
             var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
@@ -442,41 +449,39 @@ function getItemCover(link, meta, done) {
     });
 }
 
-// 获取封面小图
-function getItemSmallCover(link, meta, done) {
-    // 大图地址：
-    // https://pics.javbus.info/cover/5cfb_b.jpg
-    // 小图地址:
-    // https://pics.javbus.info/thumb/5cfb.jpg
-    var fanhao = link.split('/').pop();
-    var filename = fanhao + 's.jpg';
-    let itemOutput = output + '/' + fanhao;
-    mkdirp.sync(itemOutput);
-    var fileFullPath = path.join(itemOutput, filename);
-    fs.access(fileFullPath, fs.F_OK, function (err) {
-        if (err) {
-            var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
-            var finished = false;
-            request.get(meta.img.replace('cover', 'thumb').replace('_b', ''))
-                .on('end', function () {
-                    if (!finished) {
-                        fs.renameSync(fileFullPath + '.part', fileFullPath);
-                        finished = true;
-                        console.error(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, fileFullPath);
-                        return done();
-                    }
-                })
-                .on('error', function (err) {
-                    if (!finished) {
-                        finished = true;
-                        console.error(('[' + fanhao + ']').red.bold.inverse + '[小封面]'.yellow.inverse, err.message.red);
-                        return done();
-                    }
-                })
-                .pipe(coverFileStream);
-        } else {
-            console.log(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
-            return done();
-        }
-    });
-}
+//// 获取封面小图，目前删了
+//function getItemSmallCover(link, meta, done) {
+    //// 大图地址：https://pics.javbus.info/cover/5cfb_b.jpg
+    //// 小图地址:https://pics.javbus.info/thumb/5cfb.jpg
+    //var fanhao = link.split('/').pop();
+    //var filename = fanhao + 's.jpg';
+    //let itemOutput = output + '/' + fanhao;
+    //mkdirp.sync(itemOutput);
+    //var fileFullPath = path.join(itemOutput, filename);
+    //fs.access(fileFullPath, fs.F_OK, function (err) {
+        //if (err) {
+            //var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
+            //var finished = false;
+            //request.get(meta.img.replace('cover', 'thumb').replace('_b', ''))
+                //.on('end', function () {
+                    //if (!finished) {
+                        //fs.renameSync(fileFullPath + '.part', fileFullPath);
+                        //finished = true;
+                        //console.error(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, fileFullPath);
+                        //return done();
+                    //}
+                //})
+                //.on('error', function (err) {
+                    //if (!finished) {
+                        //finished = true;
+                        //console.error(('[' + fanhao + ']').red.bold.inverse + '[小封面]'.yellow.inverse, err.message.red);
+                        //return done();
+                    //}
+                //})
+                //.pipe(coverFileStream);
+        //} else {
+            //console.log(('[' + fanhao + ']').green.bold.inverse + '[小封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            //return done();
+        //}
+    //});
+//}
