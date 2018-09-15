@@ -24,9 +24,9 @@ var currentPageHtml = null;
 program
     .version(VERSION)
     .usage('[options]')
-    .option('-o, --output <file_path>', '保存位置，勿含空格，已有的文件会跳过，例：-o E:|学习资料[18-06]|，默认为d:|javbus|(|替换为右斜杠)', 'd:\javbus') 
+    .option('-o, --output <file_path>', '保存位置，勿含空格，已有的文件会跳过，例：-o D:|学习资料[18-06]| (|应为右斜杠)，默认为默认为用户目录下magnets ', path.join(userHome, 'magnets') 
     //可更改最后一逗号内为默认保存位置，可参考下面：
-    //默认为E:|javbus| ', 'e:\javbus' 
+    //默认为D:|javbus| ', 'd:\javbus' 
     //默认为用户目录下magnets ', path.join(userHome, 'magnets') 
     .option('-s, --search <string>', '搜索关键词，可中文/日文/番号，不设置则为从首页开始！番号必须后加-')
     .option('-b, --base <url>', '自定义抓取起始页，例如可用来抓某类别1j：-b http://www.javbus.in/genre/1j（网址search/后面的关键字不能是汉字/日文，可网页搜后复制过来）')
