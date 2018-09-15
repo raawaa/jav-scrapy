@@ -26,7 +26,7 @@ $ sudo npm link    # 使jav-scrapy全局可执行
 
     -h, --help                output usage information
     -V, --version             output the version number
-    -o, --output <file_path>  保存位置，勿含空格，已有的文件会跳过，例：-o E:|学习资料[18-06]|，默认为d:|javbus|(|替换为右斜杠)
+    -o, --output <file_path>  保存位置，勿含空格，已有的文件会跳过，例：-o E:\学习资料[18-06]，默认为当前用户的主目录下的 magnets 文件夹
     -s, --search <string>     搜索关键词，可中文/日文/番号，不设置则为从首页开始！番号必须后加-
     -b, --base <url>          自定义抓取起始页，例如可用来抓某类别1j：-b http://www.javbus.in/genre/1j（网址search/后面的关键字不能是汉字/日文，可网页搜后复制过来）
     -l, --limit <num>         抓取影片数量上限，一般一页30个，0即默认不设置为抓取全部影片
@@ -36,14 +36,14 @@ $ sudo npm link    # 使jav-scrapy全局可执行
     -x, --proxy <url>         设置代理服务器, 例：-x http://127.0.0.1:8087
     -t, --timeout <num>       设置连接超时时间(毫秒)。默认值：5000毫秒
       一直timeout链接失败时可更改jav.js的18行域名为https://www.javbus.com .in .me .us .pw javbus2.com seedmm.com，
-      地址发布页https://announce.seedmm.com/website.php
-      (js位于Users-XXX-AppData-Roaming-npm-node_modules-jav-scarpy下)
+      地址发布页https://announce.seedmm.com/website.php https://news.javbus2.pw/website.php
+      (windows10系统js位于Users\XXX\AppData\Roaming\npm\node_modules\jav-scarpy下)
 ```
 
 ### Examples
 
 ```bash
-# 抓取所有影片封面、磁链、片段截图，保存到 d:/javbus 目录下，并行下载数为 10
+# 抓取所有影片封面、磁链、片段截图，保存到 ~magnets 目录下以番号为名的子文件夹下，并行下载数为 10
 $ jav -p 10
 
 # 抓取番号以 ipz 开头的所有影片，并保存在 /path/to/folder 中，并行抓取数 20
