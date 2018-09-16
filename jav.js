@@ -16,7 +16,7 @@ const _ = require('lodash');
 
 const VERSION = require('./package.json').version;
 const baseUrl = 'https://www.javbus.com'
-//timeout链接失败时可更改jav.js代码的16行域名为www.jav.com .in .me .us .pw javbus2.com seedmm.com 3ubdxu00l1lkcjoz5n.com，地址发布页https://announce.seedmm.com/website.php
+//timeout链接失败时可更改jav.js代码的16行域名为www.jav.com或.in .me .us .pw javbus2.com seedmm.com 3ubdxu00l1lkcjoz5n.com，地址发布页https://announce.seedmm.com/website.php
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
@@ -91,7 +91,10 @@ async.during(
     // page not exits or finished parsing
     function (err) {
         if (err) {
-            console.log('抓取过程终止：%s', err.message);
+            console.log('抓取过程终止：%s  \n\
+一直timeout链接失败时可更改jav.js的18行域名为https://www.javbus.com或.in .me .us .pw javbus2.com seedmm.com，\n\
+地址发布页https://announce.seedmm.com/website.php  \n\
+(js位于Users-XXX-AppData-Roaming-npm-node_modules-jav-scarpy下) ', err.message);
             return process.exit(1);
         }
         if (hasLimit && (count < 1)) {
