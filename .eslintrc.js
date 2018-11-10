@@ -1,16 +1,17 @@
-{
+module.exports = {
     "env": {
-        "es6": true,
-        "node": true
+        "node":true,
+        "browser": false,
+        "es6": true
     },
     "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": 2015
+    },
     "rules": {
         "indent": [
             "error",
-            4,
-            {
-                "SwitchCase": 1
-            }
+            4
         ],
         "linebreak-style": [
             "error",
@@ -18,15 +19,12 @@
         ],
         "quotes": [
             "error",
-            "single",
-            {
-                "allowTemplateLiterals": true
-            }
+            "single"
         ],
         "semi": [
             "error",
             "always"
         ],
-        "no-console": "off"
+        "no-console":["warn"]
     }
-}
+};

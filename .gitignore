@@ -1,5 +1,6 @@
 /node_modules
 .tern-project
 .eslintrc
+launch.json
 
 test

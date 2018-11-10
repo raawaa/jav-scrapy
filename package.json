@@ -20,13 +20,15 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "async": "^1.5.0",
-    "cheerio": "^0.19.0",
-    "colors": "^1.1.2",
-    "commander": "^2.9.0",
-    "lodash": "^4.17.5",
-    "mkdirp": "^0.5.1",
-    "request": "^2.67.0",
-    "user-home": "^2.0.0"
+    "cheerio": "^1.0.0-rc.2",
+    "commander": "^2.19.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2",
+    "request-promise-native": "^1.0.5",
+    "rxjs": "^6.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^5.8.0",
+    "eslint-config-google": "^0.11.0"
   }
 }
