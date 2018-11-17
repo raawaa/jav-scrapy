@@ -11,10 +11,10 @@
 
 ## Installation
 
-```bash
-$ git clone https://github.com/raawaa/jav-scrapy.git
-$ cd jav-scrapy
-$ sudo npm link    # 安装npm包依赖并使jav-scrapy全局可执行
+```bash  #windows请用管理员方式打开命令行
+$ git clone https://github.com/mcneet/jav-scrapy.git  #需要安装git；无git的可以下载zip解压至%AppData%\npm\node\modules\jav-scarpy下，放在其他目录GUI将无法使用
+$ cd jav-scrapy  #转入该目录
+$ sudo npm link  #安装npm包依赖并使jav-scrapy全局可执行；windows输入npm link即可
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ $ sudo npm link    # 安装npm包依赖并使jav-scrapy全局可执行
   -h, --help                output usage information
   -V, --version             output the version number
   -o, --output <file_path>  保存位置，勿含空格半角括号单引号和文件名不允许的符号，已有的文件会跳过
-    ★例：-o E:|!!!javbus-genre|妹[-s]|，默认为D:|jav|(|替换为右斜杠)
+    ★例：-o E:|!!!javbus-genre|妹[-s]|，默认为D:|jav|(Windows系统|代表右斜杠，其他系统为左斜杠)
   -w, --www <string>        自定义域名, 默认www.javbus.com
     ★一直timeout链接失败时可改为www.javbus.in .me .us .pw www.javbus2.com www.seedmm.com www.busjav.cc www.busdmm.net www.dmmsee.net等；地址发布页https://announce.seedmm.com/website.php
   -s, --search <string>     搜索关键词，可繁中/日文/番号，单词勿含空格，如只搜番号须加入-，不设置则为从网站首页开始！
@@ -64,8 +64,8 @@ $ jav -x http://127.0.0.1:8087
 
 ## Notes
 
-- GUI现有更多功能，如方便的测试和翻译按钮、支持如html或JbusDriver等app生成的含多番号的类文本中所有影片批量抓取、安装帮助等。需自行编译.e。
 - Windows系统安装目录为%AppData%\npm\node\modules\jav-scarpy。如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1) 。
+- GUI现有更多功能，如方便的测试和翻译按钮、支持如html或JbusDriver等app生成的含多番号的类文本中所有影片批量抓取、安装帮助等。需自行编译.e。编译出的exe不要放在jav.js同目录下。
 
 ## Contributors
 
