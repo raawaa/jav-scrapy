@@ -231,10 +231,9 @@ function getItemPage(link, index, callback) {
                 let $ = cheerio.load(body);
                 let script = $('script', 'body').eq(2).html();
                 let meta = parse(script);
-
+                meta.category = [];
                 $('div.col-md-3 > p').each(function (i, e) {
                     let text = $(e).text();
-                    meta.category = [];
                     if (text.includes('發行日期:')) {
                         meta.date = text.replace('發行日期: ', '');
                     } else if (text.includes('系列:')) {

@@ -13,7 +13,7 @@ var mkdirp = require('mkdirp');
 
 // global var
 
-const baseUrl = 'https://www.javbus.me/actresses';
+const baseUrl = 'https://www.3ubdxu00l1lkcjoz5n.com/actresses';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
