@@ -10,7 +10,9 @@ var userHome = require('user-home');
 var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+var MongoClient = require('mongodb').MongoClient;
 const _ = require('lodash');
+var url = "mongodb://localhost:27017/";
 
 // global var
 
@@ -72,17 +74,17 @@ mkdirp.sync(output);
 async.during(
     pageExist,
     // when page exist
-    function (callback) {
+    function(callback) {
         async.waterfall(
             [parseLinks, getItems],
-            function (err) {
+            function(err) {
                 pageIndex++;
                 if (err) return callback(err);
                 return callback(null);
             });
     },
     // page not exits or finished parsing
-    function (err) {
+    function(err) {
         if (err) {
             console.log('抓取过程终止：%s', err.message);
             return process.exit(1);
@@ -135,7 +137,7 @@ function getItems(links, next) {
         links,
         parallel,
         getItemPage,
-        function (err) {
+        function(err) {
             if (err) {
                 if (err.message === 'limit') {
                     return next();
@@ -164,10 +166,10 @@ function pageExist(callback) {
 
     let retryCount = 1;
     async.retry(3,
-        function (callback) {
+        function(callback) {
             let options = program.nomag ? { url: url, headers: { 'Cookie': 'existmag=all' } } : { url: url };
             request
-                .get(options, function (err, res, body) {
+                .get(options, function(err, res, body) {
                     if (err) {
                         if (err.status === 404) {
                             console.error('已抓取完所有页面, StatusCode:', err.status);
@@ -182,7 +184,7 @@ function pageExist(callback) {
                     return callback(null, res);
                 });
         },
-        function (err, res) {
+        function(err, res) {
             if (err) {
                 if (err.status === 404) {
                     return callback(null, false);
@@ -223,7 +225,7 @@ function getItemPage(link, index, callback) {
         return callback();
     } catch (e) {
         request
-            .get(link, function (err, res, body) {
+            .get(link, function(err, res, body) {
                 if (err) {
                     console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
                     return callback(null);
@@ -232,14 +234,14 @@ function getItemPage(link, index, callback) {
                 let script = $('script', 'body').eq(2).html();
                 let meta = parse(script);
                 meta.category = [];
-                $('div.col-md-3 > p').each(function (i, e) {
+                $('div.col-md-3 > p').each(function(i, e) {
                     let text = $(e).text();
                     if (text.includes('發行日期:')) {
                         meta.date = text.replace('發行日期: ', '');
                     } else if (text.includes('系列:')) {
                         meta.series = text.replace('系列:', '');
                     } else if (text.includes('類別:')) {
-                        $('div.col-md-3 > p > span.genre').each(function (idx, span) {
+                        $('div.col-md-3 > p > span.genre').each(function(idx, span) {
                             let $span = $(span);
                             if (!$span.attr('onmouseover')) {
                                 meta.category.push($span.text());
@@ -249,7 +251,7 @@ function getItemPage(link, index, callback) {
                 });
                 // 提取演员
                 meta.actress = [];
-                $('span.genre').each(function (i, e) {
+                $('span.genre').each(function(i, e) {
                     let $e = $(e);
                     if ($e.attr('onmouseover')) {
                         meta.actress.push($e.find('a').text());
@@ -257,17 +259,17 @@ function getItemPage(link, index, callback) {
                 });
                 // 提取片名
                 meta.title = $('h3').text();
-
-                getItemMagnet(link, meta, callback);
-
                 // 所有截图link
-                var snapshots = [];
-                $('a.sample-box').each(function (i, e) {
+                meta.snapshots = [];
+                // var snapshots = [];
+                $('a.sample-box').each(function(i, e) {
                     let $e = $(e);
-
-                    snapshots.push($e.attr('href'));
+                    meta.snapshots.push($e.attr('href'));
                 });
-                getSnapshots(link, snapshots);
+                // meta.snapshots = snapshots;
+                getItemMagnet(link, meta, callback);
+                // 关闭了下载截图的功能
+                getSnapshots(link, meta.snapshots);
             });
     }
 }
@@ -287,19 +289,19 @@ function getSnapshot(link, snahpshotLink) {
 
     let snapshotName = snahpshotLink.split('/').pop();
     let fileFullPath = path.join(itemOutput, snapshotName);
-    fs.access(fileFullPath, fs.F_OK, function (err) {
+    fs.access(fileFullPath, fs.F_OK, function(err) {
         if (err) {
             var snapshotFileStream = fs.createWriteStream(fileFullPath + '.part');
             var finished = false;
             request.get(snahpshotLink)
-                .on('end', function () {
+                .on('end', function() {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
                         finished = true;
                         console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, fileFullPath);
                     }
                 })
-                .on('error', function (err) {
+                .on('error', function(err) {
                     if (!finished) {
                         finished = true;
                         console.error(('[' + fanhao + ']').red.bold.inverse + '[截图]'.yellow.inverse, err.message.red);
@@ -339,19 +341,23 @@ function getItemMagnet(link, meta, done) {
     let fanhao = link.split('/').pop();
     let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
-    let magnetFilePath = path.join(itemOutput, fanhao + '.json');
+    let InfoFilePath = path.join(itemOutput, fanhao + '.json');
+    // console.log("snapshots:", meta.snapshots)
     let jsonInfo = {
+        fanhao: fanhao,
         title: meta.title,
         data: meta.date,
         series: meta.series,
         category: meta.category,
-        actress: meta.actress
+        actress: meta.actress,
+        cover: meta.img,
+        snapshots: meta.snapshots,
     };
-    fs.access(magnetFilePath, fs.F_OK, function (err) {
+    fs.access(InfoFilePath, fs.F_OK, function(err) {
         if (err) {
             request
                 .get(baseUrl + '/ajax/uncledatoolsbyajax.php?gid=' + meta.gid + '&lang=' + meta.lang + '&img=' + meta.img + '&uc=' + meta.uc + '&floor=' + Math.floor(Math.random() * 1e3 + 1),
-                    function (err, res, body) {
+                    function(err, res, body) {
                         if (err) {
                             console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
                             return done(null); // one magnet fetch fail, do not crash the whole task.
@@ -368,30 +374,40 @@ function getItemMagnet(link, meta, done) {
                             }).get();
                             mag_sizes = _.orderBy(mag_sizes, 'size', 'desc');
                             const magOrdered = _.map(mag_sizes, x => x.magnet);
-
                             jsonInfo.magnets = program.allmag ? magOrdered : _.slice(magOrdered, 0, 1);
-                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), jsonInfo.magnets.toString().replace(',', '\n'), function (err) {
+                            // console.log('11111', jsonInfo.magnets)
+                            fs.writeFile(path.join(itemOutput, fanhao + '-magnet.txt'), jsonInfo.magnets.toString().replace(',', '\n'), function(err) {
                                 if (err) {
                                     throw err;
                                 }
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse);
                                 console.log(jsonInfo.magnets);
                             });
-
                         }
+                        MongoClient.connect(url, function(err, db) {
+                            if (err) throw err;
+                            var dbo = db.db("javbus");
+                            dbo.collection("Fanhao").insertOne(jsonInfo, function(err, res) {
+                                if (err) throw err;
+                                console.log(('[' + fanhao + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
+                                db.close();
+                            });
+                        });
 
-                        fs.writeFile(magnetFilePath, JSON.stringify(jsonInfo, '', 4),
-                            function (err) {
+                        fs.writeFile(InfoFilePath, JSON.stringify(jsonInfo, '', 4),
+                            function(err) {
                                 if (err) {
                                     throw err;
                                 }
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse + '影片信息已抓取');
+                                // 关闭了下载封面的功能
                                 getItemCover(link, meta, done);
                             });
 
                     });
         } else {
             console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            // 关闭了下载封面的功能
             getItemCover(link, meta, done);
         }
     });
@@ -403,12 +419,12 @@ function getItemCover(link, meta, done) {
     let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
     var fileFullPath = path.join(itemOutput, filename);
-    fs.access(fileFullPath, fs.F_OK, function (err) {
+    fs.access(fileFullPath, fs.F_OK, function(err) {
         if (err) {
             var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
             var finished = false;
             request.get(meta.img)
-                .on('end', function () {
+                .on('end', function() {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
                         finished = true;
@@ -417,7 +433,7 @@ function getItemCover(link, meta, done) {
                         return done();
                     }
                 })
-                .on('error', function (err) {
+                .on('error', function(err) {
                     if (!finished) {
                         finished = true;
                         console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
@@ -445,12 +461,12 @@ function getItemSmallCover(link, meta, done) {
     let itemOutput = output + '/' + fanhao;
     mkdirp.sync(itemOutput);
     var fileFullPath = path.join(itemOutput, filename);
-    fs.access(fileFullPath, fs.F_OK, function (err) {
+    fs.access(fileFullPath, fs.F_OK, function(err) {
         if (err) {
             var coverFileStream = fs.createWriteStream(fileFullPath + '.part');
             var finished = false;
             request.get(meta.img.replace('cover', 'thumb').replace('_b', ''))
-                .on('end', function () {
+                .on('end', function() {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
                         finished = true;
@@ -458,7 +474,7 @@ function getItemSmallCover(link, meta, done) {
                         return done();
                     }
                 })
-                .on('error', function (err) {
+                .on('error', function(err) {
                     if (!finished) {
                         finished = true;
                         console.error(('[' + fanhao + ']').red.bold.inverse + '[小封面]'.yellow.inverse, err.message.red);
