@@ -387,7 +387,7 @@ function getItemMagnet(link, meta, done) {
                         MongoClient.connect(url, function(err, db) {
                             if (err) throw err;
                             var dbo = db.db("javbus");
-                            dbo.collection("Fanhao").insertOne(jsonInfo, function(err, res) {
+                            dbo.collection("fanhao").insertOne(jsonInfo, function(err, res) {
                                 if (err) throw err;
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
                                 db.close();
