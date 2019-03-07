@@ -385,12 +385,19 @@ function getItemMagnet(link, meta, done) {
                             });
                         }
                         MongoClient.connect(url, function(err, db) {
-                            if (err) throw err;
+                            if (err) {
+                                console.error(('[' + fanhao + ']').red.bold.inverse + '[mongodb链接失败]' + err.message.red);
+                                return done(null);
+                            };
                             var dbo = db.db("javbus");
                             dbo.collection("fanhao").insertOne(jsonInfo, function(err, res) {
-                                if (err) throw err;
-                                console.log(('[' + fanhao + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
-                                db.close();
+                                if (err) {
+                                    console.error(('[' + fanhao + ']').red.bold.inverse + '[该番号在mongodb中已存在]' + err.message.red);
+                                    db.close();
+                                } else {
+                                    console.log(('[' + fanhao + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
+                                    db.close();
+                                }
                             });
                         });
 
