@@ -4,6 +4,7 @@
 -- 修改版，增加-w -i -u参数以便进阶抓取；调整log使输出更直观；将封面重命名为番号标题-演员[日期].jpg，并和信息.json，磁链.txt保存到一个主文件夹下，截图在各子文件夹方便之后手动批量打包。
 
 ![image](https://github.com/McNEET/jav-scrapy/blob/patch-1/Snap.png)
+![image](https://github.com/McNEET/jav-scrapy/blob/patch-1/Snap_GUI.png)
 
 ## Prequisites
 
