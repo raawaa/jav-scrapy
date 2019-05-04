@@ -17,7 +17,7 @@ var url = "mongodb://localhost:27017/";
 // global var
 
 const VERSION = require('./package.json').version;
-const baseUrl = 'https://www.3ubdxu00l1lkcjoz5n.com/'
+const baseUrl = 'https://www.3ubdxu00l1lkcjoz5n.com/';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
@@ -57,11 +57,11 @@ var hasLimit = (count !== 0),
     targetFound = false;
 var output = program.output.replace(/['"]/g, '');
 
-console.log('========== 获取资源站点：%s =========='.green.bold, baseUrl);
+console.log('========== 获取资源站点：%s =========='.green.bold, program.base);
 console.log('并行连接数：'.green, parallel.toString().green.bold, '      ',
     '连接超时设置：'.green, (timeout / 1000.0).toString().green.bold, '秒'.green);
-console.log('磁链保存位置: '.green, output.green.bold);
-console.log('代理服务器: '.green, (proxy ? proxy : '无').green.bold);
+// console.log('磁链保存位置: '.green, output.green.bold);
+// console.log('代理服务器: '.green, (proxy ? proxy : '无').green.bold);
 
 /****************************
  *****************************
@@ -128,7 +128,7 @@ function parseLinks(next) {
         fanhao.push(link.split('/').pop());
     }
 
-    console.log('正处理以下番号影片...\n'.green + fanhao.toString().yellow);
+    // console.log('正处理以下番号影片...\n'.green + fanhao.toString().yellow);
     next(null, links);
 }
 
@@ -221,7 +221,7 @@ function getItemPage(link, index, callback) {
     try {
         fs.accessSync(coverFilePath, fs.F_OK);
         fs.accessSync(magnetFilePath, fs.F_OK);
-        console.log(('[' + fanhao + ']').yellow.bold.inverse + ' ' + 'Alreday fetched, SKIP!'.yellow);
+        // console.log(('[' + fanhao + ']').yellow.bold.inverse + ' ' + 'Alreday fetched, SKIP!'.yellow);
         return callback();
     } catch (e) {
         request
@@ -269,7 +269,7 @@ function getItemPage(link, index, callback) {
                 // meta.snapshots = snapshots;
                 getItemMagnet(link, meta, callback);
                 // 关闭了下载截图的功能
-                getSnapshots(link, meta.snapshots);
+                // getSnapshots(link, meta.snapshots);
             });
     }
 }
@@ -279,7 +279,7 @@ function getSnapshots(link, snapshots) {
     for (var i = 0; i < snapshots.length; i++) {
         getSnapshot(link, snapshots[i]);
     }
-    // console.log('截图下载完毕:' + link);
+    console.log('截图下载完毕:' + link);
 }
 
 function getSnapshot(link, snahpshotLink) {
@@ -298,24 +298,23 @@ function getSnapshot(link, snahpshotLink) {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
                         finished = true;
-                        console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, fileFullPath);
+                        // console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, fileFullPath);
                     }
                 })
                 .on('error', function(err) {
                     if (!finished) {
                         finished = true;
-                        console.error(('[' + fanhao + ']').red.bold.inverse + '[截图]'.yellow.inverse, err.message.red);
+                        // console.error(('[' + fanhao + ']').red.bold.inverse + '[截图]'.yellow.inverse, err.message.red);
                     }
                 })
                 .pipe(snapshotFileStream);
         } else {
-            console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            // console.log(('[' + fanhao + ']').green.bold.inverse + '[截图]'.yellow.inverse, 'file already exists, skip!'.yellow);
         }
     });
 }
 
 function getItemMagnet(link, meta, done) {
-
     function text2size(text) {
         let re = /([0-9.]+)([GMTK]B)/i;
         let found = _.trim(text).match(re);
@@ -381,10 +380,10 @@ function getItemMagnet(link, meta, done) {
                                     throw err;
                                 }
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[磁链]'.yellow.inverse);
-                                console.log(jsonInfo.magnets);
+                                // console.log(jsonInfo.magnets);
                             });
                         }
-                        MongoClient.connect(url, function(err, db) {
+                        MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
                             if (err) {
                                 console.error(('[' + fanhao + ']').red.bold.inverse + '[mongodb链接失败]' + err.message.red);
                                 return done(null);
@@ -393,6 +392,13 @@ function getItemMagnet(link, meta, done) {
                             dbo.collection("fanhao").insertOne(jsonInfo, function(err, res) {
                                 if (err) {
                                     console.error(('[' + fanhao + ']').red.bold.inverse + '[该番号在mongodb中已存在]' + err.message.red);
+                                    dbo.collection("fanhao").updateOne(jsonInfo, function(err, res) {
+                                        if (err) {
+                                            console.error(('[' + fanhao + ']').red.bold.inverse + '又出错了，这可咋办啊' + err.message.red);
+                                            db.close();
+                                        }
+                                    });
+                                    console.error(('[' + fanhao + ']').red.bold.inverse + '[正在更新磁力链接]' + err.message.red);
                                     db.close();
                                 } else {
                                     console.log(('[' + fanhao + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
@@ -413,9 +419,50 @@ function getItemMagnet(link, meta, done) {
 
                     });
         } else {
-            console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse, 'file already exists'.yellow);
+            request
+                .get(baseUrl + '/ajax/uncledatoolsbyajax.php?gid=' + meta.gid + '&lang=' + meta.lang + '&img=' + meta.img + '&uc=' + meta.uc + '&floor=' + Math.floor(Math.random() * 1e3 + 1),
+                    function(err, res, body) {
+                        if (err) {
+                            console.error(('[' + fanhao + ']').red.bold.inverse + ' ' + err.message.red);
+                            return done(null); // one magnet fetch fail, do not crash the whole task.
+                        } else {
+                            const $ = cheerio.load(body);
+                            if ($('tr').eq(-1).children('td').eq(1).children('a').text()) {
+                                let mag_sizes = $('tr').map(function readMagnetAndSize(i, e) {
+                                    let anchorInSecondTableCell = $(e).children('td').eq(1).children('a');
+                                    return {
+                                        magnet: anchorInSecondTableCell.attr('href'),
+                                        size: text2size(anchorInSecondTableCell.text()),
+                                        sizeText: _.trim(anchorInSecondTableCell.text())
+                                    };
+                                }).get();
+                                mag_sizes = _.orderBy(mag_sizes, 'size', 'desc');
+                                const magOrdered = _.map(mag_sizes, x => x.magnet);
+                                jsonInfo.magnets = program.allmag ? magOrdered : _.slice(magOrdered, 0, 1);
+                            }
+                            MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+                                if (err) {
+                                    console.error(('[' + fanhao + ']').red.bold.inverse + '[mongodb链接失败]' + err.message.red);
+                                    return done(null);
+                                };
+                                // var dbo = db.db("javbus");
+                                var dbo = db.db("producer");
+                                dbo.collection("fanhao").updateOne({ "fanhao": jsonInfo.fanhao }, { $set: jsonInfo }, function(err, res) {
+                                    if (err) {
+                                        console.error(('[' + fanhao + ']').red.bold.inverse + '又出错了，这可咋办啊' + err.message.red);
+                                        db.close();
+                                    } else {
+                                        console.error(('[' + fanhao + ']').red.bold.inverse + '更新数据库完成');
+                                        db.close();
+                                    }
+                                });
+                            });
+                        }
+                    });
             // 关闭了下载封面的功能
-            getItemCover(link, meta, done);
+            return done();
+            // getItemCover(link, meta, done);
         }
     });
 }
@@ -435,7 +482,7 @@ function getItemCover(link, meta, done) {
                     if (!finished) {
                         fs.renameSync(fileFullPath + '.part', fileFullPath);
                         finished = true;
-                        console.error(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
+                        // console.error(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, fileFullPath);
                         // getItemSmallCover(link, meta, done);
                         return done();
                     }
@@ -443,14 +490,14 @@ function getItemCover(link, meta, done) {
                 .on('error', function(err) {
                     if (!finished) {
                         finished = true;
-                        console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
+                        // console.error(('[' + fanhao + ']').red.bold.inverse + '[封面]'.yellow.inverse, err.message.red);
                         // getItemSmallCover(link, meta, done);
                         return done();
                     }
                 })
                 .pipe(coverFileStream);
         } else {
-            console.log(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
+            // console.log(('[' + fanhao + ']').green.bold.inverse + '[封面]'.yellow.inverse, 'file already exists, skip!'.yellow);
             // getItemSmallCover(link, meta, done);
             return done();
         }

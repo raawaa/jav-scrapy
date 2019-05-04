@@ -1,8 +1,10 @@
 # jav-scrapy
 
 一个可以爬取 AV 磁力链接或影片封面的小爬虫。
-添加了将结果保存到mongodb中，便于分类查找。
 
+**修改为将结果保存到mongodb中，便于用户进行分类查找**。
+
+添加了在结果中进行搜索的Python脚本。
 
 ![anim.gif](https://ooo.0o0.ooo/2015/10/31/56345cf140299.gif "anim.gif")
 
@@ -10,6 +12,8 @@
 ## Prequisites
 
 - Node.js 4.2.1+
+- Python 3.7.x
+
 
 ## Installation
 
@@ -18,6 +22,7 @@ $ git clone https://github.com/raawaa/jav-scrapy.git
 $ cd jav-scrapy
 $ npm install # 安装npm包依赖
 $ sudo npm link    # 使jav-scrapy全局可执行
+$ pip install pymongo son json optparse
 ```
 
 ## Usage
@@ -60,6 +65,16 @@ $ jav -b http://www.javbus.in/genre/28
 $ jav -x http://127.0.0.1:8087
 ```
 
+```python
+  Usage: selectmag.py [options]
+
+  Options:
+
+    -f, --file <string>       从文件中读取要查找磁力链接的关键词，文件使用json格式，参考本目录下的pmv文件
+    -c, --chn <num>           设置是否只查找有中文字幕的电影，1为是，0为否，默认值：1
+    -o, --output <string>      将查询结果保存到指定文件。默认值：result
+```
+
 ## Notes
 
 - Windows 用户注目，如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1) 。
@@ -70,3 +85,5 @@ $ jav -x http://127.0.0.1:8087
 - [@qiusli](https://github.com/qiusli)
 - [@Eddie104](https://github.com/Eddie104)
 - [@leongfeng](https://github.com/leongfeng)
+
+
