@@ -15,7 +15,7 @@ var url = "mongodb://localhost:27017/";
 
 // global var
 
-const baseUrl = 'https://www.3ubdxu00l1lkcjoz5n.com/actresses';
+const baseUrl = 'https://www.3ubdxu00l1lkcjoz5n.com/uncensored/actresses';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
@@ -287,12 +287,19 @@ function getItemPage(link, index, callback) {
                         maskCode: maskCode,
                     };
                     MongoClient.connect(url, function(err, db) {
-                        if (err) throw err;
+                        if (err) {
+                            console.error(('[' + name + ']').red.bold.inverse + '[mongodb连接失败]' + err.message.red);
+                            return done(null);
+                        };
                         var dbo = db.db("javbus");
                         dbo.collection("actress").insertOne(jsonInfo, function(err, res) {
-                            if (err) throw err;
-                            console.log(('[' + name + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
-                            db.close();
+                            if (err) {
+                                console.error(('[' + name + ']').red.bold.inverse + '[该演员在mongodb中已存在]' + err.message.red);
+                                db.close();
+                            } else {
+                                console.log(('[' + name + ']').green.bold.inverse + '[Mongodb保存成功]'.yellow.inverse);
+                                db.close();
+                            }
                         });
                     });
                     fs.writeFile(jsonPath, JSON.stringify(jsonInfo, '', 4), function(err) {
