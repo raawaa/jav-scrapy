@@ -15,7 +15,7 @@ const _ = require('lodash');
 // global var
 
 const VERSION = require('./package.json').version;
-const baseUrl = 'https://www.3ubdxu00l1lkcjoz5n.com/'
+const baseUrl = 'https://www.buscdn.life/'
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
