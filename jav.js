@@ -32,6 +32,7 @@ program
     .option('-x, --proxy <url>', '使用代理服务器, 例：-x http://127.0.0.1:8087')
     .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
+    .option('-N, --nosnap', '不抓取影片截图')
     .parse(process.argv);
 
 
@@ -261,14 +262,16 @@ function getItemPage(link, index, callback) {
 
                 getItemMagnet(link, meta, callback);
 
-                // 所有截图link
-                var snapshots = [];
-                $('a.sample-box').each(function (i, e) {
-                    let $e = $(e);
+                if (!program.nosnap) {
+                    // 所有截图link
+                    var snapshots = [];
+                    $('a.sample-box').each(function (i, e) {
+                        let $e = $(e);
 
-                    snapshots.push($e.attr('href'));
-                });
-                getSnapshots(link, snapshots);
+                        snapshots.push($e.attr('href'));
+                    });
+                    getSnapshots(link, snapshots);
+                }
             });
     }
 }
