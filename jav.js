@@ -15,7 +15,7 @@ const _ = require('lodash');
 // global var
 
 const VERSION = require('./package.json').version;
-const baseUrl = 'https://www.buscdn.life/'
+const baseUrl = 'https://www.buscdn.life/';
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
@@ -32,7 +32,7 @@ program
     .option('-x, --proxy <url>', '使用代理服务器, 例：-x http://127.0.0.1:8087')
     .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
-    .option('-N, --nosnap', '不抓取影片截图')
+    .option('-N, --nopic', '不抓取图片')
     .parse(process.argv);
 
 
@@ -262,7 +262,7 @@ function getItemPage(link, index, callback) {
 
                 getItemMagnet(link, meta, callback);
 
-                if (!program.nosnap) {
+                if (!program.nopic) {
                     // 所有截图link
                     var snapshots = [];
                     $('a.sample-box').each(function (i, e) {
@@ -390,13 +390,16 @@ function getItemMagnet(link, meta, done) {
                                     throw err;
                                 }
                                 console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse + '影片信息已抓取');
-                                getItemCover(link, meta, done);
+                                if (!program.nopic) {
+                                    getItemCover(link, meta, done);
+                                } else { return done(); }
                             });
 
                     });
         } else {
             console.log(('[' + fanhao + ']').green.bold.inverse + '[信息]'.yellow.inverse, 'file already exists, skip!'.yellow);
-            getItemCover(link, meta, done);
+            if (!program.nopic) getItemCover(link, meta, done);
+            else return done();
         }
     });
 }
