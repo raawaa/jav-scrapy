@@ -35,6 +35,7 @@ $ sudo npm link    # 使jav-scrapy全局可执行
     -x, --proxy <url>         设置代理，例：-x http://127.0.0.1:8087
     -n, --nomag               是否抓取尚无磁链的影片
     -a, --allmag              是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)
+    -N, --nopic               抓取时不抓取图片
 ```
 
 ### Examples
