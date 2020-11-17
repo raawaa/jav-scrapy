@@ -1,7 +1,7 @@
-# jav-scrapy
+# Jav-scrapy-GUI
 
-一个可以爬取 javbus 网站的小爬虫
-- 修改版，增加-w -i -u参数以便进阶抓取；调整log使输出更直观；将封面重命名为番号标题-演员[日期].jpg，并和信息.json，磁链.txt保存到一个主文件夹下，截图在各子文件夹方便之后手动批量打包。
+一个可以爬取 javbus 网站的小爬虫 修改GUI版
+- 在原作基础上，增加-w -i -u参数以便进阶抓取；调整log使输出更直观；将封面重命名为番号标题-演员[日期].jpg，并和信息.json，磁链.txt保存到一个主文件夹下，截图在各子文件夹方便之后手动批量打包。
 - !GUI现有更多功能，如方便的测试和翻译按钮、支持如html或JbusDriver等app生成的含多番号的类文本中所有影片批量抓取、安装帮助等。为避免传播需自行编译.e，见谅。
 
 ![image](https://github.com/McNEET/jav-scrapy/blob/patch-1/Snap.png)
