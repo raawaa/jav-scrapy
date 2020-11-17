@@ -10,19 +10,18 @@
 ## Easy installation & Usage
 
 (本说明适用于Windows系统)
-- 从node官网下载相应的node安装http://nodejs.cn/download/，windows系统直接运行msi安装；
+- 从node官网下载相应的node安装，windows系统直接运行msi安装；(http://nodejs.cn/download/)
 - 下载我release中最新的zip包，解压；
-- 用易语音静态编译其中的.e文件为.exe，放在相同位置(易语言下载例如https://www.52pojie.cn/thread-1095238-1-1.html)；
+- 用易语音静态编译其中的.e文件为.exe，放在相同位置；(易语言下载例如https://www.52pojie.cn/thread-1095238-1-1.html)
 - 运行该exe，此时还不能抓取，请先仔细查看上面写的安装指南，即点击bat安装，之后会自动退出该程序；(bat内容：安装jav.js npm包依赖并在%ProgramFiles(x86)%下建立Jav-scrapy程序夹将除jav.js外所有文件拷入，建立桌面快捷方式)
 - 运行桌面图标，检查状态即可。
-注：
+- 注：
 - Windows系统jav.js npm包安装目录为%AppData%\npm\node\modules\jav-scarpy，如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错(exe也不要放在jav.js同目录下抓取)，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1) ；
 - 已知问题1：代理失败，-x输入xxnet的代理不行unable to verify the first certificate，xx-net的话用全局会报证书问题；
 - 已知问题2：截图经常下不好，很多空文件.part，不明原因；
 - 已知问题3：从起始页抓取有问题，如不限制少于还剩的页数x30（每页有30项）则有毛病会不停循环；
-- 已知问题4：极少数页面报错中断jav.js:210 let gid = gid_r[1]; TypeError: Cannot read property '1' of null，可能是由于网站页面结构更改的原因，导致图中 script 为空(https://github.com/raawaa/jav-scrapy/issues/17)，可考虑从该页的下一页开始抓（起始页抓取处输入下页的地址），注意要限制数量，如不限制少于还剩的页数x30（每页有30项）则有毛病会不停循环；
-其他：
-- 推荐试试批量功能，批量文本功能可处理如html或JbusDriver等app生成的含多番号的类文本中所有影片批量抓取，批量目录则可将含番号的文件名中所有番号抽出抓取，非常适合更新完善信息。此功能依赖番号正则表达式查找，现用[0-Z]{2,6}\D-[0-9]{2,5}，去掉了类似2018-10这种，但少了类似abp1-001这种，另无码影片番号规律不太一样，暂支持不好。
+- 已知问题4：极少数页面报错中断jav.js:210 let gid = gid_r[1]; TypeError: Cannot read property '1' of null，可能是由于网站页面结构更改的原因导致，暂时的解决办法可考虑从该页的下一页开始抓(起始页抓取处输入下页的地址)，注意要限制数量，如不限制少于还剩的页数x30（每页有30项）则有毛病会不停循环；
+- 关于批量功能：批量文本功能可处理如html或JbusDriver等app生成的含多番号的类文本中所有影片批量抓取，批量目录则可将含番号的文件名中所有番号抽出抓取，非常适合更新完善信息。此功能依赖番号正则表达式查找，现用[0-Z]{2,6}\D-[0-9]{2,5}，去掉了类似2018-10这种，但少了类似abp1-001这种，另无码影片番号规律不太一样，暂支持不良。
 
 
 ## Prequisites
