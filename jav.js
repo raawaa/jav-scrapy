@@ -15,7 +15,7 @@ const _ = require('lodash');
 // global var
 
 const VERSION = require('./package.json').version;
-const baseUrl = 'https://www.buscdn.life/';
+const baseUrl = 'https://www.busjav.fun/'; // 另有备用地址： https://www.busfan.fun/, https://www.seedmm.fun/
 const searchUrl = '/search';
 var pageIndex = 1;
 var currentPageHtml = null;
