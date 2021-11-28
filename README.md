@@ -63,6 +63,13 @@ $ jav -x http://127.0.0.1:8087
 - Windows 用户注目，如在 jav-scrapy 目录下直接运行 `jav` 命令可能会报错，可参考 [issue #1](https://github.com/raawaa/jav-scrapy/issues/1) 。
 - 若影片存在高清资源，则优先抓取高清磁链。
 
+### ❗如何更换防屏蔽地址
+
+在项目文件夹下的 `jav.js` 文件中更换如下行的地址（大致在第18行），并保存即可：
+```javascript
+const baseUrl = 'https://www.buscdn.life/';
+```
+
 ## Contributors
 
 - [@qiusli](https://github.com/qiusli)
