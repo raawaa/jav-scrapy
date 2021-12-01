@@ -200,8 +200,12 @@ function parse(script) {
     let gid = gid_r[1];
     let uc_r = /uc\s+=\s(\d+)/g.exec(script);
     let uc = uc_r[1];
-    let img_r = /img\s+=\s+'(\/pics\/cover\/\S+\.jpg)'/g.exec(script);
-    let img = baseUrl + img_r[1];
+    let img = '';
+    if(/img\s+=\s+'http/i.test(script)){ //如果是完整外站url地址
+        img = /img\s+=\s+'([^']+)'/g.exec(script)[1];
+    }else{                              // 如果是本站相对地址
+        img = new URL(/img\s+=\s+'([^']+)'/g.exec(script)[1], baseUrl).toString();
+    }
     return {
         gid: gid,
         img: img,
@@ -279,7 +283,12 @@ function getItemPage(link, index, callback) {
 function getSnapshots(link, snapshots) {
     // https://pics.dmm.co.jp/digital/video/118abp00454/118abp00454jp-1.jpg
     for (var i = 0; i < snapshots.length; i++) {
-        getSnapshot(link, snapshots[i]);
+        if(/^https?:\/\//i.test(snapshots[i])){
+            getSnapshot(link, snapshots[i]);
+        }else{
+            getSnapshot(link, new URL(snapshots[i], baseUrl).toString());
+
+        }
     }
     // console.log('截图下载完毕:' + link);
 }
