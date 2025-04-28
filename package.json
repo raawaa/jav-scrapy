@@ -36,6 +36,7 @@
   "scripts": {
     "test": "mocha test/*.test.js",
     "prepublish": "npm run build",
+    "prepare": "npm run build",
     "build": "tsc"
   }
 }
