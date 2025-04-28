@@ -34,6 +34,7 @@ const PROGRAM_CONFIG = configManager.getConfig();
 const RequestHandler = require('./src/core/requestHandler');
 const FileHandler = require('./src/core/fileHandler');
 const Parser = require('./src/core/parser');
+const { Logform } = require('winston');
 
 class JavScraper {
     constructor(config) {
@@ -96,16 +97,16 @@ class JavScraper {
         const generatePageSuffix = (index) => index === 1 ? '' : `/page/${index}`;
         // 根据不同条件生成 URL
         let url;
-        if (program.search) {
+        if (this.config.search) {
             // 确保BASE_URL末尾没有斜杠
-            const cleanUrl = PROGRAM_CONFIG.BASE_URL.endsWith('/') ? PROGRAM_CONFIG.BASE_URL.slice(0, -1) : PROGRAM_CONFIG.BASE_URL;
-            url = `${cleanUrl}${searchUrl}/${encodeURIComponent(program.search)}${generatePageSuffix(pageIndex)}`;
-        } else if (program.base) {
+            const cleanUrl = this.config.BASE_URL.endsWith('/') ? this.config.BASE_URL.slice(0, -1) : this.config.BASE_URL;
+            url = `${cleanUrl}${searchUrl}/${encodeURIComponent(this.config.search)}${generatePageSuffix(pageIndex)}`;
+        } else if (this.config.base) {
             // Ensure base URL ends with slash if it doesn't already
-            const base = program.base.endsWith('/') ? program.base.slice(0, -1) : program.base;
+            const base = this.config.base.endsWith('/') ? this.config.base.slice(0, -1) : this.config.base;
             url = `${base}${generatePageSuffix(pageIndex)}`;
         } else {
-            const cleanUrl = PROGRAM_CONFIG.BASE_URL.endsWith('/') ? PROGRAM_CONFIG.BASE_URL.slice(0, -1) : PROGRAM_CONFIG.BASE_URL;
+            const cleanUrl = this.config.BASE_URL.endsWith('/') ? this.config.BASE_URL.slice(0, -1) : this.config.BASE_URL;
             url = `${cleanUrl}${generatePageSuffix(pageIndex)}`;
         }
         return url;
@@ -115,5 +116,7 @@ class JavScraper {
 
 (async () => {
     const scraper = new JavScraper(PROGRAM_CONFIG);
+    logger.info('开始抓取 Jav 影片...');
+    logger.info(`使用配置: ${JSON.stringify(PROGRAM_CONFIG, null, 2)}`);
     await scraper.mainExecution();
 })();

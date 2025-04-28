@@ -22,15 +22,15 @@ class ConfigManager {
     }
 
     updateFromProgram(program) {
-        this.config.parallel = parseInt(program.parallel) || 2;
-        this.config.timeout = parseInt(program.timeout) || 30000;
-        this.config.proxy = process.env.http_proxy || program.proxy;
+        this.config.parallel = parseInt(program.opts().parallel) || 2;
+        this.config.timeout = parseInt(program.opts().timeout) || 30000;
+        this.config.proxy = process.env.http_proxy || program.opts().proxy;
         this.config.output = (program.opts().output || path.join(userHome, 'magnets')).replace(/['"]/g, '');
-        this.config.search = program.search;
-        this.config.base = program.base;
-        this.config.nomag = program.nomag;
-        this.config.allmag = program.allmag;
-        this.config.nopic = program.nopic;
+        this.config.search = program.opts().search;
+        this.config.base = program.opts().base;
+        this.config.nomag = program.opts().nomag;
+        this.config.allmag = program.opts().allmag;
+        this.config.nopic = program.opts().nopic;
     }
 
     getConfig() {
