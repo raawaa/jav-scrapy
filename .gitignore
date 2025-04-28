@@ -1,7 +1,7 @@
 /node_modules
 .tern-project
 .eslintrc
-
+dist/**/*
 test
 /.vs
 error.log
