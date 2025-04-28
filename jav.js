@@ -2,14 +2,10 @@
 
 'use strict';
 const logger = require('./src/logger');
-const axios = require('axios');
 var async = require('async');
-const chalk = require('chalk');
 const { program } = require('commander');
 var userHome = require('user-home');
 var path = require('path');
-var fs = require('fs');
-const _ = require('lodash');
 const configManager = require('./src/core/config.js');
 const { version } = require('./package.json');
 const searchUrl = '/search';
@@ -65,7 +61,6 @@ class JavScraper {
                 logger.info(`开始抓取第 ${task.pageIndex} 页`);
                 const response = await this.requestHandler.getPage(this.getCurrentPageUrl(task.pageIndex));
                 const links = Parser.parsePageLinks(response.body);
-
                 logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
                 links.forEach(link => {
                     detailPageQueue.push({ link });
@@ -113,9 +108,6 @@ class JavScraper {
             const cleanUrl = PROGRAM_CONFIG.BASE_URL.endsWith('/') ? PROGRAM_CONFIG.BASE_URL.slice(0, -1) : PROGRAM_CONFIG.BASE_URL;
             url = `${cleanUrl}${generatePageSuffix(pageIndex)}`;
         }
-
-
-
         return url;
     }
 }
