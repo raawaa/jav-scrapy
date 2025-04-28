@@ -20,11 +20,8 @@
     "async": "^3.2.6",
     "chai": "^4.3.10",
     "cheerio": "^1.0.0",
-    "esm": "3.2.25",
     "mocha": "^10.2.0",
-    "nock": "^13.5.3",
-    "sinon": "^17.0.1",
-    "temp": "^0.9.4"
+    "nock": "^13.5.3"
   },
   "scripts": {
     "test": "mocha test/*.test.js"

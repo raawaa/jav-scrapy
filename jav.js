@@ -9,13 +9,11 @@ const { program } = require('commander');
 var userHome = require('user-home');
 var path = require('path');
 var fs = require('fs');
-var mkdirp = require('mkdirp');
 const _ = require('lodash');
-const { BASE_URL, DEFAULT_TIMEOUT } = require('./src/core/config.js');
+const configManager = require('./src/core/config.js');
 const { version } = require('./package.json');
 const searchUrl = '/search';
-var pageIndex = 1;
-var currentPageHtml = null;
+
 
 program
     .version(version)
@@ -33,25 +31,20 @@ program
     .parse(process.argv);
 
 
-const PROGRAM_CONFIG = {
-    parallel: parseInt(program.parallel) || 2,
-    timeout: parseInt(program.timeout) || 30000,
-    proxy: process.env.http_proxy || program.proxy,
-    output: (program.opts().output || path.join(userHome, 'magnets')).replace(/['"]/g, '')
-};
+configManager.updateFromProgram(program);
+const PROGRAM_CONFIG = configManager.getConfig();
 
 
 const RequestHandler = require('./src/core/requestHandler');
 const FileHandler = require('./src/core/fileHandler');
 const Parser = require('./src/core/parser');
-const { Logform, Logger } = require('winston');
 
 class JavScraper {
     constructor(config) {
         this.config = config;
         this.requestHandler = new RequestHandler(config);
         this.fileHandler = new FileHandler({ outputDir: config.output });
-        this.parser=new Parser(config);
+        this.parser = new Parser(config);
         this.pageIndex = 1;
     }
 
@@ -61,13 +54,7 @@ class JavScraper {
                 const response = await this.requestHandler.getPage(task.link);
                 const metadata = Parser.parseMetadata(response.body);
                 const magnet = await this.parser.parseMagnet(metadata);
-                
                 logger.info(`成功抓取 ${metadata.title} 的磁链: ${magnet}`);
-                await this.fileHandler.saveResult({
-                    title: metadata.title,
-                    magnet,
-                    date: new Date().toISOString()
-                });
             } catch (err) {
                 logger.error(`处理详情页 ${task.link} 时出错: ${err.message}`);
             }
@@ -78,12 +65,11 @@ class JavScraper {
                 logger.info(`开始抓取第 ${task.pageIndex} 页`);
                 const response = await this.requestHandler.getPage(this.getCurrentPageUrl(task.pageIndex));
                 const links = Parser.parsePageLinks(response.body);
-                
+
                 logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
                 links.forEach(link => {
                     detailPageQueue.push({ link });
                 });
-                
                 this.pageIndex++;
             } catch (err) {
                 logger.error(`抓取第 ${task.pageIndex} 页时出错: ${err.message}`);
@@ -102,7 +88,7 @@ class JavScraper {
         // 启动抓取
         while (true) {
             await indexPageQueue.push({ pageIndex: this.pageIndex });
-            
+
             // 添加延迟避免过快请求
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -117,19 +103,18 @@ class JavScraper {
         let url;
         if (program.search) {
             // 确保BASE_URL末尾没有斜杠
-            const cleanUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+            const cleanUrl = PROGRAM_CONFIG.BASE_URL.endsWith('/') ? PROGRAM_CONFIG.BASE_URL.slice(0, -1) : PROGRAM_CONFIG.BASE_URL;
             url = `${cleanUrl}${searchUrl}/${encodeURIComponent(program.search)}${generatePageSuffix(pageIndex)}`;
         } else if (program.base) {
             // Ensure base URL ends with slash if it doesn't already
             const base = program.base.endsWith('/') ? program.base.slice(0, -1) : program.base;
             url = `${base}${generatePageSuffix(pageIndex)}`;
         } else {
-            const cleanUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+            const cleanUrl = PROGRAM_CONFIG.BASE_URL.endsWith('/') ? PROGRAM_CONFIG.BASE_URL.slice(0, -1) : PROGRAM_CONFIG.BASE_URL;
             url = `${cleanUrl}${generatePageSuffix(pageIndex)}`;
         }
 
-        // 添加日志输出，方便调试
-        // console.log('[DEBUG] 生成的 URL:', url);
+
 
         return url;
     }
