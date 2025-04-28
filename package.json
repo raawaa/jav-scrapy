@@ -1,32 +1,32 @@
 {
-  "name": "jav-scarpy",
+  "name": "jav-scrapy",
   "version": "0.8.0",
+  "type": "commonjs",
   "description": "",
   "main": "jav.js",
   "preferGlobal": true,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/raawaa/jav-scrapy.git"
+  "dependencies": {
+    "axios": "1.9.0",
+    "axios-retry": "^4.5.0",
+    "chalk": "5.3.0",
+    "commander": "12.1.0",
+    "http-proxy-agent": "7.0.2",
+    "lodash": "^4.17.21",
+    "mkdirp": "^3.0.1",
+    "user-home": "^2.0.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "async": "^3.2.6",
+    "chai": "^4.3.10",
+    "cheerio": "^1.0.0",
+    "esm": "3.2.25",
+    "mocha": "^10.2.0",
+    "nock": "^13.5.3",
+    "sinon": "^17.0.1",
+    "temp": "^0.9.4"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "raawaa <wenjie_yu@yeah.net>",
-  "bin": {
-    "jav": "jav.js"
-  },
-  "contributors": [
-    "Qiushi Li <qius.li3@gmail.com>"
-  ],
-  "license": "ISC",
-  "dependencies": {
-    "async": "^1.5.0",
-    "cheerio": "^0.22.0",
-    "colors": "^1.1.2",
-    "commander": "^2.9.0",
-    "lodash": "^4.17.21",
-    "mkdirp": "^0.5.1",
-    "request": "^2.88.0",
-    "user-home": "^2.0.0"
+    "test": "mocha test/*.test.js"
   }
 }

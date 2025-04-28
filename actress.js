@@ -2,9 +2,9 @@
 
 'use strict';
 var cheerio = require('cheerio');
-var request = require('request');
+const axios = require('axios');
 var async = require('async');
-require('colors');
+var chalk = require('chalk');
 var program = require('commander');
 var userHome = require('user-home');
 var path = require('path');
@@ -35,7 +35,7 @@ var parallel = parseInt(program.parallel);
 var timeout = parseInt(program.timeout) || 30000;
 var proxy = process.env.http_proxy || program.proxy;
 // console.log('proxy: ', proxy);
-request = request.defaults({
+const axiosInstance = axios.create({
 	timeout: timeout,
 	headers: {
 		'Referer': 'http://www.javbus.in',
@@ -43,7 +43,7 @@ request = request.defaults({
 	}
 });
 if (proxy) {
-	request = request.defaults({
+	const axiosInstance = axios.create({
 		'proxy': proxy
 	});
 }
