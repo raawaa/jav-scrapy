@@ -26,7 +26,16 @@
     "nock": "^13.5.3",
     "typescript": "^5.8.3"
   },
+  "bin": {
+    "jav": "./dist/jav.js"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
-    "test": "mocha test/*.test.js"
+    "test": "mocha test/*.test.js",
+    "prepublish": "npm run build",
+    "build": "tsc"
   }
 }

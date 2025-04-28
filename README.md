@@ -11,10 +11,11 @@
 ## Installation
 
 ```bash
-$ git clone https://github.com/raawaa/jav-scrapy.git
-$ cd jav-scrapy
-$ npm install # 安装npm包依赖
-$ sudo npm link    # 使jav-scrapy全局可执行
+# 通过npm全局安装
+$ npm install -g .
+
+# 验证安装
+$ jav --version
 ```
 
 ## Usage
