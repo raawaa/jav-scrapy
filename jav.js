@@ -56,45 +56,55 @@ class JavScraper {
     }
 
     async mainExecution() {
-        const detailPageQueue = async.queue(async (task, callback) => {
-            // todo: 解析详情页
-            const response = await this.requestHandler.getPage(task.link);
-            const metadata = Parser.parseMetadata(response.body);
-            const magnet =await this.parser.parseMagnet(metadata);
-            logger.info(`正在抓取 ${metadata.title} 的磁链: ${magnet}`); 
-            // logger.info(`正在抓取 ${task.link}`);
-            // logger.info(`正在抓取 ${magnet} 的磁链`);
-            // callback();
-        }, this.config.parallel);
-
-
-        const indexPageQueue = async.queue(async (task, callback) => {
-            logger.info(`正在抓取第 ${task.pageIndex} 页`);
-            const response = await this.requestHandler.getPage(this.getCurrentPageUrl(task.pageIndex));
-            this.pageIndex++;
-            const links = Parser.parsePageLinks(response.body);
-            logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
-
-            links.forEach(element => {
-                detailPageQueue.push({ link: element }, (err) => {
-                    if (err) logger.error(`处理 ${element} 时出错: ${err.stack}`);
+        const detailPageQueue = async.queue(async (task) => {
+            try {
+                const response = await this.requestHandler.getPage(task.link);
+                const metadata = Parser.parseMetadata(response.body);
+                const magnet = await this.parser.parseMagnet(metadata);
+                
+                logger.info(`成功抓取 ${metadata.title} 的磁链: ${magnet}`);
+                await this.fileHandler.saveResult({
+                    title: metadata.title,
+                    magnet,
+                    date: new Date().toISOString()
                 });
-            });
-            // callback();
+            } catch (err) {
+                logger.error(`处理详情页 ${task.link} 时出错: ${err.message}`);
+            }
         }, this.config.parallel);
 
-        indexPageQueue.error((err, task) => {
-            logger.error(`抓取第 ${task.pageIndex} 页时出错: ${err.stack}`);
-        });
-        indexPageQueue.drain(() => {
-            // logger.info('所有页面抓取完成');
-        });
-        detailPageQueue.error((err, task) => {
-            logger.error(`抓取 ${task.link} 时出错: ${err.stack}`); 
-        })
+        const indexPageQueue = async.queue(async (task) => {
+            try {
+                logger.info(`开始抓取第 ${task.pageIndex} 页`);
+                const response = await this.requestHandler.getPage(this.getCurrentPageUrl(task.pageIndex));
+                const links = Parser.parsePageLinks(response.body);
+                
+                logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
+                links.forEach(link => {
+                    detailPageQueue.push({ link });
+                });
+                
+                this.pageIndex++;
+            } catch (err) {
+                logger.error(`抓取第 ${task.pageIndex} 页时出错: ${err.message}`);
+            }
+        }, this.config.parallel);
 
+        // 统一错误处理
+        const handleQueueError = (queueName) => (err, task) => {
+            logger.error(`[${queueName}] 处理任务时出错: ${err.message}`);
+            logger.debug(`错误详情: ${err.stack}`);
+        };
+
+        indexPageQueue.error(handleQueueError('indexPageQueue'));
+        detailPageQueue.error(handleQueueError('detailPageQueue'));
+
+        // 启动抓取
         while (true) {
             await indexPageQueue.push({ pageIndex: this.pageIndex });
+            
+            // 添加延迟避免过快请求
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
     }
