@@ -1,12 +1,20 @@
-import logger from '../../src/logger';
-import RequestHandler from './requestHandler';
+/**
+ * @file parser.ts
+ * @description 解析器模块，用于解析页面内容和提取所需信息。
+ * @module parser
+ * @requires cheerio - 用于解析HTML的库。
+ * @exports parsePageLinks - 解析页面中的电影链接。
+ * @exports parseMetadata - 解析页面中的元数据。
+ * @exports parseCategories - 解析页面中的分类信息。
+ * @exports parseActress - 解析页面中的演员信息。
+ * @exports parseFilmData - 解析页面中的影片数据。
+ * @author raawaa
+ */
+
 import { Config, Metadata, FilmData } from '../types/interfaces';
-
-
 
 class Parser {
   private config: Config;
-
 
   public constructor(config: Config) {
     this.config = config;
@@ -48,8 +56,6 @@ class Parser {
   }
 
 
-
-
   static parseCategories(html: string) {
     const $ = require('cheerio').load(html);
     return $('span.genre label a').map((i: number, el: cheerio.Element) => $(el).text()).get();
@@ -70,8 +76,6 @@ class Parser {
     }
     return filmData;
   }
-
-
 
 }
 

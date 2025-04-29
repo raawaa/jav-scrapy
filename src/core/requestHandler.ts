@@ -1,8 +1,13 @@
-// 由于后面有 ES 模块导入的 axios，这里删除重复的 CommonJS 导入
-// const axios = require('axios'); 注释掉或删除此代码以解决冲突
-// 由于后续有 ES 模块导入的 axiosRetry，移除重复的 CommonJS 导入，此代码删除后不会影响后续使用
+// 此模块 `requestHandler.ts` 主要用于处理网络请求，为爬虫程序提供页面内容获取、XMLHttpRequest 请求发送等功能。
+// 它借助 `axios` 库进行 HTTP 请求，并使用 `axios-retry` 库实现请求重试机制。
+// 具体功能包括：
+// 1. 初始化请求配置，包含超时时间、代理、请求头信息等。
+// 2. 实现请求重试逻辑，在网络错误或特定状态码（如 500 及以上）时进行重试。
+// 3. 提供 `getPage` 方法用于获取指定 URL 的页面内容。
+// 4. 提供 `getXMLHttpRequest` 方法用于发送 XMLHttpRequest 请求。
+// 5. 提供 `fetchMagnet` 方法用于从指定页面提取磁力链接，并返回最大文件大小对应的磁力链接。
 
-// 由于原代码中 RequestHandler 类重复，这里删除多余的类声明，保留后面完整的类定义，此行为占位行
+
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { Config } from '../types/interfaces';
@@ -67,8 +72,6 @@ class RequestHandler {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0',
         Cookie: config.headers.Cookie || ''
       }
-
-
     };
 
     this.retries = 3; // 重试次数
@@ -83,19 +86,10 @@ class RequestHandler {
         // 检查错误是否是网络错误或特定的状态码
         return (error.response && error.response.status >= 500) || error.code === 'ECONNABORTED';
       }
-
-    })
-
-
-
+    });
   }
 
 
-
-  // 异步方法，用于获取指定 URL 的页面内容。
-  // 参数:
-  // url - 要请求的页面的 URL。
-  // options - 可选参数，用于覆盖默认的请求配置。
   async getPage(url: string, options: Record<string, any> = {}) {
     const mergedOptions = {
       ...this.config,
@@ -116,8 +110,6 @@ class RequestHandler {
     } catch (err) {
       throw err;
     }
-
-
   }
 
 
@@ -139,15 +131,11 @@ class RequestHandler {
           ...mergedOptions.headers,
           'X-Requested-With': 'XMLHttpRequest'
         }
-
-
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
       throw err;
     }
-
-
   }
 
   public async fetchMagnet(metadata: Metadata) {
@@ -172,13 +160,6 @@ class RequestHandler {
 
     return maxSizePair ? maxSizePair.magnetLink : null;
   }
-
-
 }
-
-
-
-
-
 
 export default RequestHandler;

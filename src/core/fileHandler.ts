@@ -1,5 +1,16 @@
+/**
+ * @file fileHandler.ts
+ * @description 文件处理模块，用于处理文件的读取、写入和操作。
+ * @module fileHandler
+ * @requires fs - 用于文件系统操作的库。
+ * @requires path - 用于处理文件路径的库。
+ * @requires types/interfaces - 包含 FilmData 接口的路径。
+ * @requires logger - 日志记录器模块。
+ * @exports FileHandler - 文件处理类的导出。
+ * @author raawaa
+ */
+
 import fs from 'fs';
-import mkdirp from 'mkdirp';
 import path from 'path';
 import { FilmData } from '../types/interfaces'; // 导入 FilmData 类型
 import logger from '../logger';
@@ -63,9 +74,6 @@ class FileHandler {
       throw error;
     }
   }
-
 }
-
-
 
 export default FileHandler;

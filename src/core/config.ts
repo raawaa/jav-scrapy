@@ -1,3 +1,17 @@
+/**
+ * @file config.ts
+ * @description 配置管理模块，用于管理和更新程序的配置信息。
+ * @module config
+ * @requires commander - 用于解析命令行参数的库。
+ * @requires user-home - 用于获取用户主目录路径的库。
+ * @requires types/interfaces - 包含 Config 接口的路径。
+ * @requires logger - 日志记录器模块。
+ * @exports ConfigManager - 配置管理类的导出。
+ * @exports Config - Config 接口的导出。
+ * @author raawaa
+ */
+
+
 import path from 'path';
 import userHome from 'user-home';
 import { Command } from 'commander'; // 引入 Commander 库中的 Command 类型
