@@ -6,6 +6,10 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { Config } from '../types/interfaces';
+import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
+
+
+
 interface RequestConfig {
   timeout?: number;
   proxy?: string;
@@ -31,6 +35,8 @@ interface RequestConfig {
     Cookie: string;
   };
 }
+
+
 
 class RequestHandler {
   private config: RequestConfig;
@@ -61,6 +67,8 @@ class RequestHandler {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0',
         Cookie: config.headers.Cookie || ''
       }
+
+
     };
 
     this.retries = 3; // 重试次数
@@ -75,11 +83,14 @@ class RequestHandler {
         // 检查错误是否是网络错误或特定的状态码
         return (error.response && error.response.status >= 500) || error.code === 'ECONNABORTED';
       }
+
     })
 
 
 
   }
+
+
 
   // 异步方法，用于获取指定 URL 的页面内容。
   // 参数:
@@ -105,7 +116,10 @@ class RequestHandler {
     } catch (err) {
       throw err;
     }
+
+
   }
+
 
   async getXMLHttpRequest(url: string, options: Record<string, any> = {}) {
     const mergedOptions = {
@@ -125,13 +139,44 @@ class RequestHandler {
           ...mergedOptions.headers,
           'X-Requested-With': 'XMLHttpRequest'
         }
+
+
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
       throw err;
     }
+
+
   }
+
+  public async fetchMagnet(metadata: Metadata) {
+    const url = `https://www.fanbus.ink/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=880`;
+    const response = await this.getXMLHttpRequest(url);
+
+    const magnetLinks = [...new Set(response.body.match(/magnet:\?xt=urn:btih:[A-F0-9]+&dn=[^&"']+/gi))];
+    const sizes = response.body.match(/\d+\.\d+GB|\d+MB/g);
+
+    if (!magnetLinks || !sizes) return null;
+
+    const parsedPairs = magnetLinks.map((magnetLink, index) => {
+      const sizeStr = sizes[index];
+      const sizeValue = parseFloat(sizeStr.replace(/GB|MB/, ''));
+      const sizeInMB = sizeStr.includes('GB') ? sizeValue * 1024 : sizeValue;
+      return { magnetLink, size: sizeInMB };
+    });
+
+    const maxSizePair = parsedPairs.reduce((prev, current) => {
+      return (prev.size > current.size) ? prev : current;
+    }, parsedPairs[0]);
+
+    return maxSizePair ? maxSizePair.magnetLink : null;
+  }
+
+
 }
+
+
 
 
 

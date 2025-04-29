@@ -29,12 +29,15 @@ interface Metadata {
   gid: string;
   img: string;
   uc: string;
+  category: string[];
+  actress: string[];
 }
 
 interface FilmData {
   title: string;
   magnet: string;
-  metadata: Metadata;
+  category: string[];
+  actress: string[];
 }
 
-export { Config, IndexPageTask, DetailPageTask, Metadata, FilmData};
+export { Config, IndexPageTask, DetailPageTask, Metadata, FilmData };

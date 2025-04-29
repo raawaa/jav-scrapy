@@ -9,7 +9,7 @@ import ConfigManager from './core/config';
 import { version } from '../package.json';
 
 
-import { Config, IndexPageTask, DetailPageTask, Metadata } from './types/interfaces';
+import { Config, IndexPageTask, DetailPageTask, Metadata, FilmData } from './types/interfaces';
 const searchUrl = '/search';
 
 
@@ -55,11 +55,20 @@ class JavScraper {
     }
 
     async mainExecution(): Promise<void> {
+        const fileWriteQueue = async.queue(async (filmData: FilmData, callback) => {
+            await this.fileHandler.writeFilmDataToFile(filmData);
+            callback();
+        }, this.config.parallel);
+
+
         const detailPageQueue = async.queue(async (task: DetailPageTask, callback) => {
             logger.info(`开始处理详情页 ${task.link}`);
             const response = await this.requestHandler.getPage(task.link);
             const metadata = Parser.parseMetadata(response.body);
-            const magnet = await this.parser.fetchMagnet(metadata);
+            const magnet = await this.requestHandler.fetchMagnet(metadata);
+            // 假设 magnet 可能为 unknown 类型，将其显式转换为 string 类型以解决类型错误
+            const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
+            fileWriteQueue.push(filmData);
             logger.info(`成功抓取 ${metadata.title} 的磁链: ${magnet}`);
             // 增加任务之间的延时，假设延时时间为 1000 毫秒，可根据需要修改
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -95,6 +104,7 @@ class JavScraper {
 
         indexPageQueue.error(handleQueueError('indexPageQueue'));
         detailPageQueue.error(handleQueueError('detailPageQueue'));
+        fileWriteQueue.error(handleQueueError('fileWriteQueue'));
 
         // 启动抓取
         while (true) {
