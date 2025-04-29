@@ -25,7 +25,8 @@ class ConfigManager {
     constructor() {
         this.config = {
             DEFAULT_TIMEOUT: 30000,
-            BASE_URL: 'https://www.fanbus.ink/',
+            BASE_URL: 'https://www.fanbus.ink',
+            searchUrl:'/search',
             parallel: 2,
             headers: {
                 Referer: 'https://www.fanbus.ink/',

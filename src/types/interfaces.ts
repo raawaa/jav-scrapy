@@ -26,6 +26,7 @@ interface Config {
   allmag: boolean;
   nopic: boolean;
   timeout?: number;
+  searchUrl: string;
 }
 
 interface IndexPageTask {

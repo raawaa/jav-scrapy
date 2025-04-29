@@ -11,7 +11,6 @@ import QueueManager from './core/queueManager';
 
 
 import { Config } from './types/interfaces';
-const searchUrl = '/search';
 
 
 program
@@ -53,7 +52,7 @@ class JavScraper {
         const queueManager = new QueueManager(this.config);
         const fileWriteQueue = queueManager.getFileWriteQueue();
         const detailPageQueue = queueManager.getDetailPageQueue();
-        const indexPageQueue = queueManager.getIndexPageQueue(this.getCurrentPageUrl.bind(this));
+        const indexPageQueue = queueManager.getIndexPageQueue();
 
 
         // 统一错误处理
@@ -91,7 +90,7 @@ class JavScraper {
         const baseUrl = this.cleanUrl(this.config.base || this.config.BASE_URL);
         if (this.config.search) {
             const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${searchUrl}/${encodeURIComponent(this.config.search)}${index}`;
+            return `${baseUrl}${this.config.searchUrl}/${encodeURIComponent(this.config.search)}${index}`;
         } else {
             const index = this.pageIndex === 1 ? '' : `/page/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
             return `${baseUrl}${index}`;
