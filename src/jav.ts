@@ -2,8 +2,6 @@
 
 import logger from './logger';
 import { program } from 'commander';
-import userHome from 'user-home';
-import path from 'path';
 import ConfigManager from './core/config';
 import { version } from '../package.json';
 import QueueManager from './core/queueManager';
