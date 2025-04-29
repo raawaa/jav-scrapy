@@ -7,6 +7,7 @@ import userHome from 'user-home';
 import path from 'path';
 import ConfigManager from './core/config';
 import { version } from '../package.json';
+import QueueManager from './core/queueManager';
 
 
 import { Config, IndexPageTask, DetailPageTask, Metadata, FilmData } from './types/interfaces';
@@ -55,52 +56,14 @@ class JavScraper {
     }
 
     async mainExecution(): Promise<void> {
-        const fileWriteQueue = async.queue(async (filmData: FilmData, callback) => {
-            await this.fileHandler.writeFilmDataToFile(filmData);
-            callback();
-        }, this.config.parallel);
+        const queueManager = new QueueManager(this.config);
+        const fileWriteQueue = queueManager.createFileWriteQueue();
+        const detailPageQueue = queueManager.createDetailPageQueue();
+        const indexPageQueue = queueManager.createIndexPageQueue(this.getCurrentPageUrl.bind(this));
 
-
-        const detailPageQueue = async.queue(async (task: DetailPageTask, callback) => {
-            logger.info(`开始处理详情页 ${task.link}`);
-            const response = await this.requestHandler.getPage(task.link);
-            const metadata = Parser.parseMetadata(response.body);
-            const magnet = await this.requestHandler.fetchMagnet(metadata);
-            // 假设 magnet 可能为 unknown 类型，将其显式转换为 string 类型以解决类型错误
-            const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
-            fileWriteQueue.push(filmData);
-            logger.info(`成功抓取 ${metadata.title} 的磁链: ${magnet}`);
-            // 增加任务之间的延时，假设延时时间为 1000 毫秒，可根据需要修改
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            callback();
-        }, this.config.parallel);
-
-        detailPageQueue.drain(() => {
-            logger.info('所有详情页任务已完成');
-        });
-
-
-        const indexPageQueue = async.queue(async (task: IndexPageTask, callback) => {
-            logger.info(`开始抓取第 ${task.pageIndex} 页`);
-            const response = await this.requestHandler.getPage(this.getCurrentPageUrl(task.pageIndex));
-            const links: string[] = Parser.parsePageLinks(response.body);
-            logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
-
-            logger.info(`${links}`);
-            // 遍历 links 数组，将每个链接作为 DetailPageTask 推入 detailPageQueue 队列
-            for (const link of links) {
-                detailPageQueue.push({ link } as DetailPageTask);
-            }
-            await detailPageQueue.drain(); // 等待 detailPageQueue 队列中的任务全部处理完成，再继续下一轮的抓取
-            // 显示索引页队列和详情页队列的长度
-            callback();
-        }, this.config.parallel);
 
         // 统一错误处理
-        const handleQueueError = (queueName: string) => (err: Error, task: any) => {
-            logger.error(`[${queueName}] 处理任务时出错: ${err.message}`);
-            logger.debug(`错误详情: ${err.stack}`);
-        };
+        const handleQueueError = QueueManager.createErrorHandler;
 
         indexPageQueue.error(handleQueueError('indexPageQueue'));
         detailPageQueue.error(handleQueueError('detailPageQueue'));
@@ -111,7 +74,6 @@ class JavScraper {
             try {
                 await indexPageQueue.push({ pageIndex: this.pageIndex });
                 this.pageIndex++;
-
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 if (err instanceof Error) {

@@ -53,9 +53,14 @@ class FileHandler {
       let existingData: FilmData[] = [];
       if (fs.existsSync(filePath)) {
         const fileContent = fs.readFileSync(filePath, 'utf-8');
-        existingData = JSON.parse(fileContent);
-        if (!Array.isArray(existingData)) {
-          existingData = [existingData];
+        try {
+          existingData = JSON.parse(fileContent);
+          if (!Array.isArray(existingData)) {
+            existingData = [existingData];
+          }
+        } catch {
+          existingData = [];
+          logger.warn(`Invalid JSON format in ${filePath}, using empty array as default`);
         }
       }
       
