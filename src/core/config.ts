@@ -14,8 +14,8 @@ class ConfigManager {
             BASE_URL: 'https://www.fanbus.ink/',
             parallel: 2,
             headers: {
-                Referer: 'http://www.javbus2.pw',
-                Cookie: 'existmag=mag; PHPSESSID=4p7qb93bj920lemlmrpk9tu4m4'
+                Referer: 'https://www.fanbus.ink/',
+                Cookie: 'existmag=mag'
             },
             output: path.join(userHome, 'magnets'),
             search: null,
