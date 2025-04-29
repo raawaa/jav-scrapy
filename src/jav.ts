@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import logger from './logger';
-import async from 'async';
 import { program } from 'commander';
 import userHome from 'user-home';
 import path from 'path';
@@ -33,11 +32,6 @@ const configManager = new ConfigManager();
 configManager.updateFromProgram(program);
 const PROGRAM_CONFIG = configManager.getConfig();
 
-
-import RequestHandler from './core/requestHandler';
-import FileHandler from './core/fileHandler';
-import Parser from './core/parser';
-import { Logform } from 'winston';
 
 class JavScraper {
     private config: Config;
