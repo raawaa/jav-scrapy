@@ -74,22 +74,7 @@ class JavScraper {
         }
 
     }
-
-
-    private cleanUrl(url: string): string {
-        return url.endsWith('/') ? url.slice(0, -1) : url;
-    }
-
-    private getCurrentPageUrl(pageIndex: number): string {
-        const baseUrl = this.cleanUrl(this.config.base || this.config.BASE_URL);
-        if (this.config.search) {
-            const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${this.config.searchUrl}/${encodeURIComponent(this.config.search)}${index}`;
-        } else {
-            const index = this.pageIndex === 1 ? '' : `/page/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${index}`;
-        }
-    }
+   
 }
 
 
