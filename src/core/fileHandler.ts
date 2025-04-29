@@ -13,7 +13,7 @@
 import fs from 'fs';
 import path from 'path';
 import { FilmData } from '../types/interfaces'; // 导入 FilmData 类型
-import logger from '../logger';
+import logger from './logger';
 
 
 class FileHandler {

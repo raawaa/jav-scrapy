@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import logger from './logger';
+import logger from './core/logger';
 import { program } from 'commander';
 import ConfigManager from './core/config';
 import { version } from '../package.json';

@@ -1,7 +1,7 @@
 import async from 'async';
 import { FilmData, DetailPageTask, IndexPageTask } from '../types/interfaces';
 import { Config } from '../types/interfaces';
-import logger from '../logger';
+import logger from './logger';
 import RequestHandler from './requestHandler';
 import FileHandler from './fileHandler';
 import Parser from './parser';
