@@ -35,7 +35,8 @@ class ConfigManager {
             base: null,
             nomag: false,
             allmag: false,
-            nopic: false
+            nopic: false,
+            limit: 0,
         };
     }
 
@@ -61,6 +62,9 @@ class ConfigManager {
         }
         if (program.opts().nopic !== undefined && program.opts().nopic !== null) {
             this.config.nopic = program.opts().nopic;
+        }
+        if(program.opts().limit!== undefined && program.opts().limit!== null){
+            this.config.limit = parseInt(program.opts().limit);
         }
     }
 

@@ -23,6 +23,11 @@ export class QueueManager {
     private detailPageQueue: async.QueueObject<DetailPageTask> | null = null;
     private indexPageQueue: async.QueueObject<IndexPageTask> | null = null;
     private pageIndex: number = 1;
+    private filmCount: number = 0;
+
+    public getFilmCount(): number {
+        return this.filmCount;
+    }
 
     constructor(config: Config) {
         this.config = config;
@@ -48,7 +53,15 @@ export class QueueManager {
                 const metadata = Parser.parseMetadata(response.body);
                 const magnet = await this.requestHandler.fetchMagnet(metadata);
                 const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
-                this.getFileWriteQueue().push(filmData); // 确保 fileWriteQueue 不为 null 后再调用 push 方法
+                this.getFileWriteQueue().push(filmData, () => {
+                    this.filmCount++;
+                    if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
+                        this.detailPageQueue?.kill();
+                        this.indexPageQueue?.kill();
+                        logger.info(`已达到限制数量 ${this.config.limit}，停止抓取`);
+                        process.exit(0);
+                    }
+                });
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 callback();
             }, this.config.parallel);

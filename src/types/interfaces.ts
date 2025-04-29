@@ -27,6 +27,7 @@ interface Config {
   nopic: boolean;
   timeout?: number;
   searchUrl: string;
+  limit: number;
 }
 
 interface IndexPageTask {
