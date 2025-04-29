@@ -43,6 +43,8 @@ $ npm run build
 $ npm install -g . --force
 ```
 
+✨**Windows用户可以直接使用自动化安装脚本`install.bat`傻瓜式安装。**
+
 ## 使用方法
 
 ```bash
