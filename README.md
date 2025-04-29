@@ -73,14 +73,11 @@ $ jav -a
 | ---------------------- | ------------------------------------------ |
 | -p, --parallel<num>  | 设置并发连接数（默认：2）                |
 | -t, --timeout<num>   | 设置连接超时时间（毫秒，默认：30000）    |
-| -l, --limit<num>     | 限制抓取影片数量（0表示无限制，默认：0） |
 | -o, --output<path>   | 设置结果保存路径（默认：~/magnets）      |
 | -s, --search<string> | 搜索关键词                               |
 | -b, --base<url>      | 自定义起始页URL                          |
 | -x, --proxy<url>     | 使用代理服务器                           |
-| -n, --nomag          | 抓取尚无磁链的影片                       |
-| -a, --allmag         | 抓取所有磁链（默认只抓取最大体积的）     |
-| -N, --nopic          | 不抓取图片                               |
+
 
 ## Features
 
@@ -116,6 +113,13 @@ $ jav -a
             allmag: false,
             nopic: false
         };
+```
+
+或者在命令行中使用 `-b` 选项指定自定义起始页URL：
+
+
+```bash
+$ jav -b https://www.fanbus.ink/
 ```
 
 ## Contributors
