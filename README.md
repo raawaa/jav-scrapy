@@ -4,9 +4,22 @@
 
 ![anim.gif](https://ooo.0o0.ooo/2015/10/31/56345cf140299.gif "anim.gif")
 
-## Prequisites
 
-- Node.js 4.2.1+
+### 前提条件
+- **Node.js 环境**：由于该工具是通过 `npm` 进行全局安装的，所以需要系统已经安装了 Node.js。你可以从 [Node.js 官方网站](https://nodejs.org/) 下载并安装适合你操作系统的版本。安装完成后，你可以通过以下命令验证 Node.js 和 `npm` 是否安装成功：
+```bash
+$ node --version
+$ npm --version
+```
+
+- **TypeScript 环境**：由于该库是使用 TypeScript 编写的，需要安装 TypeScript 编译器。你可以通过 `npm` 全局安装 TypeScript，命令如下：
+```bash
+$ npm install -g typescript
+```
+安装完成后，你可以通过以下命令验证 TypeScript 是否安装成功：
+```bash
+$ tsc --version
+```
 
 ## Installation
 
@@ -21,43 +34,49 @@ $ jav --version
 ## Usage
 
 ```bash
-  Usage: jav [options]
+# 基本用法
+$ jav
 
-  Options:
+# 常用选项
+$ jav -p 5 -t 60000 -o ~/downloads/magnets
 
-    -h, --help                output usage information
-    -V, --version             output the version number
-    -p, --parallel <num>      设置抓取并发连接数，默认值：2
-    -t, --timeout <num>       自定义连接超时时间(毫秒)。默认值：30000毫秒
-    -l, --limit <num>         设置抓取影片的数量上限，0为抓取全部影片。默认值：0
-    -o, --output <file_path>  设置磁链和封面抓取结果的保存位置，默认为当前用户的主目录下的 magnets 文件夹
-    -s, --search <string>     搜索关键词，可只抓取搜索结果的磁链或封面
-    -b, --base <url>          自定义抓取的起始页
-    -x, --proxy <url>         设置代理，例：-x http://127.0.0.1:8087
-    -n, --nomag               是否抓取尚无磁链的影片
-    -a, --allmag              是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)
-    -N, --nopic               抓取时不抓取图片
-```
+# 搜索特定影片
+$ jav -s "影片关键词"
 
-### Examples
-
-```bash
-# 抓取所有影片封面、磁链、片段截图，保存到 ~/magnets 目录下以番号
-# 命名的子文件夹中，并行下载数为 10
-$ jav -p 10
-
-# 抓取番号以 ipz 开头的所有影片，并保存在 /path/to/folder 中，并行抓取数 20
-$ jav -s ipz -p 20 -o /path/to/folder
-
-# 抓取番号为 ipz-634 的影片
-$ jav -s ipz-634 -o /path/to/folder
-
-# 抓取「连裤袜」主题的所有影片
-$ jav -b http://www.javbus.in/genre/28
-
-# 使用代理
+# 使用代理服务器
 $ jav -x http://127.0.0.1:8087
+
+# 不抓取图片
+$ jav -N
+
+# 抓取所有磁链（默认只抓取最大体积的磁链）
+$ jav -a
 ```
+
+### 命令行选项说明
+| 选项 | 说明 |
+|------|------|
+| -p, --parallel <num> | 设置并发连接数（默认：2） |
+| -t, --timeout <num> | 设置连接超时时间（毫秒，默认：30000） |
+| -l, --limit <num> | 限制抓取影片数量（0表示无限制，默认：0） |
+| -o, --output <path> | 设置结果保存路径（默认：~/magnets） |
+| -s, --search <string> | 搜索关键词 |
+| -b, --base <url> | 自定义起始页URL |
+| -x, --proxy <url> | 使用代理服务器 |
+| -n, --nomag | 抓取尚无磁链的影片 |
+| -a, --allmag | 抓取所有磁链（默认只抓取最大体积的） |
+| -N, --nopic | 不抓取图片 |
+
+
+
+
+## Features
+
+- 自动抓取影片磁力链接和封面图片
+- 支持并发下载，可自定义并发数
+- 支持代理服务器配置
+- 支持关键词搜索过滤
+- 结果自动保存到指定目录
 
 ## Notes
 
