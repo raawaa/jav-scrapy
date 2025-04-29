@@ -29,7 +29,7 @@ export class QueueManager {
     this.fileHandler = new FileHandler(config.output);
   }
 
-  public createFileWriteQueue() {
+  public getFileWriteQueue() {
     if (!this.fileWriteQueue) {
       this.fileWriteQueue = async.queue(async (filmData: FilmData, callback) => {
         await this.fileHandler.writeFilmDataToFile(filmData);
@@ -39,7 +39,7 @@ export class QueueManager {
     return this.fileWriteQueue;
   }
 
-  public createDetailPageQueue() {
+  public getDetailPageQueue() {
     if (!this.detailPageQueue) {
       this.detailPageQueue = async.queue(async (task: DetailPageTask, callback) => {
         logger.info(`开始处理详情页 ${task.link}`);
@@ -47,7 +47,7 @@ export class QueueManager {
         const metadata = Parser.parseMetadata(response.body);
         const magnet = await this.requestHandler.fetchMagnet(metadata);
         const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
-        this.createFileWriteQueue().push(filmData); // 确保 fileWriteQueue 不为 null 后再调用 push 方法
+        this.getFileWriteQueue().push(filmData); // 确保 fileWriteQueue 不为 null 后再调用 push 方法
         await new Promise(resolve => setTimeout(resolve, 1000));
         callback();
       }, this.config.parallel);
@@ -55,14 +55,14 @@ export class QueueManager {
     return this.detailPageQueue;
   }
 
-  public createIndexPageQueue(getPageUrl: (pageIndex: number) => string) {
+  public getIndexPageQueue(getPageUrl: (pageIndex: number) => string) {
     if (!this.indexPageQueue) {
       this.indexPageQueue = async.queue(async (task: IndexPageTask, callback) => {
         logger.info(`开始抓取第 ${task.pageIndex} 页`);
         const response = await this.requestHandler.getPage(getPageUrl(task.pageIndex));
         const links: string[] = Parser.parsePageLinks(response.body);
         logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
-        this.createDetailPageQueue().push(links.map(link => ({ link })));
+        this.getDetailPageQueue().push(links.map(link => ({ link })));
         await new Promise(resolve => setTimeout(resolve, 1000));
         callback();
       }, this.config.parallel);

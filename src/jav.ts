@@ -10,7 +10,7 @@ import { version } from '../package.json';
 import QueueManager from './core/queueManager';
 
 
-import { Config, IndexPageTask, DetailPageTask, Metadata, FilmData } from './types/interfaces';
+import { Config } from './types/interfaces';
 const searchUrl = '/search';
 
 
@@ -42,24 +42,18 @@ import { Logform } from 'winston';
 
 class JavScraper {
     private config: Config;
-    private requestHandler: RequestHandler;
-    private fileHandler: FileHandler;
-    private parser: Parser;
     private pageIndex: number;
 
     constructor(config: Config) {
         this.config = config;
-        this.requestHandler = new RequestHandler(config);
-        this.fileHandler = new FileHandler(config.output);
-        this.parser = new Parser(config);
         this.pageIndex = 1;
     }
 
     async mainExecution(): Promise<void> {
         const queueManager = new QueueManager(this.config);
-        const fileWriteQueue = queueManager.createFileWriteQueue();
-        const detailPageQueue = queueManager.createDetailPageQueue();
-        const indexPageQueue = queueManager.createIndexPageQueue(this.getCurrentPageUrl.bind(this));
+        const fileWriteQueue = queueManager.getFileWriteQueue();
+        const detailPageQueue = queueManager.getDetailPageQueue();
+        const indexPageQueue = queueManager.getIndexPageQueue(this.getCurrentPageUrl.bind(this));
 
 
         // 统一错误处理
