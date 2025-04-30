@@ -20,6 +20,11 @@ class FileHandler {
   private outputDir: string; // 定义 outputDir 属性
   private filename: string; // 定义 filename 属性
 
+  /**
+   * 创建FileHandler实例
+   * @param {string} outputDir - 输出目录路径
+   * @throws {Error} 如果outputDir不是非空字符串
+   */
   constructor(outputDir: string) {
     // 校验输入是否为非空字符串
     if (typeof outputDir !== 'string' || outputDir.trim() === '') {
@@ -30,6 +35,11 @@ class FileHandler {
     this.filename = 'filmData.json'; // 定义默认文件名
   }
 
+  /**
+   * 确保输出目录存在，如果不存在则创建
+   * @private
+   * @returns {Promise<void>}
+   */
   private async ensureOutputDirExists() {
     try {
       await fs.promises.access(this.outputDir, fs.constants.F_OK);
@@ -38,7 +48,12 @@ class FileHandler {
     }
   }
 
-  // 将 FilmData 对象转换为 JSON 字符串写入文件，如果文件不存在则创建文件，如果文件存在则追加内容
+  /**
+   * 将FilmData对象写入JSON文件
+   * @param {FilmData} data - 要写入的电影数据对象
+   * @returns {Promise<void>}
+   * @throws {Error} 如果data不是FilmData类型
+   */
   public async writeFilmDataToFile(data: FilmData) {
     // 校验 data 是否为 FilmData 类型
     if (typeof data !== 'object' || data === null) {
@@ -48,7 +63,7 @@ class FileHandler {
     try {
       // 定义文件路径
       const filePath = path.join(this.outputDir, 'filmData.json');
-      
+
       // 读取现有文件内容（如果存在）
       let existingData: FilmData[] = [];
       if (fs.existsSync(filePath)) {
@@ -63,17 +78,26 @@ class FileHandler {
           logger.warn(`Invalid JSON format in ${filePath}, using empty array as default`);
         }
       }
-      
-      // 添加新数据
-      existingData.push(data);
-      
-      // 将完整数据转换为格式化的JSON字符串
-      const jsonData = JSON.stringify(existingData, null, 2);
-      
+
+      // 检查是否已存在相同title的数据
+      const isDuplicate = existingData.some(item => item.title === data.title);
+
+      if (!isDuplicate) {
+        // 添加新数据
+        existingData.push(data);
+
+        // 将完整数据转换为格式化的JSON字符串
+        const jsonData = JSON.stringify(existingData, null, 2);
+
+        // 写入文件
+        fs.writeFileSync(filePath, jsonData);
+
+        logger.info(`Film data successfully written to ${filePath}`);
+      } else {
+        logger.info(`Skipped duplicate film data with title: ${data.title}`);
+      }
+
       // 写入文件
-      fs.writeFileSync(filePath, jsonData);
-      
-      logger.info(`Film data successfully written to ${filePath}`);
     } catch (error) {
       logger.error(`Failed to write film data: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
