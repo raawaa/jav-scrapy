@@ -40,31 +40,31 @@ class ConfigManager {
         };
     }
 
-    public updateFromProgram(program: Command): void {
-        this.config.parallel = parseInt(program.opts().parallel) || 2;
+    public updateFromProgram(options: any): void {
+        this.config.parallel = parseInt(options.parallel) || this.config.parallel;
         // 原代码中 Config 接口不存在 timeout 属性，应使用 DEFAULT_TIMEOUT 属性
-        this.config.DEFAULT_TIMEOUT = parseInt(program.opts().timeout) || 30000;
-        this.config.proxy = process.env.http_proxy || program.opts().proxy;
-        if (program.opts().output !== undefined && program.opts().output !== null) {
-            this.config.output = program.opts().output;
+        this.config.DEFAULT_TIMEOUT = parseInt(options.timeout) || this.config.DEFAULT_TIMEOUT;
+        this.config.proxy = process.env.http_proxy || options.proxy;
+        if (options.output !== undefined && options.output !== null) {
+            this.config.output = options.output;
         }
-        if (program.opts().search !== undefined && program.opts().search !== null) {
-            this.config.search = program.opts().search;
+        if (options.search !== undefined && options.search !== null) {
+            this.config.search = options.search;
         }
-        if (program.opts().base !== undefined && program.opts().base !== null) {
-            this.config.base = program.opts().base;
+        if (options.base !== undefined && options.base !== null) {
+            this.config.base = options.base;
         }
-        if (program.opts().nomag !== undefined && program.opts().nomag !== null) {
-            this.config.nomag = program.opts().nomag;
+        if (options.nomag !== undefined && options.nomag !== null) {
+            this.config.nomag = options.nomag;
         }
-        if (program.opts().allmag !== undefined && program.opts().allmag !== null) {
-            this.config.allmag = program.opts().allmag;
+        if (options.allmag !== undefined && options.allmag !== null) {
+            this.config.allmag = options.allmag;
         }
-        if (program.opts().nopic !== undefined && program.opts().nopic !== null) {
-            this.config.nopic = program.opts().nopic;
+        if (options.nopic !== undefined && options.nopic !== null) {
+            this.config.nopic = options.nopic;
         }
-        if(program.opts().limit!== undefined && program.opts().limit!== null){
-            this.config.limit = parseInt(program.opts().limit);
+        if (options.limit !== undefined && options.limit !== null) {
+            this.config.limit = parseInt(options.limit);
         }
     }
 

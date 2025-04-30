@@ -6,14 +6,12 @@ import ConfigManager from './core/config';
 import { version } from '../package.json';
 import Scraper from './core/scraper';
 
-const configManager = new ConfigManager();
-configManager.updateFromProgram(program);
-const PROGRAM_CONFIG = configManager.getConfig();
+
 
 
 program
     .version(version)
-    .usage('[options] [command]')
+    .description('Jav 影片抓取工具');
 
 // 添加 search 子命令
 program.command('search <keyword>')
@@ -44,8 +42,9 @@ program.command('act <actress>')
     });
 
 // 添加 pull 子命令
-program.command('pull')
-    .description('抓取所有影片')
+program
+    .command('pull', { isDefault: true })
+    .description('抓取所有影片（默认命令）')
     .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2')
     .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
     .option('-l, --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0')
@@ -56,14 +55,16 @@ program.command('pull')
     .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .option('-N, --nopic', '不抓取图片')
-    .action(() => {
-        // 这里需要实现抓取所有影片的逻辑
-        console.log('开始抓取所有影片');
+    .action((options) => {
+        const configManager = new ConfigManager();
+        configManager.updateFromProgram(options);
+        const PROGRAM_CONFIG = configManager.getConfig();
         const scraper = new Scraper(PROGRAM_CONFIG);
         logger.info('开始抓取 Jav 影片...');
         logger.info(`使用配置: ${JSON.stringify(PROGRAM_CONFIG, null, 2)}`);
         scraper.mainExecution();
-    });
+    })
+
 
 program.parse(process.argv);
 
