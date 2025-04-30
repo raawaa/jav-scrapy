@@ -172,6 +172,10 @@ class RequestHandler {
 
   public async downloadImage(url: string, filename: string) {
     try {
+      const filePath = path.join(this.config.output, filename);
+      if (fs.existsSync(filePath)) {
+        return false; // 文件已存在，跳过下载
+      }
       const response = await axios.get(url, {
         responseType: 'arraybuffer',
         timeout: this.requestConfig.timeout,
@@ -181,7 +185,6 @@ class RequestHandler {
         } : undefined,
         headers: this.requestConfig.headers
       });
-      const filePath = path.join(this.config.output, filename);
       fs.writeFileSync(filePath, Buffer.from(response.data, 'binary'));
       return true;
     } catch (err) {
