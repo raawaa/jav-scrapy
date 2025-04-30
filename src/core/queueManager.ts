@@ -60,7 +60,7 @@ class QueueManager {
     }
 
     // 队列获取方法
-    
+
     /**
      * 获取图片下载队列
      * @returns {async.QueueObject<Metadata>} 图片下载队列实例
@@ -136,13 +136,14 @@ class QueueManager {
         return this.indexPageQueue;
     }
 
+
     /**
-     * 创建队列错误处理器
+     * 创建一个错误处理函数，用于处理队列任务执行过程中发生的错误。
      * @static
-     * @param {string} queueName - 队列名称
-     * @returns {Function} 错误处理函数
+     * @param {string} queueName - 队列的名称，用于在日志中标识出错的队列。
+     * @returns {(err: Error, task: any) => void} 一个错误处理函数，接收错误对象和任务对象作为参数。
      */
-    public static createErrorHandler(queueName: string): Function {
+    public static createErrorHandler(queueName: string): (err: Error, task: any) => void {
         return (err: Error, task: any) => {
             logger.error(`[${queueName}] 处理任务时出错: ${err.message}`);
             logger.debug(`错误详情: ${err.stack}`);
