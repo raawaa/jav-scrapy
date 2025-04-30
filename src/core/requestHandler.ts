@@ -12,6 +12,9 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { Config } from '../types/interfaces';
 import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
+import path from 'path'; // 导入 path 模块，用于处理文件路径
+import fs from 'fs'; // 导入 fs 模块，用于文件操作
+
 
 
 
@@ -44,16 +47,18 @@ interface RequestConfig {
 
 
 class RequestHandler {
-  private config: RequestConfig;
+  private requestConfig: RequestConfig;
+  private config:Config;
   private retries: number;
   private retryDelay: number;
 
   constructor(config: Config) {
-    this.config = {
-      timeout: config.timeout || 30000,
+    this.config = config;
+    this.requestConfig = {
+      timeout: config.timeout,
       proxy: config.proxy,
       headers: {
-        referer: 'https://www.fanbus.ink/',
+        referer: this.config.headers.Referer,
         scheme: 'https',
         accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'accept-encoding': 'gzip, deflate, br, zstd',
@@ -92,7 +97,7 @@ class RequestHandler {
 
   async getPage(url: string, options: Record<string, any> = {}) {
     const mergedOptions = {
-      ...this.config,
+      ...this.requestConfig,
       ...options,
       url
     };
@@ -113,9 +118,11 @@ class RequestHandler {
   }
 
 
+
+
   async getXMLHttpRequest(url: string, options: Record<string, any> = {}) {
     const mergedOptions = {
-      ...this.config,
+      ...this.requestConfig,
       ...options,
       url
     };
@@ -137,6 +144,8 @@ class RequestHandler {
       throw err;
     }
   }
+
+
 
   public async fetchMagnet(metadata: Metadata) {
     const url = `https://www.fanbus.ink/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=880`;
@@ -160,6 +169,27 @@ class RequestHandler {
 
     return maxSizePair ? maxSizePair.magnetLink : null;
   }
+
+  public async downloadImage(url: string, filename: string) {
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: this.requestConfig.timeout,
+        proxy: this.requestConfig.proxy ? {
+          host: this.requestConfig.proxy.split(':')[0],
+          port: parseInt(this.requestConfig.proxy.split(':')[1], 10)
+        } : undefined,
+        headers: this.requestConfig.headers
+      });
+      const filePath = path.join(this.config.output, filename);
+      fs.writeFileSync(filePath, Buffer.from(response.data, 'binary'));
+      return true;
+    } catch (err) {
+      throw err;
+    }
+  }
 }
+
+
 
 export default RequestHandler;
