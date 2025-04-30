@@ -31,13 +31,23 @@ interface Config {
 }
 
 interface IndexPageTask {
-  pageIndex: number;
+  url: string;
 }
 
 interface DetailPageTask {
   link: string;
 }
 
+/**
+ * @interface Metadata
+ * @description 元数据接口，用于描述影片的基本信息。
+ * @property {string} title - 影片标题。
+ * @property {string} gid - 影片的唯一标识符。
+ * @property {string} img - 影片的图片链接。
+ * @property {string} uc - 影片的用户标识。
+ * @property {string[]} category - 影片的分类标签数组。
+ * @property {string[]} actress - 影片的演员数组。
+ */
 interface Metadata {
   title: string;
   gid: string;

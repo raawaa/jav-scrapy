@@ -1,12 +1,10 @@
 import async from 'async';
-import { FilmData, DetailPageTask, IndexPageTask } from '../types/interfaces';
+import { FilmData, DetailPageTask, IndexPageTask, Metadata } from '../types/interfaces';
 import { Config } from '../types/interfaces';
 import logger from './logger';
 import RequestHandler from './requestHandler';
 import FileHandler from './fileHandler';
 import Parser from './parser';
-
-
 export interface QueueTask {
     execute(): Promise<void>;
 }
@@ -15,24 +13,49 @@ export interface QueueHandler {
     handle(task: any): Promise<void>;
 }
 
+export enum QueueEventType {
+    INDEX_PAGE_PROCESSED = 'index_page_processed',
+    DETAIL_PAGE_PROCESSED = 'detail_page_processed',
+    FILM_DATA_SAVED = 'film_data_saved'
+}
+
+export interface QueueEvent {
+    type: QueueEventType;
+    data?: any;
+}
+
+export type EventHandler = (event: QueueEvent) => void;
+
 export class QueueManager {
+    // 配置相关
     private config: Config;
     private requestHandler: RequestHandler;
     private fileHandler: FileHandler;
+    
+    // 队列相关
     private fileWriteQueue: async.QueueObject<FilmData> | null = null;
     private detailPageQueue: async.QueueObject<DetailPageTask> | null = null;
     private indexPageQueue: async.QueueObject<IndexPageTask> | null = null;
-    private pageIndex: number = 1;
-    private filmCount: number = 0;
-
-    public getFilmCount(): number {
-        return this.filmCount;
-    }
-
+    private imageDownloadQueue: async.QueueObject<Metadata> | null = null;
+    
+    // 事件相关
+    private eventHandlers: Map<QueueEventType, EventHandler[]> = new Map();
     constructor(config: Config) {
         this.config = config;
         this.requestHandler = new RequestHandler(config);
         this.fileHandler = new FileHandler(config.output);
+    }
+    // 队列获取方法
+    public getImageDownloadQueue() {
+        if (!this.imageDownloadQueue) {
+            this.imageDownloadQueue = async.queue(async (metadata: Metadata, callback) => {
+                const baseUrl = this.config.base || this.config.BASE_URL;
+                const imageUrl = `${baseUrl.replace(/\/+$/, '')}/${metadata.img.replace(/^\/+/, '')}`;
+                await this.requestHandler.downloadImage(imageUrl, metadata.title + '.jpg');
+                callback();
+            }, this.config.parallel);
+        }
+        return this.imageDownloadQueue;
     }
 
     public getFileWriteQueue() {
@@ -53,14 +76,9 @@ export class QueueManager {
                 const metadata = Parser.parseMetadata(response.body);
                 const magnet = await this.requestHandler.fetchMagnet(metadata);
                 const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
-                this.getFileWriteQueue().push(filmData, () => {
-                    this.filmCount++;
-                    if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
-                        this.detailPageQueue?.kill();
-                        this.indexPageQueue?.kill();
-                        logger.info(`已达到限制数量 ${this.config.limit}，停止抓取`);
-                        process.exit(0);
-                    }
+                this.emit({
+                    type: QueueEventType.DETAIL_PAGE_PROCESSED,
+                    data: { filmData, metadata }
                 });
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 callback();
@@ -72,11 +90,14 @@ export class QueueManager {
     public getIndexPageQueue() {
         if (!this.indexPageQueue) {
             this.indexPageQueue = async.queue(async (task: IndexPageTask, callback) => {
-                logger.info(`开始抓取第 ${task.pageIndex} 页`);
-                const response = await this.requestHandler.getPage(this.getCurrentPageUrl(task.pageIndex));
+                logger.info(`开始抓取 ${task.url} `);
+                const response = await this.requestHandler.getPage(task.url);
                 const links: string[] = Parser.parsePageLinks(response.body);
-                logger.info(`第 ${task.pageIndex} 页抓取完成，共找到 ${links.length} 条链接`);
-                this.getDetailPageQueue().push(links.map(link => ({ link })));
+                logger.info(`第 ${task.url} 页抓取完成，共找到 ${links.length} 条链接`);
+                this.emit({
+                    type: QueueEventType.INDEX_PAGE_PROCESSED,
+                    data: { links }
+                });
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 callback();
             }, this.config.parallel);
@@ -91,21 +112,19 @@ export class QueueManager {
         };
     }
 
-
-    private cleanUrl(url: string): string {
-        return url.endsWith('/') ? url.slice(0, -1) : url;
-    }
-
-    private getCurrentPageUrl(pageIndex: number): string {
-        const baseUrl = this.cleanUrl(this.config.base || this.config.BASE_URL);
-        if (this.config.search) {
-            const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${this.config.searchUrl}/${encodeURIComponent(this.config.search)}${index}`;
-        } else {
-            const index = this.pageIndex === 1 ? '' : `/page/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${index}`;
+    public on(eventType: QueueEventType, handler: EventHandler): void {
+        if (!this.eventHandlers.has(eventType)) {
+            this.eventHandlers.set(eventType, []);
         }
+        this.eventHandlers.get(eventType)?.push(handler);
     }
+
+    private emit(event: QueueEvent): void {
+        const handlers = this.eventHandlers.get(event.type);
+        handlers?.forEach(handler => handler(event));
+    }
+    
 }
 
 export default QueueManager;
+
