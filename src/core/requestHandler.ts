@@ -1,13 +1,7 @@
-// 此模块 `requestHandler.ts` 主要用于处理网络请求，为爬虫程序提供页面内容获取、XMLHttpRequest 请求发送等功能。
-// 它借助 `axios` 库进行 HTTP 请求，并使用 `axios-retry` 库实现请求重试机制。
-// 具体功能包括：
-// 1. 初始化请求配置，包含超时时间、代理、请求头信息等。
-// 2. 实现请求重试逻辑，在网络错误或特定状态码（如 500 及以上）时进行重试。
-// 3. 提供 `getPage` 方法用于获取指定 URL 的页面内容。
-// 4. 提供 `getXMLHttpRequest` 方法用于发送 XMLHttpRequest 请求。
-// 5. 提供 `fetchMagnet` 方法用于从指定页面提取磁力链接，并返回最大文件大小对应的磁力链接。
-
-
+/**
+ * RequestHandler 类用于处理网络请求，提供页面内容获取、XMLHttpRequest 请求发送等功能。
+ * 它借助 axios 库进行 HTTP 请求，并使用 axios-retry 库实现请求重试机制。
+ */
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { Config } from '../types/interfaces';
@@ -15,9 +9,9 @@ import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
 import path from 'path'; // 导入 path 模块，用于处理文件路径
 import fs from 'fs'; // 导入 fs 模块，用于文件操作
 
-
-
-
+/**
+ * 请求配置接口
+ */
 interface RequestConfig {
   timeout?: number;
   proxy?: string;
@@ -44,14 +38,19 @@ interface RequestConfig {
   };
 }
 
-
-
+/**
+ * RequestHandler 类
+ */
 class RequestHandler {
   private requestConfig: RequestConfig;
-  private config:Config;
+  private config: Config;
   private retries: number;
   private retryDelay: number;
 
+  /**
+   * 构造函数
+   * @param config 配置对象
+   */
   constructor(config: Config) {
     this.config = config;
     this.requestConfig = {
@@ -94,7 +93,12 @@ class RequestHandler {
     });
   }
 
-
+  /**
+   * 获取指定 URL 的页面内容
+   * @param url 目标 URL
+   * @param options 可选参数
+   * @returns 包含状态码和页面内容的对象
+   */
   async getPage(url: string, options: Record<string, any> = {}) {
     const mergedOptions = {
       ...this.requestConfig,
@@ -117,9 +121,12 @@ class RequestHandler {
     }
   }
 
-
-
-
+  /**
+   * 发送 XMLHttpRequest 请求
+   * @param url 目标 URL
+   * @param options 可选参数
+   * @returns 包含状态码和响应内容的对象
+   */
   async getXMLHttpRequest(url: string, options: Record<string, any> = {}) {
     const mergedOptions = {
       ...this.requestConfig,
@@ -145,8 +152,11 @@ class RequestHandler {
     }
   }
 
-
-
+  /**
+   * 从指定页面提取磁力链接，并返回最大文件大小对应的磁力链接
+   * @param metadata 元数据对象
+   * @returns 最大文件大小对应的磁力链接，如果没有找到则返回 null
+   */
   public async fetchMagnet(metadata: Metadata) {
     const url = `https://www.fanbus.ink/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=880`;
     const response = await this.getXMLHttpRequest(url);
@@ -170,6 +180,12 @@ class RequestHandler {
     return maxSizePair ? maxSizePair.magnetLink : null;
   }
 
+  /**
+   * 下载图片到指定路径
+   * @param url 图片 URL
+   * @param filename 文件名
+   * @returns 如果文件已存在则返回 false，否则返回 true
+   */
   public async downloadImage(url: string, filename: string) {
     try {
       const filePath = path.join(this.config.output, filename);
@@ -192,7 +208,5 @@ class RequestHandler {
     }
   }
 }
-
-
 
 export default RequestHandler;

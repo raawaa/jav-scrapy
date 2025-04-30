@@ -5,6 +5,8 @@ import logger from './logger';
 import RequestHandler from './requestHandler';
 import FileHandler from './fileHandler';
 import Parser from './parser';
+
+
 export interface QueueTask {
     execute(): Promise<void>;
 }
@@ -26,27 +28,44 @@ export interface QueueEvent {
 
 export type EventHandler = (event: QueueEvent) => void;
 
-export class QueueManager {
+/**
+ * 队列管理器，负责创建和管理不同类型的异步任务队列
+ * @class
+ */
+class QueueManager {
     // 配置相关
     private config: Config;
     private requestHandler: RequestHandler;
     private fileHandler: FileHandler;
-    
+
     // 队列相关
     private fileWriteQueue: async.QueueObject<FilmData> | null = null;
     private detailPageQueue: async.QueueObject<DetailPageTask> | null = null;
     private indexPageQueue: async.QueueObject<IndexPageTask> | null = null;
     private imageDownloadQueue: async.QueueObject<Metadata> | null = null;
-    
+
     // 事件相关
     private eventHandlers: Map<QueueEventType, EventHandler[]> = new Map();
+
+
+    /**
+    * 创建队列管理器实例
+    * @constructor
+    * @param {Config} config - 配置对象
+    */
     constructor(config: Config) {
         this.config = config;
         this.requestHandler = new RequestHandler(config);
         this.fileHandler = new FileHandler(config.output);
     }
+
     // 队列获取方法
-    public getImageDownloadQueue() {
+    
+    /**
+     * 获取图片下载队列
+     * @returns {async.QueueObject<Metadata>} 图片下载队列实例
+     */
+    public getImageDownloadQueue(): async.QueueObject<Metadata> {
         if (!this.imageDownloadQueue) {
             this.imageDownloadQueue = async.queue(async (metadata: Metadata, callback) => {
                 const baseUrl = this.config.base || this.config.BASE_URL;
@@ -58,7 +77,11 @@ export class QueueManager {
         return this.imageDownloadQueue;
     }
 
-    public getFileWriteQueue() {
+    /**
+     * 获取文件写入队列
+     * @returns {async.QueueObject<FilmData>} 文件写入队列实例
+     */
+    public getFileWriteQueue(): async.QueueObject<FilmData> {
         if (!this.fileWriteQueue) {
             this.fileWriteQueue = async.queue(async (filmData: FilmData, callback) => {
                 await this.fileHandler.writeFilmDataToFile(filmData);
@@ -68,7 +91,11 @@ export class QueueManager {
         return this.fileWriteQueue;
     }
 
-    public getDetailPageQueue() {
+    /**
+     * 获取详情页处理队列
+     * @returns {async.QueueObject<DetailPageTask>} 详情页处理队列实例
+     */
+    public getDetailPageQueue(): async.QueueObject<DetailPageTask> {
         if (!this.detailPageQueue) {
             this.detailPageQueue = async.queue(async (task: DetailPageTask, callback) => {
                 logger.info(`开始处理详情页 ${task.link}`);
@@ -87,7 +114,11 @@ export class QueueManager {
         return this.detailPageQueue;
     }
 
-    public getIndexPageQueue() {
+    /**
+     * 获取索引页处理队列
+     * @returns {async.QueueObject<IndexPageTask>} 索引页处理队列实例
+     */
+    public getIndexPageQueue(): async.QueueObject<IndexPageTask> {
         if (!this.indexPageQueue) {
             this.indexPageQueue = async.queue(async (task: IndexPageTask, callback) => {
                 logger.info(`开始抓取 ${task.url} `);
@@ -105,13 +136,25 @@ export class QueueManager {
         return this.indexPageQueue;
     }
 
-    public static createErrorHandler(queueName: string) {
+    /**
+     * 创建队列错误处理器
+     * @static
+     * @param {string} queueName - 队列名称
+     * @returns {Function} 错误处理函数
+     */
+    public static createErrorHandler(queueName: string): Function {
         return (err: Error, task: any) => {
             logger.error(`[${queueName}] 处理任务时出错: ${err.message}`);
             logger.debug(`错误详情: ${err.stack}`);
         };
     }
 
+    /**
+     * 注册事件监听器
+     * @param {QueueEventType} eventType - 事件类型
+     * @param {EventHandler} handler - 事件处理函数
+     * @returns {void}
+     */
     public on(eventType: QueueEventType, handler: EventHandler): void {
         if (!this.eventHandlers.has(eventType)) {
             this.eventHandlers.set(eventType, []);
@@ -123,7 +166,7 @@ export class QueueManager {
         const handlers = this.eventHandlers.get(event.type);
         handlers?.forEach(handler => handler(event));
     }
-    
+
 }
 
 export default QueueManager;

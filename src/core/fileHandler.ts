@@ -21,9 +21,9 @@ class FileHandler {
   private filename: string; // 定义 filename 属性
 
   /**
-   * 创建FileHandler实例
+   * 创建 FileHandler 实例
    * @param {string} outputDir - 输出目录路径
-   * @throws {Error} 如果outputDir不是非空字符串
+   * @throws {Error} 如果 outputDir 不是非空字符串
    */
   constructor(outputDir: string) {
     // 校验输入是否为非空字符串
@@ -49,10 +49,10 @@ class FileHandler {
   }
 
   /**
-   * 将FilmData对象写入JSON文件
+   * 将 FilmData 对象写入 JSON 文件
    * @param {FilmData} data - 要写入的电影数据对象
    * @returns {Promise<void>}
-   * @throws {Error} 如果data不是FilmData类型
+   * @throws {Error} 如果 data 不是 FilmData 类型
    */
   public async writeFilmDataToFile(data: FilmData) {
     // 校验 data 是否为 FilmData 类型
@@ -79,14 +79,14 @@ class FileHandler {
         }
       }
 
-      // 检查是否已存在相同title的数据
+      // 检查是否已存在相同 title 的数据
       const isDuplicate = existingData.some(item => item.title === data.title);
 
       if (!isDuplicate) {
         // 添加新数据
         existingData.push(data);
 
-        // 将完整数据转换为格式化的JSON字符串
+        // 将完整数据转换为格式化的 JSON 字符串
         const jsonData = JSON.stringify(existingData, null, 2);
 
         // 写入文件
