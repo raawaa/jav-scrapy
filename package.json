@@ -6,11 +6,13 @@
   "main": "jav.js",
   "preferGlobal": true,
   "dependencies": {
+    "@types/tunnel": "^0.0.7",
     "axios": "1.9.0",
     "axios-retry": "^4.5.0",
     "commander": "12.1.0",
     "http-proxy-agent": "7.0.2",
     "mkdirp": "^3.0.1",
+    "tunnel": "^0.0.6",
     "user-home": "^2.0.0",
     "winston": "^3.17.0"
   },
