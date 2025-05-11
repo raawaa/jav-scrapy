@@ -53,7 +53,14 @@ class ConfigManager {
         }
         if (options.base !== undefined && options.base !== null) {
             this.config.base = options.base;
+            try {
+                const baseUrl = new URL(options.base);
+                this.config.headers.Referer = `${baseUrl.protocol}//${baseUrl.hostname}/`;
+            } catch (error) {
+                // 忽略解析错误，保持原有Referer
+            }
         }
+
         if (options.nomag !== undefined && options.nomag !== null) {
             this.config.nomag = options.nomag;
         }

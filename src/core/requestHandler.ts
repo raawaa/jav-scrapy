@@ -4,6 +4,7 @@
  */
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
+import tunnel from 'tunnel';
 import { Config } from '../types/interfaces';
 import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
 import path from 'path'; // 导入 path 模块，用于处理文件路径
@@ -24,15 +25,6 @@ interface RequestConfig {
     'accept-language': string;
     'cache-control': string;
     pragma: string;
-    priority: string;
-    'sec-ch-ua': string;
-    'sec-ch-ua-mobile': string;
-    'sec-ch-ua-platform': string;
-    'sec-fetch-dest': string;
-    'sec-fetch-mode': string;
-    'sec-fetch-site': string;
-    'sec-fetch-user': string;
-    'upgrade-insecure-requests': string;
     'user-agent': string;
     Cookie: string;
   };
@@ -60,19 +52,10 @@ class RequestHandler {
         referer: this.config.headers.Referer,
         scheme: 'https',
         accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-encoding': 'gzip, deflate, br',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
         'cache-control': 'no-cache',
         pragma: 'no-cache',
-        priority: 'u=0, i',
-        'sec-ch-ua': '"Microsoft Edge";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'document',
-        'sec-fetch-mode': 'navigate',
-        'sec-fetch-site': 'none',
-        'sec-fetch-user': '?1',
-        'upgrade-insecure-requests': '1',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0',
         Cookie: config.headers.Cookie || ''
       }
@@ -91,6 +74,22 @@ class RequestHandler {
         return (error.response && error.response.status >= 500) || error.code === 'ECONNABORTED';
       }
     });
+    
+    // 添加HTTPS代理拦截器
+    axios.interceptors.request.use((config) => {
+      if (this.requestConfig.proxy && config.url?.startsWith('https')) {
+        const proxyUrl = new URL(this.requestConfig.proxy);
+        const agent = tunnel.httpsOverHttp({
+          proxy: {
+            host: proxyUrl.hostname,
+            port: parseInt(proxyUrl.port, 10)
+          }
+        });
+        config.httpsAgent = agent;
+        config.proxy = false;
+      }
+      return config;
+    });
   }
 
   /**
@@ -107,13 +106,8 @@ class RequestHandler {
     };
     try {
       const response = await axios.get(mergedOptions.url, {
-        timeout: mergedOptions.timeout,
-        // 将 string 类型的 proxy 转换为 AxiosProxyConfig 类型
-        proxy: mergedOptions.proxy ? {
-          host: mergedOptions.proxy.split(':')[0],
-          port: parseInt(mergedOptions.proxy.split(':')[1], 10)
-        } : undefined,
-        headers: mergedOptions.headers
+          timeout: mergedOptions.timeout,
+          headers: mergedOptions.headers
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
@@ -135,16 +129,11 @@ class RequestHandler {
     };
     try {
       const response = await axios.get(mergedOptions.url, {
-        timeout: mergedOptions.timeout,
-        // 将 string 类型的 proxy 转换为 AxiosProxyConfig 类型，若 proxy 不存在则为 undefined
-        proxy: mergedOptions.proxy ? {
-          host: mergedOptions.proxy.split(':')[0],
-          port: parseInt(mergedOptions.proxy.split(':')[1], 10)
-        } : undefined,
-        headers: {
-          ...mergedOptions.headers,
-          'X-Requested-With': 'XMLHttpRequest'
-        }
+          timeout: mergedOptions.timeout,
+          headers: {
+              ...mergedOptions.headers,
+              'X-Requested-With': 'XMLHttpRequest'
+          }
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
@@ -190,16 +179,12 @@ class RequestHandler {
     try {
       const filePath = path.join(this.config.output, filename);
       if (fs.existsSync(filePath)) {
-        return false; // 文件已存在，跳过下载
+        return false;
       }
       const response = await axios.get(url, {
-        responseType: 'arraybuffer',
-        timeout: this.requestConfig.timeout,
-        proxy: this.requestConfig.proxy ? {
-          host: this.requestConfig.proxy.split(':')[0],
-          port: parseInt(this.requestConfig.proxy.split(':')[1], 10)
-        } : undefined,
-        headers: this.requestConfig.headers
+          responseType: 'arraybuffer',
+          timeout: this.requestConfig.timeout,
+          headers: this.requestConfig.headers
       });
       fs.writeFileSync(filePath, Buffer.from(response.data, 'binary'));
       return true;
