@@ -1,8 +1,8 @@
 /node_modules
 .tern-project
 .eslintrc
-dist/**/*
-test
+/dist
+/test
 /.vs
 error.log
 combined.log
