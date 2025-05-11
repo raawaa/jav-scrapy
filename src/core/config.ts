@@ -53,6 +53,12 @@ class ConfigManager {
         }
         if (program.opts().base !== undefined && program.opts().base !== null) {
             this.config.base = program.opts().base;
+            try {
+                const baseUrl = new URL(program.opts().base);
+                this.config.headers.Referer = `${baseUrl.protocol}//${baseUrl.hostname}/`;
+            } catch (error) {
+                // 忽略解析错误，保持原有Referer
+            }
         }
         if (program.opts().nomag !== undefined && program.opts().nomag !== null) {
             this.config.nomag = program.opts().nomag;
