@@ -79,12 +79,9 @@ class RequestHandler {
     axios.interceptors.request.use((config) => {
       if (this.requestConfig.proxy && config.url?.startsWith('https')) {
         const proxyUrl = new URL(this.requestConfig.proxy);
-        const agent = tunnel.httpsOverHttp({
-          proxy: {
-            host: proxyUrl.hostname,
-            port: parseInt(proxyUrl.port, 10)
-          }
-        });
+        const agent = proxyUrl.protocol === 'http:' 
+          ? tunnel.httpsOverHttp({ proxy: { host: proxyUrl.hostname, port: parseInt(proxyUrl.port, 10) } })
+          : tunnel.httpsOverHttps({ proxy: { host: proxyUrl.hostname, port: parseInt(proxyUrl.port, 10) } });
         config.httpsAgent = agent;
         config.proxy = false;
       }
