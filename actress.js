@@ -172,11 +172,11 @@ function pageExist(callback) {
 				.get(url, function(err, res, body) {
 					if (err) {
 						if (err.status === 404) {
-							console.error('已抓取完所有页面, StatusCode:', err.status);
+							// console.error('已抓取完所有页面, StatusCode:', err.status);
 						} else {
 							retryCount++;
-							console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
-							console.error('...进行第%d次尝试...'.red, retryCount);
+							// console.error('第%d页页面获取失败：%s'.red, pageIndex, err.message);
+							// console.error('...进行第%d次尝试...'.red, retryCount);
 						}
 						return callback(err);
 					}
@@ -229,7 +229,7 @@ function getItemPage(link, index, callback) {
 	} catch(e){
 		request.get(link, function (err, res, body) {
 			if(err){
-				console.error(('[' + maskCode + ']').red.bold.inverse + ' ' + err.message.red);
+				// console.error(('[' + maskCode + ']').red.bold.inverse + ' ' + err.message.red);
 				errorCount++;
 				return callback(null);
 			}
@@ -304,14 +304,14 @@ function getActressPic(maskCode, picUrl, done) {
 						if (!finished) {
 							fs.renameSync(fileFullPath + '.part', fileFullPath);
 							finished = true;
-							console.error(('[' + maskCode + ']').green.bold.inverse + '[头像]'.yellow.inverse, fileFullPath);
+							// console.error(('[' + maskCode + ']').green.bold.inverse + '[头像]'.yellow.inverse, fileFullPath);
 							return done();
 						}
 					})
 					.on('error', function(err) {
 						if (!finished) {
 							finished = true;
-							console.error(('[' + maskCode + ']').red.bold.inverse + '[头像]'.yellow.inverse, err.message.red);
+							// console.error(('[' + maskCode + ']').red.bold.inverse + '[头像]'.yellow.inverse, err.message.red);
 							errorCount++;
 							return done();
 						}

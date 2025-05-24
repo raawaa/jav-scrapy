@@ -11,7 +11,6 @@
  */
 
 interface Config {
-  DEFAULT_TIMEOUT: number;
   BASE_URL: string;
   parallel: number;
   proxy?: string;

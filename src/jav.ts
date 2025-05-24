@@ -7,6 +7,8 @@ import { version } from '../package.json';
 import QueueManager from './core/queueManager';
 import { QueueEventType } from './core/queueManager';
 import { Config } from './types/interfaces';
+import * as cliProgress from 'cli-progress';
+import chalk from 'chalk';
 
 
 program
@@ -34,10 +36,29 @@ class JavScraper {
     private config: Config;
     private pageIndex: number;
     private filmCount: number = 0;
+    public multibar: cliProgress.MultiBar | null = null;
+    public progressBar: cliProgress.SingleBar | null = null;
 
     constructor(config: Config) {
         this.config = config;
         this.pageIndex = 1;
+        if (this.config.limit > 0) {
+            this.multibar = new cliProgress.MultiBar({
+                format: '下载进度 |{bar}| {percentage}% | {value}/{total} 部影片 | 剩余: {eta}s',
+                barCompleteChar: '█',
+                barIncompleteChar: '░',
+                hideCursor: true
+            }, cliProgress.Presets.shades_classic);
+            this.progressBar = this.multibar.create(this.config.limit, 0);
+        }
+    }
+
+    private logInfo(message: string): void {
+        if (this.multibar) {
+            this.multibar.log(message + '\n');
+        } else {
+            logger.info(message);
+        }
     }
 
     private getCurrentIndexPageUrl(): string {
@@ -45,6 +66,11 @@ class JavScraper {
             return url.endsWith('/') ? url.slice(0, -1) : url;
         }
         const baseUrl = cleanUrl(this.config.base || this.config.BASE_URL);
+        //如果baseUrl包含/genre/,后面就不加page/了,而是直接跟index
+        if (baseUrl.includes('/genre/') || baseUrl.includes('/search/')) {
+            const index = this.pageIndex === 1? '' : `/${this.pageIndex}`; 
+            return `${baseUrl}${index}`;
+        }
         if (this.config.search) {
             const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
             return `${baseUrl}${this.config.searchUrl}/${encodeURIComponent(this.config.search)}${index}`;
@@ -55,21 +81,55 @@ class JavScraper {
     }
 
     async mainExecution(): Promise<void> {
+        this.logInfo('开始抓取 Jav 影片...');
+        if (this.config.limit > 0) {
+            this.logInfo(`目标抓取数量: ${this.config.limit} 部影片`);
+        }
+        this.logInfo(`使用配置: ${JSON.stringify(this.config, null, 2)}`);
+
         const queueManager = new QueueManager(this.config);
         let shouldStop = false;
 
         // 注册事件处理器
+        queueManager.on(QueueEventType.INDEX_PAGE_START, (event) => {
+            this.logInfo(`开始抓取第${this.pageIndex}页: ${event.data.link}`);
+        });
+
         queueManager.on(QueueEventType.INDEX_PAGE_PROCESSED, (event) => {
             const links = event.data.links;
+            console.log(`第${this.pageIndex}页抓取到${links.length}部影片`);
             queueManager.getDetailPageQueue().push(links.map((link: string) => ({ link })));
         });
+        queueManager.on(QueueEventType.DETAIL_PAGE_START, (event) => {
+            this.logInfo(`开始处理详情页: ${event.data.link}`);
+        });
+
         queueManager.on(QueueEventType.DETAIL_PAGE_PROCESSED, (event) => {
-            logger.info(`已抓取 ${event.data.filmData.title}`); // 输出日志，显示已抓取的影片数量，用于调试和监控
-            this.filmCount++; // 每次处理完一个详情页，增加计数器
-            if(this.config.limit > 0 && this.filmCount > this.config.limit) { // 如果设置了抓取数量限制，并且当前抓取数量达到限制
-                shouldStop = true; // 设置停止标志为 true
-                logger.info(`已抓取 ${this.config.limit} 部影片，停止抓取。`);
-                queueManager.getDetailPageQueue().kill(); // 停止详情页队列的处理
+            this.filmCount++;
+            
+            if (this.progressBar) {
+                this.progressBar.update(this.filmCount);
+                // Log below the progress bar after updating it
+                // This requires the bar to be stopped and restarted or using a method that logs without interference
+                // For simplicity, we'll log directly, assuming the update will redraw over it or it's acceptable.
+                // A more robust solution might involve a dedicated logging area or a different progress bar library.
+                this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`); 
+            } else {
+                logger.info(`已抓取 ${event.data.filmData.title}`);
+            }
+            
+            if(this.config.limit > 0 && this.filmCount >= this.config.limit) {
+                shouldStop = true;
+                
+                if (this.progressBar) {
+                    // this.progressBar.stop(); // Stop is handled in cleanup
+                    // Log completion message
+                    console.log(`已完成抓取 ${this.config.limit} 部影片。`);
+                } else {
+                    logger.info(`已抓取 ${this.config.limit} 部影片，停止抓取。`);
+                }
+                
+                queueManager.getDetailPageQueue().kill();
             }
             if (!shouldStop) { // 如果未设置抓取数量限制，或者当前抓取数量未达到限制
                 queueManager.getFileWriteQueue().push(event.data.filmData); // 处理完成后将影片数据推送到文件写入队列
@@ -93,13 +153,41 @@ class JavScraper {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 if (err instanceof Error) {
-                    logger.error(`抓取第${this.pageIndex}页时出错: ${err.message}`);
+                    // logger.error(`抓取第${this.pageIndex}页时出错: ${err.message}`);
                 } else {
-                    logger.error(`抓取第${this.pageIndex}页时出错: ${String(err)}`);
+                    // logger.error(`抓取第${this.pageIndex}页时出错: ${String(err)}`);
                 }
                 // 错误恢复 - 等待5秒后重试
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
+        }
+    }
+
+    /**
+     * 清理资源，停止进度条
+     */
+    private cleanup(): void {
+        if (this.progressBar) {
+            this.progressBar.stop();
+            this.progressBar = null;
+        }
+        if (this.multibar) {
+            this.multibar.stop();
+            this.multibar = null;
+        }
+    }
+
+    public destroy(): void {
+        const wasActive = !!this.progressBar;
+        this.cleanup();
+        if (wasActive) {
+            if (this.multibar) {
+                this.multibar.log('资源清理完成。\n');
+            } else {
+                console.log('资源清理完成。');
+            }
+        } else {
+            logger.info('资源清理完成。');
         }
     }
 
@@ -108,7 +196,50 @@ class JavScraper {
 
 (async () => {
     const scraper = new JavScraper(PROGRAM_CONFIG);
-    logger.info('开始抓取 Jav 影片...');
-    logger.info(`使用配置: ${JSON.stringify(PROGRAM_CONFIG, null, 2)}`);
-    await scraper.mainExecution();
+    
+    process.on('SIGINT', () => {
+        if (scraper.progressBar) {
+            scraper.progressBar.stop();
+            if (scraper.multibar) {
+                scraper.multibar.log('收到退出信号，开始清理...\n');
+            } else {
+                console.log('收到退出信号，开始清理...');
+            }
+        } else {
+            logger.info('收到退出信号，开始清理...');
+        }
+        scraper.destroy();
+        process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+        if (scraper.progressBar) {
+            scraper.progressBar.stop();
+            if (scraper.multibar) {
+                scraper.multibar.log('收到终止信号，开始清理...\n');
+            } else {
+                console.log('收到终止信号，开始清理...');
+            }
+        } else {
+            logger.info('收到终止信号，开始清理...');
+        }
+        scraper.destroy();
+        process.exit(0);
+    });
+    
+    try {
+        // Initial logs moved to mainExecution
+        await scraper.mainExecution();
+    } catch (error) {
+        // logger.error('程序执行出错:', error);
+        console.error('程序执行出错:', error);
+        scraper.destroy(); // destroy will log completion
+        process.exit(1);
+    } finally {
+        // Ensure destroy is called, which also logs completion
+        // but only if not already exited by SIGINT/SIGTERM or error handling
+        if (process.exitCode === undefined) { // Check if exit hasn't been called
+             scraper.destroy();
+        }
+    }
 })();

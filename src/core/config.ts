@@ -22,15 +22,15 @@ class ConfigManager {
 
     constructor() {
         this.config = {
-            DEFAULT_TIMEOUT: 30000,
-            BASE_URL: 'https://www.fanbus.ink',
+            BASE_URL: 'https://www.seedmm.ink/',
             searchUrl: '/search',
             parallel: 2,
             headers: {
-                Referer: 'https://www.fanbus.ink/',
+                Referer: 'https://www.seedmm.ink/',
                 Cookie: 'existmag=mag'
             },
             output: process.cwd(),
+            timeout: 30000, 
             search: null,
             base: null,
             nomag: false,
@@ -42,8 +42,7 @@ class ConfigManager {
 
     public updateFromProgram(program: Command): void {
         this.config.parallel = parseInt(program.opts().parallel) || 2;
-        // 原代码中 Config 接口不存在 timeout 属性，应使用 DEFAULT_TIMEOUT 属性
-        this.config.DEFAULT_TIMEOUT = parseInt(program.opts().timeout) || 30000;
+        this.config.timeout = parseInt(program.opts().timeout) || 30000;
         this.config.proxy = process.env.http_proxy || program.opts().proxy;
         if (program.opts().output !== undefined && program.opts().output !== null) {
             this.config.output = program.opts().output;

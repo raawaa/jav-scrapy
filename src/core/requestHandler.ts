@@ -10,6 +10,15 @@ import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
 import path from 'path'; // 导入 path 模块，用于处理文件路径
 import fs from 'fs'; // 导入 fs 模块，用于文件操作
 
+
+
+// 常见浏览器User-Agent列表（定期更新）
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/121.0'
+];
+
 /**
  * 请求配置接口
  */
@@ -19,14 +28,20 @@ interface RequestConfig {
   cookie?: string;
   headers: {
     referer: string;
-    scheme: string;
-    accept: string;
-    'accept-encoding': string;
-    'accept-language': string;
-    'cache-control': string;
-    pragma: string;
     'user-agent': string;
     Cookie: string;
+    'Sec-Fetch-Dest': string;
+    'Sec-Fetch-Mode': string;
+    'Sec-Fetch-Site': string;
+    'Sec-Fetch-User': string;
+    'Sec-Ch-Ua': string;
+    'Sec-Ch-Ua-Mobile': string;
+    'Sec-Ch-Ua-Platform': string;
+    'Accept': string;
+    'Accept-Language': string;
+    'Cache-Control': string;
+    'Connection': string;
+    'Upgrade-Insecure-Requests': string;
   };
 }
 
@@ -49,41 +64,70 @@ class RequestHandler {
       timeout: config.timeout,
       proxy: config.proxy,
       headers: {
-        referer: this.config.headers.Referer,
-        scheme: 'https',
-        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'accept-encoding': 'gzip, deflate, br',
-        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-        'cache-control': 'no-cache',
-        pragma: 'no-cache',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0',
-        Cookie: config.headers.Cookie || ''
+        'referer': new URL(this.config.base || this.config.BASE_URL).origin,
+        'Cookie': this.config.headers.Cookie || '',
+        'Sec-Ch-Ua': '"Chromium";v="119", "Not?A_Brand";v="24"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-User': '?1',
+        'user-agent': USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
       }
     };
 
-    this.retries = 3; // 重试次数
-    this.retryDelay = 1000; // 重试延迟
+    this.retries = 5;
+    this.retryDelay = 5000; // 增加重试延迟到5秒
 
     axiosRetry(axios, {
       retries: this.retries,
       retryDelay: (retryCount) => {
-        return retryCount * this.retryDelay; // 指数退避
+        return retryCount * this.retryDelay + Math.random() * 1000; // 添加随机延迟
       },
       retryCondition: (error) => {
-        // 检查错误是否是网络错误或特定的状态码
-        return (error.response && error.response.status >= 500) || error.code === 'ECONNABORTED';
+        // 检查错误是否是网络错误、ECONNRESET、超时或特定的状态码
+        const shouldRetry =
+          (error.response && (error.response.status >= 500 || error.response.status === 429)) ||
+          error.code === 'ECONNABORTED' ||
+          error.code === 'ECONNRESET' ||
+          error.code === 'ETIMEDOUT' ||
+          error.code === 'ECONNREFUSED';
+        if (shouldRetry) {
+          console.warn(`请求失败，正在重试... 错误: ${error.code || error.message}`);
+        }
+        return shouldRetry;
       }
     });
-    
+
     // 添加HTTPS代理拦截器
     axios.interceptors.request.use((config) => {
       if (this.requestConfig.proxy && config.url?.startsWith('https')) {
-        const proxyUrl = new URL(this.requestConfig.proxy);
-        const agent = proxyUrl.protocol === 'http:' 
-          ? tunnel.httpsOverHttp({ proxy: { host: proxyUrl.hostname, port: parseInt(proxyUrl.port, 10) } })
-          : tunnel.httpsOverHttps({ proxy: { host: proxyUrl.hostname, port: parseInt(proxyUrl.port, 10) } });
-        config.httpsAgent = agent;
-        config.proxy = false;
+        try {
+          const proxyUrl = new URL(this.requestConfig.proxy);
+          const agentOptions = {
+            proxy: {
+              host: proxyUrl.hostname,
+              port: parseInt(proxyUrl.port, 10),
+              // 可选：如果代理需要认证
+              // proxyAuth: 'username:password'
+            }
+          };
+          const agent = proxyUrl.protocol === 'http:'
+            ? tunnel.httpsOverHttp(agentOptions)
+            : tunnel.httpsOverHttps(agentOptions);
+          config.httpsAgent = agent;
+          config.proxy = false; // 必须设置为false，否则axios会尝试使用自己的代理逻辑
+        } catch (proxyError) {
+          // console.error(`配置代理时出错: ${proxyError instanceof Error ? proxyError.message : String(proxyError)}`);
+          // 可选择抛出错误或允许请求在没有代理的情况下继续
+          // throw proxyError;
+        }
       }
       return config;
     });
@@ -103,12 +147,14 @@ class RequestHandler {
     };
     try {
       const response = await axios.get(mergedOptions.url, {
-          timeout: mergedOptions.timeout,
-          headers: mergedOptions.headers
+        timeout: mergedOptions.timeout,
+        headers: mergedOptions.headers
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
-      throw err;
+      const error = err as any;
+      console.error(`获取页面 ${mergedOptions.url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
+      throw error;
     }
   }
 
@@ -126,15 +172,17 @@ class RequestHandler {
     };
     try {
       const response = await axios.get(mergedOptions.url, {
-          timeout: mergedOptions.timeout,
-          headers: {
-              ...mergedOptions.headers,
-              'X-Requested-With': 'XMLHttpRequest'
-          }
+        timeout: mergedOptions.timeout,
+        headers: {
+          ...mergedOptions.headers,
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
-      throw err;
+      const error = err as any;
+      // console.error(`发送 XMLHttpRequest 到 ${mergedOptions.url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
+      throw error;
     }
   }
 
@@ -144,11 +192,15 @@ class RequestHandler {
    * @returns 最大文件大小对应的磁力链接，如果没有找到则返回 null
    */
   public async fetchMagnet(metadata: Metadata) {
-    const url = `https://www.fanbus.ink/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=880`;
+    // 使用配置中的 BASE_URL 作为默认值，而不是空字符串
+    const baseUrl = this.config.base || this.config.BASE_URL;
+    const parsedBaseUrl = new URL(baseUrl);
+    const baseDomain = `${parsedBaseUrl.protocol}//${parsedBaseUrl.host}`;
+    const url = `${baseDomain}/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=880`;
     const response = await this.getXMLHttpRequest(url);
 
     const magnetLinks = [...new Set(response.body.match(/magnet:\?xt=urn:btih:[A-F0-9]+&dn=[^&"']+/gi))];
-    const sizes = response.body.match(/\d+\.\d+GB|\d+MB/g);
+    const sizes = response.body.match(/\d+(\.\d+)?[GM]B/g);
 
     if (!magnetLinks || !sizes) return null;
 
@@ -176,17 +228,20 @@ class RequestHandler {
     try {
       const filePath = path.join(this.config.output, filename);
       if (fs.existsSync(filePath)) {
+        // console.log(`图片 ${filename} 已存在，跳过下载。`);
         return false;
       }
       const response = await axios.get(url, {
-          responseType: 'arraybuffer',
-          timeout: this.requestConfig.timeout,
-          headers: this.requestConfig.headers
+        responseType: 'arraybuffer',
+        timeout: this.requestConfig.timeout,
+        headers: this.requestConfig.headers
       });
       fs.writeFileSync(filePath, Buffer.from(response.data, 'binary'));
       return true;
     } catch (err) {
-      throw err;
+      const error = err as any;
+      // console.error(`下载图片 ${url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
+      throw error;
     }
   }
 }

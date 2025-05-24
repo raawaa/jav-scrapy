@@ -16,7 +16,9 @@ export interface QueueHandler {
 }
 
 export enum QueueEventType {
+    INDEX_PAGE_START = 'index_page_start',
     INDEX_PAGE_PROCESSED = 'index_page_processed',
+    DETAIL_PAGE_START = 'detail_page_start',
     DETAIL_PAGE_PROCESSED = 'detail_page_processed',
     FILM_DATA_SAVED = 'film_data_saved'
 }
@@ -69,7 +71,11 @@ class QueueManager {
         if (!this.imageDownloadQueue) {
             this.imageDownloadQueue = async.queue(async (metadata: Metadata, callback) => {
                 const baseUrl = this.config.base || this.config.BASE_URL;
-                const imageUrl = `${baseUrl.replace(/\/+$/, '')}/${metadata.img.replace(/^\/+/, '')}`;
+                const parsedUrl = new URL(baseUrl); // 解析 baseUrl 为 URL 对象
+                const domainOnly = `${parsedUrl.protocol}//${parsedUrl.hostname}`; // 提取域名部分            
+
+
+                const imageUrl = `${domainOnly.replace(/\/+$/, '')}/${metadata.img.replace(/^\/+/, '')}`;
                 await this.requestHandler.downloadImage(imageUrl, metadata.title + '.jpg');
                 callback();
             }, this.config.parallel);
@@ -98,17 +104,23 @@ class QueueManager {
     public getDetailPageQueue(): async.QueueObject<DetailPageTask> {
         if (!this.detailPageQueue) {
             this.detailPageQueue = async.queue(async (task: DetailPageTask, callback) => {
-                logger.info(`开始处理详情页 ${task.link}`);
-                const response = await this.requestHandler.getPage(task.link);
-                const metadata = Parser.parseMetadata(response.body);
-                const magnet = await this.requestHandler.fetchMagnet(metadata);
-                const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
-                this.emit({
-                    type: QueueEventType.DETAIL_PAGE_PROCESSED,
-                    data: { filmData, metadata }
-                });
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                callback();
+                try {
+                    this.emit({ type: QueueEventType.DETAIL_PAGE_START, data: { link: task.link } }); // 触发页面请求事件
+                    const response = await this.requestHandler.getPage(task.link);
+                    const metadata = Parser.parseMetadata(response.body);
+                    const magnet = await this.requestHandler.fetchMagnet(metadata);
+                    const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
+                    this.emit({
+                        type: QueueEventType.DETAIL_PAGE_PROCESSED,
+                        data: { filmData, metadata }
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    callback();
+                } catch (error) {
+                    console.error(`处理详情页 ${task.link} 时出错:`, error);
+                    // 不中断队列处理，继续处理下一个任务
+                    callback();
+                }
             }, this.config.parallel);
         }
         return this.detailPageQueue;
@@ -121,10 +133,11 @@ class QueueManager {
     public getIndexPageQueue(): async.QueueObject<IndexPageTask> {
         if (!this.indexPageQueue) {
             this.indexPageQueue = async.queue(async (task: IndexPageTask, callback) => {
-                logger.info(`开始抓取 ${task.url} `);
+                // logger.info(`开始抓取 ${task.url} `);
+                this.emit({ type: QueueEventType.INDEX_PAGE_START, data: { link: task.url } }); // 触发页面请求事件
                 const response = await this.requestHandler.getPage(task.url);
                 const links: string[] = Parser.parsePageLinks(response.body);
-                logger.info(`第 ${task.url} 页抓取完成，共找到 ${links.length} 条链接`);
+                // logger.info(`第 ${task.url} 页抓取完成，共找到 ${links.length} 条链接`);
                 this.emit({
                     type: QueueEventType.INDEX_PAGE_PROCESSED,
                     data: { links }
@@ -146,7 +159,7 @@ class QueueManager {
     public static createErrorHandler(queueName: string): (err: Error, task: any) => void {
         return (err: Error, task: any) => {
             logger.error(`[${queueName}] 处理任务时出错: ${err.message}`);
-            logger.debug(`错误详情: ${err.stack}`);
+            // logger.debug(`错误详情: ${err.stack}`);
         };
     }
 

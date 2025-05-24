@@ -92,9 +92,9 @@ class FileHandler {
         // 写入文件
         fs.writeFileSync(filePath, jsonData);
 
-        logger.info(`Film data successfully written to ${filePath}`);
+        // logger.info(`Film data successfully written to ${filePath}`);
       } else {
-        logger.info(`Skipped duplicate film data with title: ${data.title}`);
+        // logger.info(`Skipped duplicate film data with title: ${data.title}`);
       }
 
       // 写入文件
