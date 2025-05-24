@@ -107,6 +107,33 @@ class Parser {
     return filmData;
   }
 
+  /**
+   * 提取防屏蔽地址
+   * @param {string} html - 页面HTML内容
+   * @returns {Array<string>} 防屏蔽地址数组
+   * @description 从页面中提取所有包含防屏蔽地址的链接
+   */
+  static extractAntiBlockUrls(html: string): Array<string> {
+    const $ = require('cheerio').load(html);
+    const antiBlockUrls: Array<string> = [];
+
+    // 定位到包含防屏蔽地址的警告框
+    const alertBox = $('.alert.alert-info');
+    
+    // 遍历所有包含防屏蔽地址的列
+    alertBox.find('.col-xs-12.col-md-6.col-lg-3.text-center').each((i: number, elem: cheerio.Element) => {
+        const strongText = $(elem).find('strong').text().trim();
+        
+        // 验证是否是防屏蔽地址条目
+        if (strongText.includes('防屏蔽地址')) {
+            const url = $(elem).find('a').attr('href').trim();
+            antiBlockUrls.push(url);
+        }
+    });
+
+    return antiBlockUrls;
+}
+
 }
 
 export default Parser;

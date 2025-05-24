@@ -9,6 +9,8 @@ import { QueueEventType } from './core/queueManager';
 import { Config } from './types/interfaces';
 import * as cliProgress from 'cli-progress';
 import chalk from 'chalk';
+import Parser from './core/parser';  // Adjust the path if needed, e.g., '../core/parser'
+import RequestHandler from './core/requestHandler';  // 确认路径正确
 
 
 program
@@ -59,6 +61,10 @@ class JavScraper {
         }
     }
 
+    /**
+     * 获取当前页面的 URL
+     * @returns {string} 当前页面的 URL
+     */
     private getCurrentIndexPageUrl(): string {
         const baseUrl = (this.config.base || this.config.BASE_URL).replace(/\/$/, ''); // 移除末尾斜杠
         const pagePart = this.pageIndex === 1 ? '' : `/${this.pageIndex}`;
@@ -76,6 +82,8 @@ class JavScraper {
     }
 
     async mainExecution(): Promise<void> {
+
+
         this.logInfo('开始抓取 Jav 影片...');
         if (this.config.limit > 0) {
             this.logInfo(`目标抓取数量: ${this.config.limit} 部影片`);
@@ -194,6 +202,16 @@ async function initializeScraper() {
     const configManager = new ConfigManager();
     await configManager.updateFromProgram(program);
     const PROGRAM_CONFIG = configManager.getConfig();
+
+    const requestHandler = new RequestHandler(PROGRAM_CONFIG);  // 已修正
+    const pageData = await requestHandler.getPage(PROGRAM_CONFIG.base || PROGRAM_CONFIG.BASE_URL);
+    const html = pageData.body;
+    const antiBlockUrls = Parser.extractAntiBlockUrls(html);
+    if (antiBlockUrls.length > 0) {
+        // 随机选择一个防屏蔽地址
+        const randomIndex = Math.floor(Math.random() * antiBlockUrls.length);
+        PROGRAM_CONFIG.base = antiBlockUrls[randomIndex];
+    }
 
     // 实例化 JavScraper 并使用最新配置
     const scraper = new JavScraper(PROGRAM_CONFIG);
