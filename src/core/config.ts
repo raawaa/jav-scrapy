@@ -14,6 +14,7 @@
 
 import { Command } from 'commander'; // 引入 Commander 库中的 Command 类型
 import { Config } from '../types/interfaces'; // 引入 Config 接口的路径，根据实际情况调整路径
+import { getSystemProxy, parseProxyServer } from '../utils/systemProxy';
 
 
 
@@ -30,20 +31,31 @@ class ConfigManager {
                 Cookie: 'existmag=mag'
             },
             output: process.cwd(),
-            timeout: 30000, 
+            timeout: 30000,
             search: null,
             base: null,
             nomag: false,
             allmag: false,
             nopic: false,
             limit: 0,
+            proxy: undefined
         };
     }
 
-    public updateFromProgram(program: Command): void {
+    public async updateFromProgram(program: Command): Promise<void> {
+        // 先读取系统代理设置
+        const systemProxy = await getSystemProxy();
+        console.log('系统代理设置:', systemProxy);
+        if (systemProxy.enabled && systemProxy.server) {
+            this.config.proxy = parseProxyServer(systemProxy.server);
+        }
+
+        // 命令行参数覆盖系统代理设置
+        if (program.opts().proxy) {
+            this.config.proxy = program.opts().proxy;
+        }
         this.config.parallel = parseInt(program.opts().parallel) || 2;
         this.config.timeout = parseInt(program.opts().timeout) || 30000;
-        this.config.proxy = process.env.http_proxy || program.opts().proxy;
         if (program.opts().output !== undefined && program.opts().output !== null) {
             this.config.output = program.opts().output;
         }

@@ -27,9 +27,7 @@ program
     .parse(process.argv);
 
 
-const configManager = new ConfigManager();
-configManager.updateFromProgram(program);
-const PROGRAM_CONFIG = configManager.getConfig();
+
 
 
 class JavScraper {
@@ -68,7 +66,7 @@ class JavScraper {
         const baseUrl = cleanUrl(this.config.base || this.config.BASE_URL);
         //如果baseUrl包含/genre/,后面就不加page/了,而是直接跟index
         if (baseUrl.includes('/genre/') || baseUrl.includes('/search/')) {
-            const index = this.pageIndex === 1? '' : `/${this.pageIndex}`; 
+            const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`;
             return `${baseUrl}${index}`;
         }
         if (this.config.search) {
@@ -106,21 +104,21 @@ class JavScraper {
 
         queueManager.on(QueueEventType.DETAIL_PAGE_PROCESSED, (event) => {
             this.filmCount++;
-            
+
             if (this.progressBar) {
                 this.progressBar.update(this.filmCount);
                 // Log below the progress bar after updating it
                 // This requires the bar to be stopped and restarted or using a method that logs without interference
                 // For simplicity, we'll log directly, assuming the update will redraw over it or it's acceptable.
                 // A more robust solution might involve a dedicated logging area or a different progress bar library.
-                this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`); 
+                this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`);
             } else {
                 logger.info(`已抓取 ${event.data.filmData.title}`);
             }
-            
-            if(this.config.limit > 0 && this.filmCount >= this.config.limit) {
+
+            if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
                 shouldStop = true;
-                
+
                 if (this.progressBar) {
                     // this.progressBar.stop(); // Stop is handled in cleanup
                     // Log completion message
@@ -128,7 +126,7 @@ class JavScraper {
                 } else {
                     logger.info(`已抓取 ${this.config.limit} 部影片，停止抓取。`);
                 }
-                
+
                 queueManager.getDetailPageQueue().kill();
             }
             if (!shouldStop) { // 如果未设置抓取数量限制，或者当前抓取数量未达到限制
@@ -194,9 +192,21 @@ class JavScraper {
 }
 
 
-(async () => {
+async function initializeScraper() {
+    // 确保配置更新完成
+    const configManager = new ConfigManager();
+    await configManager.updateFromProgram(program);
+    const PROGRAM_CONFIG = configManager.getConfig();
+
+    // 实例化 JavScraper 并使用最新配置
     const scraper = new JavScraper(PROGRAM_CONFIG);
-    
+    return scraper;
+}
+
+
+(async () => {
+    const scraper = await initializeScraper();
+
     process.on('SIGINT', () => {
         if (scraper.progressBar) {
             scraper.progressBar.stop();
@@ -211,7 +221,7 @@ class JavScraper {
         scraper.destroy();
         process.exit(0);
     });
-    
+
     process.on('SIGTERM', () => {
         if (scraper.progressBar) {
             scraper.progressBar.stop();
@@ -226,7 +236,7 @@ class JavScraper {
         scraper.destroy();
         process.exit(0);
     });
-    
+
     try {
         // Initial logs moved to mainExecution
         await scraper.mainExecution();
@@ -239,7 +249,7 @@ class JavScraper {
         // Ensure destroy is called, which also logs completion
         // but only if not already exited by SIGINT/SIGTERM or error handling
         if (process.exitCode === undefined) { // Check if exit hasn't been called
-             scraper.destroy();
+            scraper.destroy();
         }
     }
 })();
