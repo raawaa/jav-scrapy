@@ -23,11 +23,11 @@ class ConfigManager {
 
     constructor() {
         this.config = {
-            BASE_URL: 'https://www.seedmm.ink/',
+            BASE_URL: 'https://www.javbus.com/',
             searchUrl: '/search',
             parallel: 2,
             headers: {
-                Referer: 'https://www.seedmm.ink/',
+                Referer: 'https://www.javbus.com/',
                 Cookie: 'existmag=mag'
             },
             output: process.cwd(),

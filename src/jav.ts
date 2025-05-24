@@ -60,21 +60,18 @@ class JavScraper {
     }
 
     private getCurrentIndexPageUrl(): string {
-        function cleanUrl(url: string): string {
-            return url.endsWith('/') ? url.slice(0, -1) : url;
-        }
-        const baseUrl = cleanUrl(this.config.base || this.config.BASE_URL);
-        //如果baseUrl包含/genre/,后面就不加page/了,而是直接跟index
-        if (baseUrl.includes('/genre/') || baseUrl.includes('/search/')) {
-            const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`;
-            return `${baseUrl}${index}`;
-        }
+        const baseUrl = (this.config.base || this.config.BASE_URL).replace(/\/$/, ''); // 移除末尾斜杠
+        const pagePart = this.pageIndex === 1 ? '' : `/${this.pageIndex}`;
+
         if (this.config.search) {
-            const index = this.pageIndex === 1 ? '' : `/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${this.config.searchUrl}/${encodeURIComponent(this.config.search)}${index}`;
+            // 如果存在搜索关键词，则 URL 结构为 baseUrl/searchUrl/encodedSearch/pageIndex
+            return `${baseUrl}${this.config.searchUrl ? `/${this.config.searchUrl}` : ''}/${encodeURIComponent(this.config.search)}${pagePart}`;
+        } else if (baseUrl.includes('/genre/') || baseUrl.includes('/search/')) {
+            // 如果baseUrl已经包含 /genre/ 或 /search/，则直接在后面跟页码
+            return `${baseUrl}${pagePart}`;
         } else {
-            const index = this.pageIndex === 1 ? '' : `/page/${this.pageIndex}`; // 检查是否为第一页，如果是则不添加 page 部分到 URL 中
-            return `${baseUrl}${index}`;
+            // 否则，正常在后面跟 /page/pageIndex
+            return `${baseUrl}${this.pageIndex === 1 ? '' : `/page${pagePart}`}`;
         }
     }
 

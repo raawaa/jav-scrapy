@@ -15,9 +15,17 @@ import fs from 'fs'; // 导入 fs 模块，用于文件操作
 // 常见浏览器User-Agent列表（定期更新）
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/119.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/121.0'
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
 ];
+
+// 随机延迟函数
+const randomDelay = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
 
 /**
  * 请求配置接口
@@ -27,21 +35,27 @@ interface RequestConfig {
   proxy?: string;
   cookie?: string;
   headers: {
-    referer: string;
+    'authority'?: string;
+    'method'?: string;
+    'path'?: string;
+    'scheme'?: string;
+    'accept'?: string;
+    'accept-encoding'?: string;
+    'accept-language'?: string;
+    'cache-control'?: string;
+    'sec-ch-ua'?: string;
+    'sec-ch-ua-mobile'?: string;
+    'sec-ch-ua-platform'?: string;
+    'sec-fetch-dest'?: string;
+    'sec-fetch-mode'?: string;
+    'sec-fetch-site'?: string;
+    'sec-fetch-user'?: string;
+    'upgrade-insecure-requests'?: string;
     'user-agent': string;
-    Cookie: string;
-    'Sec-Fetch-Dest': string;
-    'Sec-Fetch-Mode': string;
-    'Sec-Fetch-Site': string;
-    'Sec-Fetch-User': string;
-    'Sec-Ch-Ua': string;
-    'Sec-Ch-Ua-Mobile': string;
-    'Sec-Ch-Ua-Platform': string;
-    'Accept': string;
-    'Accept-Language': string;
-    'Cache-Control': string;
+    'referer': string;
+    'Cookie': string;
     'Connection': string;
-    'Upgrade-Insecure-Requests': string;
+    'X-Requested-With'?: string;
   };
 }
 
@@ -60,46 +74,83 @@ class RequestHandler {
    */
   constructor(config: Config) {
     this.config = config;
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    const isChrome = userAgent.includes('Chrome');
+    const isFirefox = userAgent.includes('Firefox');
+    const isEdge = userAgent.includes('Edge');
+    
+    // 提取浏览器版本号
+    const versionMatch = userAgent.match(/(Chrome|Firefox|Edge|Edg)[\/\s](\d+)/);
+    const browserVersion = versionMatch ? versionMatch[2] : '119';
+    
+    // 设置 Sec-Ch-Ua 和浏览器指纹
+    let secChUa = '';
+    let platform = '"Windows"';
+    let secChUaMobile = '?0';
+    let secChUaPlatform = platform;
+    
+    if (isChrome || isEdge) {
+      const brandVersion = isEdge ? 'Microsoft Edge' : 'Chromium';
+      secChUa = `"${brandVersion}";v="${browserVersion}", "Not?A_Brand";v="99"`;
+    } else if (isFirefox) {
+      secChUa = `"Not.A/Brand";v="8", "Chromium";v="${browserVersion}", "Google Chrome";v="${browserVersion}"`;
+    } else {
+      secChUa = `"Chromium";v="${browserVersion}", "Not?A_Brand";v="99"`;
+    }
+    
+    // 设置请求配置
     this.requestConfig = {
-      timeout: config.timeout,
+      timeout: config.timeout || 30000, // 默认30秒超时
       proxy: config.proxy,
       headers: {
+        'authority': new URL(this.config.base || this.config.BASE_URL).hostname,
+        'method': 'GET',
+        'path': '/',
+        'scheme': 'https',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        'cache-control': 'max-age=0',
+        'sec-ch-ua': secChUa,
+        'sec-ch-ua-mobile': secChUaMobile,
+        'sec-ch-ua-platform': secChUaPlatform,
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': userAgent,
         'referer': new URL(this.config.base || this.config.BASE_URL).origin,
-        'Cookie': this.config.headers.Cookie || '',
-        'Sec-Ch-Ua': '"Chromium";v="119", "Not?A_Brand";v="24"',
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': '"Windows"',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-User': '?1',
-        'user-agent': USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Cache-Control': 'max-age=0',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
+        'Cookie': this.config.headers.Cookie || 'existmag=mag;',
+        'Connection': 'keep-alive'
       }
     };
 
     this.retries = 5;
-    this.retryDelay = 5000; // 增加重试延迟到5秒
-
+    this.retryDelay = 5000;    // 配置axios重试
     axiosRetry(axios, {
-      retries: this.retries,
+      retries: 5, // 增加重试次数
       retryDelay: (retryCount) => {
-        return retryCount * this.retryDelay + Math.random() * 1000; // 添加随机延迟
+        // 指数退避策略，加上随机延迟
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+        return delay + randomDelay(500, 1500);
       },
-      retryCondition: (error) => {
-        // 检查错误是否是网络错误、ECONNRESET、超时或特定的状态码
-        const shouldRetry =
-          (error.response && (error.response.status >= 500 || error.response.status === 429)) ||
-          error.code === 'ECONNABORTED' ||
-          error.code === 'ECONNRESET' ||
-          error.code === 'ETIMEDOUT' ||
-          error.code === 'ECONNREFUSED';
+      retryCondition: (error: any) => {
+        // 在以下情况下重试：
+        // 1. 网络错误
+        // 2. 5xx服务器错误
+        // 3. 429 Too Many Requests
+        // 4. 403 Forbidden (Cloudflare拦截)
+        const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+                         (error.response && (
+                           error.response.status >= 500 ||
+                           error.response.status === 429 ||
+                           error.response.status === 403
+                         ));
+        
         if (shouldRetry) {
-          console.warn(`请求失败，正在重试... 错误: ${error.code || error.message}`);
+          const currentRetry = (error.config && error.config['axios-retry'] && error.config['axios-retry'].retryCount) || 0;
+          console.warn(`请求失败，正在重试 (${currentRetry + 1}/5)... 错误: ${error.code || error.message}`);
         }
         return shouldRetry;
       }
@@ -181,7 +232,7 @@ class RequestHandler {
       return { statusCode: response.status, body: response.data };
     } catch (err) {
       const error = err as any;
-      // console.error(`发送 XMLHttpRequest 到 ${mergedOptions.url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
+      console.error(`发送 XMLHttpRequest 到 ${mergedOptions.url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
       throw error;
     }
   }
@@ -196,7 +247,7 @@ class RequestHandler {
     const baseUrl = this.config.base || this.config.BASE_URL;
     const parsedBaseUrl = new URL(baseUrl);
     const baseDomain = `${parsedBaseUrl.protocol}//${parsedBaseUrl.host}`;
-    const url = `${baseDomain}/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=880`;
+    const url = `${baseDomain}/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=${Math.floor(1e3 * Math.random() + 1)}`;
     const response = await this.getXMLHttpRequest(url);
 
     const magnetLinks = [...new Set(response.body.match(/magnet:\?xt=urn:btih:[A-F0-9]+&dn=[^&"']+/gi))];
