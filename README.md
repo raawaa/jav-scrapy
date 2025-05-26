@@ -4,10 +4,11 @@
 
 🚀 **主要功能**：
 - 抓取 AV 影片的磁力链接、影片信息并保存为 JSON 文件。
-- 抓取影片的封面图片并保存到本地。
+- 抓取影片的封面图片并保存到本地。自动处理文件名过长或包含非法字符的情况。
 - 支持关键词搜索功能，可根据关键词过滤影片。
 - 支持并发下载，可自定义并发数。
 - 支持代理服务器配置。如果检测到系统代理设置，会自动使用系统代理。
+- **新增 `update` 命令，用于自动检测并管理防屏蔽地址。**
 
 📝 **TODO**:
 - [ ] 实现类似git的子命令模式，例如：
@@ -68,74 +69,60 @@ $ npm install -g . --force
 ## 🚀 使用方法
 
 ```bash
-# 基本用法
-$ jav
+# 启动抓取任务
+$ jav crawl [options]
 
 # 常用选项
-$ jav -p 5 -t 60000 -o ~/downloads/magnets
+$ jav crawl -p 5 -t 60000 -o ~/downloads/magnets
 
 # 搜索特定影片
-$ jav -s "影片关键词"
+$ jav crawl -s "影片关键词"
 
 # 使用代理服务器
-$ jav -x http://127.0.0.1:8087
+$ jav crawl -x http://127.0.0.1:8087
 
 # 不抓取图片
-$ jav -N
+$ jav crawl -N
 
 # 抓取所有磁链（默认只抓取最大体积的磁链）
-$ jav -a
+$ jav crawl -a
+
+# 抓取指定数量的影片
+$ jav crawl -l 10
+
+# **更新防屏蔽地址**
+# 运行此命令会自动检测并保存新的防屏蔽地址到 ~/.jav-scrapy-antiblock-urls.json 文件中。
+# 抓取命令 (crawl) 会优先使用这些本地保存的地址。
+$ jav update
+
+# **指定起始页URL**
+# 如果您通过 -b 参数指定了起始页URL，程序将优先使用您指定的地址，忽略本地保存的防屏蔽地址。
+$ jav crawl -b https://www.your-preferred-jav-site.com/
 ```
 
 ## ⌨️ 命令行选项说明
 
 
-| 选项                 | 说明                                     |
-| ---------------------- | ------------------------------------------ |
-| -p, --parallel<num>  | 设置并发连接数（默认：2）                |
-| -t, --timeout<num>   | 设置连接超时时间（毫秒，默认：30000）    |
-| -o, --output<path>   | 设置结果保存路径（默认：当前工作目录）      |
-| -s, --search<string> | 搜索关键词                               |
-| -b, --base<url>      | 自定义起始页URL                          |
-| -x, --proxy<url>     | 使用代理服务器                           |
-
-
+| 选项                 | 说明                                                                 |
+| ---------------------- | -------------------------------------------------------------------- |
+| -p, --parallel<num>  | 设置并发连接数（默认：2）                                            |
+| -t, --timeout<num>   | 设置连接超时时间（毫秒，默认：30000）                                |
+| -o, --output<path>   | 设置结果保存路径（默认：当前工作目录）。**建议指定一个有写入权限的目录。** |
+| -s, --search<string> | 搜索关键词                                                           |
+| -b, --base<url>      | 自定义抓取的起始页URL。指定此选项将覆盖本地保存的防屏蔽地址。           |
+| -x, --proxy<url>     | 使用代理服务器。如果检测到系统代理，此选项会覆盖系统代理设置。       |
+| -l, --limit<num>     | 设置抓取影片的数量上限，0为抓取全部影片（默认：0）                    |
+| -n, --nomag          | 是否抓取尚无磁链的影片                                               |
+| -a, --allmag         | 是否抓取影片的所有磁链（默认只抓取文件体积最大的磁链）               |
+| -N, --nopic          | 不抓取图片                                                           |
 
 
 ## 📌 Notes
 
-- 本程序至抓取所有磁链中，体积最大的磁链。
+- 程序会自动检测并使用系统代理设置。
+- 抓取图片时，如果文件名过长或包含非法字符，程序会尝试自动简化文件名进行保存。
+- `jav update` 命令会将检测到的防屏蔽地址追加保存到 `~/.jav-scrapy-antiblock-urls.json` 文件中。
 
-### ❗如何更换防屏蔽地址
-
-在 `src/core/config.ts` 文件中，修改相应的配置内容并重新编译安装：
-
-```typescript
-    constructor() {
-        this.config = {
-            DEFAULT_TIMEOUT: 30000,
-            BASE_URL: 'https://www.fanbus.ink',
-            searchUrl:'/search',
-            parallel: 2,
-            headers: {
-                Referer: 'https://www.fanbus.ink/',
-                Cookie: 'existmag=mag'
-            },
-            output: path.join(userHome, 'magnets'),
-            search: null,
-            base: null,
-            nomag: false,
-            allmag: false,
-            nopic: false
-        };
-```
-
-或者在命令行中使用 `-b` 选项指定自定义起始页URL：
-
-
-```bash
-$ jav -b https://www.fanbus.ink/
-```
 
 ## 👥 Contributors
 

@@ -11,11 +11,16 @@ import * as cliProgress from 'cli-progress';
 import chalk from 'chalk';
 import Parser from './core/parser';  
 import RequestHandler from './core/requestHandler';  
+import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
+import fs from 'fs';
 
 
 program
-    .version(version)
-    .usage('[options]')
+    .version(version);
+
+program
+    .command('crawl')
+    .description('启动爬虫')
     .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2')
     .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
     .option('-l, --limit <num>', '设置抓取影片的数量上限，0为抓取全部影片。默认值：0')
@@ -26,8 +31,129 @@ program
     .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .option('-N, --nopic', '不抓取图片')
-    .parse(process.argv);
+    .action(async (options, program) => {
+        const configManager = new ConfigManager();
+        await configManager.updateFromProgram(program);
+        const PROGRAM_CONFIG = configManager.getConfig();
 
+        const requestHandler = new RequestHandler(PROGRAM_CONFIG);
+        const scraper = new JavScraper(PROGRAM_CONFIG);
+
+        // 添加信号处理
+        process.on('SIGINT', () => {
+            console.log('\n收到退出信号，正在清理资源...');
+            scraper.destroy();
+            process.exit(0);
+        });
+
+        process.on('SIGTERM', () => {
+            console.log('\n收到终止信号，正在清理资源...');
+            scraper.destroy();
+            process.exit(0);
+        });
+
+        try {
+            await scraper.mainExecution();
+        } catch (error) {
+            console.error('程序执行出错:', error);
+            scraper.destroy();
+            process.exit(1);
+        }
+    });
+
+program
+    .command('update')
+    .description('更新防屏蔽地址')
+    .action(async () => {
+        const configManager = new ConfigManager();
+        // 直接在这里读取并应用系统代理配置
+        const systemProxy = await getSystemProxy();
+        console.log('系统代理设置:', systemProxy);
+        
+        const config = configManager.getConfig(); // 获取当前配置
+        if (systemProxy.enabled && systemProxy.server) {
+            // 将系统代理设置到获取到的 config 对象中
+            config.proxy = parseProxyServer(systemProxy.server);
+        }
+
+        console.log('🚀 开始检测最新防屏蔽地址...');
+        logger.info('🚀 开始检测最新防屏蔽地址...');
+        
+        // 复用爬虫的地址获取逻辑
+        // 使用可能包含系统代理的 config 来创建 RequestHandler
+        const requestHandler = new RequestHandler(config);
+        const pageData = await requestHandler.getPage(config.base || config.BASE_URL);
+        const antiBlockUrls = Parser.extractAntiBlockUrls(pageData?.body || '');
+        
+        // 定义保存防屏蔽地址的文件路径
+        const antiblockUrlsFilePath = `${process.env.HOME}/.jav-scrapy-antiblock-urls.json`;
+        let existingUrls: string[] = [];
+
+        // 读取现有防屏蔽地址文件
+        try {
+            if (fs.existsSync(antiblockUrlsFilePath)) {
+                const data = fs.readFileSync(antiblockUrlsFilePath, 'utf-8');
+                existingUrls = JSON.parse(data);
+                if (!Array.isArray(existingUrls)) {
+                    existingUrls = []; // 如果文件内容不是数组，则重置
+                }
+            }
+        } catch (error) {
+            logger.error(`读取防屏蔽地址文件失败: ${error instanceof Error ? error.message : String(error)}`);
+            existingUrls = []; // 读取失败也重置
+        }
+
+        if (antiBlockUrls.length > 0) {
+            // 合并新旧地址并去重
+            const allUrls = Array.from(new Set([...existingUrls, ...antiBlockUrls]));
+
+            // 保存更新后的地址数组到文件
+            try {
+                fs.writeFileSync(antiblockUrlsFilePath, JSON.stringify(allUrls, null, 2));
+                logger.success(`检测到 ${antiBlockUrls.length} 个新的防屏蔽地址，已更新到文件: ${chalk.underline.blue(antiblockUrlsFilePath)}`);
+            } catch (error) {
+                logger.error(`保存防屏蔽地址文件失败: ${error instanceof Error ? error.message : String(error)}`);
+            }
+
+        } else if (existingUrls.length > 0) {
+             logger.warn(`未找到新的防屏蔽地址，当前文件共有 ${existingUrls.length} 个记录`);
+        }
+        else {
+            logger.warn('未找到新的防屏蔽地址，且不存在历史记录。');
+        }
+
+        // 移除更新主配置文件 base 字段的逻辑
+        // if (antiBlockUrls.length > 0) {
+        //     const newUrl = antiBlockUrls[Math.floor(Math.random() * antiBlockUrls.length)];
+        //     // 只更新并保存配置中的 base 字段
+        //     const configPath = `${process.env.HOME}/.config.json`;
+        //     let currentConfig = {};
+        //     try {
+        //         if (fs.existsSync(configPath)) {
+        //             currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        //         }
+        //     } catch (error) {
+        //         logger.error(`读取配置文件失败: ${error instanceof Error ? error.message : String(error)}`);
+        //         // 如果读取失败，使用当前内存中的config作为基础
+        //         currentConfig = config;
+        //     }
+        //     // 更新 base 字段
+        //     currentConfig = { ...currentConfig, base: newUrl };
+        //     try {
+        //         fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+        //         logger.success(`防屏蔽地址已更新为：${chalk.underline.blue(newUrl)} 并已保存到配置文件`);
+        //     } catch (error) {
+        //         logger.error(`保存配置文件失败: ${error instanceof Error ? error.message : String(error)}`);
+        //     }
+        // } else {
+        //     logger.warn('未找到新的防屏蔽地址，使用备用地址');
+        //     const backupUrl = backupUrls[Math.floor(Math.random() * backupUrls.length)];
+        //     // 备份地址不自动保存到配置文件，只在当前运行中使用
+        //     // configManager.updateConfig({ base: backupUrl }); // 不在这里保存
+        //     logger.info(`本次使用备用地址：${backupUrl}`);
+        // }
+
+    });
 
 class JavScraper {
     private config: Config;
@@ -131,6 +257,16 @@ class JavScraper {
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
         }
+
+        // 在 shouldStop 变为 true 后，等待所有队列任务完成
+        console.log('抓取停止条件已满足，等待队列清空...');
+        await queueManager.getIndexPageQueue().idle();
+        await queueManager.getDetailPageQueue().idle();
+        await queueManager.getFileWriteQueue().idle();
+        await queueManager.getImageDownloadQueue().idle();
+
+        this.logInfo('所有抓取任务完成。');
+        this.destroy(); // 调用 cleanup 方法并输出完成信息
     }
 
     private cleanup(): void {
@@ -150,44 +286,6 @@ class JavScraper {
     }
 }
 
-async function initializeScraper() {
-    const configManager = new ConfigManager();
-    await configManager.updateFromProgram(program);
-    const PROGRAM_CONFIG = configManager.getConfig();
+program.parse();
 
-    const requestHandler = new RequestHandler(PROGRAM_CONFIG);
-    const pageData = await requestHandler.getPage(PROGRAM_CONFIG.base || PROGRAM_CONFIG.BASE_URL);
-    const html = pageData.body;
-    const antiBlockUrls = Parser.extractAntiBlockUrls(html);
-    if (antiBlockUrls.length > 0) {
-        const randomIndex = Math.floor(Math.random() * antiBlockUrls.length);
-        PROGRAM_CONFIG.base = antiBlockUrls[randomIndex];
-    }
 
-    return new JavScraper(PROGRAM_CONFIG);
-}
-
-(async () => {
-    const scraper = await initializeScraper();
-
-    // 添加信号处理
-    process.on('SIGINT', () => {
-        console.log('\n收到退出信号，正在清理资源...');
-        scraper.destroy();
-        process.exit(0);
-    });
-
-    process.on('SIGTERM', () => {
-        console.log('\n收到终止信号，正在清理资源...');
-        scraper.destroy();
-        process.exit(0);
-    });
-
-    try {
-        await scraper.mainExecution();
-    } catch (error) {
-        console.error('程序执行出错:', error);
-        scraper.destroy();
-        process.exit(1);
-    }
-})();

@@ -1,4 +1,11 @@
 import { createLogger, format, transports, Logger } from 'winston';
+import chalk from 'chalk';
+
+declare module 'winston' {
+  interface Logger {
+    success: (message: string) => void;
+  }
+}
 
 const logger = createLogger({
   level: 'info',
@@ -12,5 +19,7 @@ const logger = createLogger({
     new transports.File({ filename: 'combined.log' })
   ]
 });
+
+logger.success = (message: string) => logger.info(chalk.green(`✅ ${message}`));
 
 export default logger;

@@ -107,13 +107,15 @@ class QueueManager {
                 try {
                     this.emit({ type: QueueEventType.DETAIL_PAGE_START, data: { link: task.link } }); // 触发页面请求事件
                     const response = await this.requestHandler.getPage(task.link);
-                    const metadata = Parser.parseMetadata(response.body);
-                    const magnet = await this.requestHandler.fetchMagnet(metadata);
-                    const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
-                    this.emit({
-                        type: QueueEventType.DETAIL_PAGE_PROCESSED,
-                        data: { filmData, metadata }
-                    });
+                    if (response?.body) {
+                        const metadata = Parser.parseMetadata(response.body);
+                        const magnet = await this.requestHandler.fetchMagnet(metadata);
+                        const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
+                        this.emit({
+                            type: QueueEventType.DETAIL_PAGE_PROCESSED,
+                            data: { filmData, metadata }
+                        });
+                    }
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     callback();
                 } catch (error) {
@@ -136,7 +138,7 @@ class QueueManager {
                 // logger.info(`开始抓取 ${task.url} `);
                 this.emit({ type: QueueEventType.INDEX_PAGE_START, data: { link: task.url } }); // 触发页面请求事件
                 const response = await this.requestHandler.getPage(task.url);
-                const links: string[] = Parser.parsePageLinks(response.body);
+                const links: string[] = response?.body ? Parser.parsePageLinks(response.body) : [];
                 // logger.info(`第 ${task.url} 页抓取完成，共找到 ${links.length} 条链接`);
                 this.emit({
                     type: QueueEventType.INDEX_PAGE_PROCESSED,
@@ -184,4 +186,3 @@ class QueueManager {
 }
 
 export default QueueManager;
-

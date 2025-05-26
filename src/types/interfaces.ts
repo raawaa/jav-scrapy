@@ -11,7 +11,10 @@
  */
 
 interface Config {
+  retryCount: number;
+  retryDelay: number;
   BASE_URL: string;
+  baseUrl: string;
   parallel: number;
   proxy?: string;
   headers: {

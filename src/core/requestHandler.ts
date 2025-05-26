@@ -2,7 +2,7 @@
  * RequestHandler 类用于处理网络请求，提供页面内容获取、XMLHttpRequest 请求发送等功能。
  * 它借助 axios 库进行 HTTP 请求，并使用 axios-retry 库实现请求重试机制。
  */
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
 import tunnel from 'tunnel';
 import { Config } from '../types/interfaces';
@@ -74,6 +74,7 @@ class RequestHandler {
    */
   constructor(config: Config) {
     this.config = config;
+    console.log('RequestHandler constructor - proxy config:', this.config.proxy);
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
     const isChrome = userAgent.includes('Chrome');
     const isFirefox = userAgent.includes('Firefox');
@@ -142,11 +143,7 @@ class RequestHandler {
         // 3. 429 Too Many Requests
         // 4. 403 Forbidden (Cloudflare拦截)
         const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-                         (error.response && (
-                           error.response.status >= 500 ||
-                           error.response.status === 429 ||
-                           error.response.status === 403
-                         ));
+                         (error.response?.status && [500, 429, 403].includes(error.response.status));
         
         if (shouldRetry) {
           const currentRetry = (error.config && error.config['axios-retry'] && error.config['axios-retry'].retryCount) || 0;
@@ -191,21 +188,29 @@ class RequestHandler {
    * @returns 包含状态码和页面内容的对象
    */
   async getPage(url: string, options: Record<string, any> = {}) {
-    const mergedOptions = {
-      ...this.requestConfig,
-      ...options,
-      url
-    };
-    try {
-      const response = await axios.get(mergedOptions.url, {
-        timeout: mergedOptions.timeout,
-        headers: mergedOptions.headers
-      });
-      return { statusCode: response.status, body: response.data };
-    } catch (err) {
-      const error = err as any;
-      console.error(`获取页面 ${mergedOptions.url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
-      throw error;
+    let attempts = 0;
+    while (attempts <= this.config.retryCount) {
+      try {
+        const mergedOptions = {
+          ...this.requestConfig,
+          ...options,
+          url
+        };
+        const response = await axios.get(mergedOptions.url, {
+          timeout: mergedOptions.timeout,
+          headers: mergedOptions.headers
+        });
+        return { statusCode: response.status, body: response.data };
+      } catch (error) {
+        const err = error as AxiosError;
+        if (axiosRetry.isNetworkOrIdempotentRequestError(err) ||
+          (err.response?.status && [500, 429, 403].includes(err.response.status))) {
+          await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts)));
+          attempts++;
+        } else {
+          throw err;
+        }
+      }
     }
   }
 
@@ -231,7 +236,7 @@ class RequestHandler {
       });
       return { statusCode: response.status, body: response.data };
     } catch (err) {
-      const error = err as any;
+      const error = err as AxiosError;
       console.error(`发送 XMLHttpRequest 到 ${mergedOptions.url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
       throw error;
     }
@@ -276,9 +281,24 @@ class RequestHandler {
    * @returns 如果文件已存在则返回 false，否则返回 true
    */
   public async downloadImage(url: string, filename: string) {
+    const dirPath = this.config.output; // 获取输出目录路径
+    const originalFilePath = path.join(dirPath, filename);
+    const ext = path.extname(filename); // 获取文件扩展名
+    const baseFilename = path.basename(filename, ext); // 获取不带扩展名的文件名
+
+    // 检查并创建目录 (如果之前没有添加的话)
+    if (!fs.existsSync(dirPath)) {
+      try {
+        await fs.promises.mkdir(dirPath, { recursive: true });
+      } catch (mkdirError) {
+        console.error(`创建输出目录失败: ${dirPath}`, mkdirError);
+        throw mkdirError; // 如果目录创建失败，后续操作也无法进行
+      }
+    }
+
+    // 尝试保存文件
     try {
-      const filePath = path.join(this.config.output, filename);
-      if (fs.existsSync(filePath)) {
+      if (fs.existsSync(originalFilePath)) {
         // console.log(`图片 ${filename} 已存在，跳过下载。`);
         return false;
       }
@@ -287,12 +307,43 @@ class RequestHandler {
         timeout: this.requestConfig.timeout,
         headers: this.requestConfig.headers
       });
-      fs.writeFileSync(filePath, Buffer.from(response.data, 'binary'));
+      fs.writeFileSync(originalFilePath, Buffer.from(response.data, 'binary'));
       return true;
     } catch (err) {
-      const error = err as any;
-      // console.error(`下载图片 ${url} 失败: ${error.message}`, error.code ? `错误码: ${error.code}` : '');
-      throw error;
+      const error = err as NodeJS.ErrnoException; // 明确类型为文件系统错误
+
+      // 检查是否是文件路径过长或非法字符导致的错误
+      if (error.code === 'ENOENT' || error.code === 'ENAMETOOLONG') {
+        console.warn(`保存图片失败，文件名可能过长或包含非法字符，尝试简化文件名: ${filename}`);
+
+        // 简化文件名，例如保留部分原文件名和哈希值
+        const simplifiedFilename = `${baseFilename.substring(0, 50)}_..._${baseFilename.substring(baseFilename.length - 10)}${ext}`.replace(/[^a-zA-Z0-9_\-. ]/g, '_'); // 简单替换非法字符
+        const simplifiedFilePath = path.join(dirPath, simplifiedFilename);
+
+        try {
+          if (fs.existsSync(simplifiedFilePath)) {
+            console.log(`简化后的图片 ${simplifiedFilename} 已存在，跳过下载。`);
+            return false;
+          }
+          const response = await axios.get(url, {
+            responseType: 'arraybuffer',
+            timeout: this.requestConfig.timeout,
+            headers: this.requestConfig.headers
+          });
+          fs.writeFileSync(simplifiedFilePath, Buffer.from(response.data, 'binary'));
+          console.log(`图片已使用简化文件名保存: ${simplifiedFilename}`);
+          return true;
+        } catch (simplifyErr) {
+          const simplifyError = simplifyErr as Error; // Simplification attempt error
+          console.error(`使用简化文件名保存图片也失败: ${simplifiedFilename}`, simplifyError);
+          throw simplifyError; // 简化文件名后仍然失败，抛出错误
+        }
+
+      } else {
+        // 其他类型的错误，直接抛出
+        console.error(`保存图片失败: ${filename}`, error);
+        throw error;
+      }
     }
   }
 }
