@@ -19,7 +19,7 @@ program
     .version(version);
 
 program
-    .command('crawl')
+    .command('crawl', { isDefault: true })
     .description('启动爬虫')
     .option('-p, --parallel <num>', '设置抓取并发连接数，默认值：2')
     .option('-t, --timeout <num>', '自定义连接超时时间(毫秒)。默认值：30000毫秒')
