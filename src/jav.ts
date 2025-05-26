@@ -213,7 +213,7 @@ class JavScraper {
 
         queueManager.on(QueueEventType.INDEX_PAGE_PROCESSED, (event) => {
             const links = event.data.links;
-            console.log(`第${this.pageIndex}页抓取到${links.length}部影片`);
+            this.logInfo(`第${this.pageIndex}页抓取到${links.length}部影片`);
             queueManager.getDetailPageQueue().push(links.map((link: string) => ({ link })));
         });
 
@@ -228,7 +228,7 @@ class JavScraper {
                 this.progressBar.update(this.filmCount);
                 this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`);
             } else {
-                console.log(`已抓取 ${event.data.filmData.title}`);
+                this.logInfo(`已抓取 ${event.data.filmData.title}`);
             }
 
             if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
@@ -253,13 +253,13 @@ class JavScraper {
                 this.pageIndex++;
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
-                console.error(`抓取第${this.pageIndex}页时出错: ${err instanceof Error ? err.message : String(err)}`);
+                this.logInfo(`抓取第${this.pageIndex}页时出错: ${err instanceof Error ? err.message : String(err)}`);
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
         }
 
         // 在 shouldStop 变为 true 后，等待所有队列任务完成
-        console.log('抓取停止条件已满足，等待队列清空...');
+        this.logInfo('抓取停止条件已满足，等待队列清空...');
         await queueManager.getIndexPageQueue().idle();
         await queueManager.getDetailPageQueue().idle();
         await queueManager.getFileWriteQueue().idle();
