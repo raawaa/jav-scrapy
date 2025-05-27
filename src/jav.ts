@@ -13,6 +13,7 @@ import Parser from './core/parser';
 import RequestHandler from './core/requestHandler';
 import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
 import fs from 'fs';
+import * as path from 'path';
 
 
 program
@@ -84,8 +85,9 @@ program
         const pageData = await requestHandler.getPage(config.base || config.BASE_URL);
         const antiBlockUrls = Parser.extractAntiBlockUrls(pageData?.body || '');
 
+        const homeDir = (process.platform === 'win32' ? process.env.USERPROFILE : process.env.HOME) || process.cwd();
         // 定义保存防屏蔽地址的文件路径
-        const antiblockUrlsFilePath = `${process.env.HOME}/.jav-scrapy-antiblock-urls.json`;
+        const antiblockUrlsFilePath = path.join(homeDir, '.jav-scrapy-antiblock-urls.json');
         let existingUrls: string[] = [];
 
         // 读取现有防屏蔽地址文件
@@ -229,10 +231,10 @@ class JavScraper {
 
         // 在 shouldStop 变为 true 后，等待所有队列任务完成
         this.logInfo('抓取停止条件已满足，等待队列清空...');
-        await queueManager.getIndexPageQueue().idle();
-        await queueManager.getDetailPageQueue().idle();
-        await queueManager.getFileWriteQueue().idle();
-        await queueManager.getImageDownloadQueue().idle();
+        queueManager.getIndexPageQueue().idle();
+        queueManager.getDetailPageQueue().idle();
+        queueManager.getFileWriteQueue().idle();
+        queueManager.getImageDownloadQueue().idle();
 
         this.logInfo('所有抓取任务完成。');
         this.destroy(); // 调用 cleanup 方法并输出完成信息
