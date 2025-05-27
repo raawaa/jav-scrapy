@@ -1,10 +1,10 @@
 /node_modules
 .tern-project
-.eslintrc
+.eslintrc.json
 /dist
 /test
-/.vscode/
-/.trae/
+/.vscode
+/.trae
 error.log
 combined.log
 bash.exe.stackdump
