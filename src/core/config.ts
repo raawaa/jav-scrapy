@@ -19,6 +19,7 @@ import { getSystemProxy, parseProxyServer } from '../utils/systemProxy';
 import logger from './logger'; // 引入日志记录器模块
 import fs from 'fs'; // 引入文件系统模块
 import chalk from 'chalk'; // 引入 chalk 库用于美化输出
+import * as path from 'path';
 
 
 class ConfigManager {
@@ -59,24 +60,14 @@ class ConfigManager {
         }
 
         // === 添加加载本地防屏蔽地址作为默认baseUrl的逻辑 ===
-        const antiblockUrlsFilePath = `${process.env.HOME}/.jav-scrapy-antiblock-urls.json`;
-        let existingUrls: string[] = [];
-        try {
-            if (fs.existsSync(antiblockUrlsFilePath)) {
-                const data = fs.readFileSync(antiblockUrlsFilePath, 'utf-8');
-                const parsedUrls = JSON.parse(data);
-                if (Array.isArray(parsedUrls) && parsedUrls.length > 0) {
-                    existingUrls = parsedUrls;
-                    // 随机选择一个作为默认baseUrl
-                    const randomIndex = Math.floor(Math.random() * existingUrls.length);
-                    this.config.base = existingUrls[randomIndex];
-                    logger.info(`使用本地保存的防屏蔽地址作为 baseUrl: ${chalk.underline.blue(this.config.base)}`);
-                }
-            }
-        } catch (error) {
-            logger.error(`读取或解析防屏蔽地址文件失败，不使用本地地址作为默认baseUrl: ${error instanceof Error ? error.message : String(error)}`);
+        const antiblockUrls = this.loadAntiBlockUrls();
+        if (antiblockUrls.length > 0) {
+            // 随机选择一个作为默认baseUrl
+            const randomIndex = Math.floor(Math.random() * antiblockUrls.length);
+            this.config.base = antiblockUrls[randomIndex];
+            logger.info(`使用本地保存的防屏蔽地址作为 baseUrl: ${chalk.underline.blue(this.config.base)}`);
         }
-        // === 结束加载本地防屏蔽地址的逻辑 ===
+        
 
         // 命令行参数覆盖本地设置和系统代理设置
         if (program.opts().proxy) {
@@ -122,6 +113,23 @@ class ConfigManager {
 
     public getConfig() {
         return this.config;
+    }
+
+    private loadAntiBlockUrls(): string[] {
+        const homeDir = (process.platform === 'win32' ? process.env.USERPROFILE : process.env.HOME) || process.cwd();
+        const antiblockUrlsFilePath = path.join(homeDir, '.jav-scrapy-antiblock-urls.json');
+        try {
+            if (fs.existsSync(antiblockUrlsFilePath)) {
+                const data = fs.readFileSync(antiblockUrlsFilePath, 'utf-8');
+                const parsedUrls = JSON.parse(data);
+                if (Array.isArray(parsedUrls) && parsedUrls.length > 0) {
+                    return parsedUrls;
+                }
+            }
+        } catch (error) {
+            logger.error(`读取或解析防屏蔽地址文件失败，不使用本地地址作为默认baseUrl: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        return [];
     }
 }
 
