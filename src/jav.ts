@@ -9,8 +9,8 @@ import { QueueEventType } from './core/queueManager';
 import { Config } from './types/interfaces';
 import * as cliProgress from 'cli-progress';
 import chalk from 'chalk';
-import Parser from './core/parser';  
-import RequestHandler from './core/requestHandler';  
+import Parser from './core/parser';
+import RequestHandler from './core/requestHandler';
 import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
 import fs from 'fs';
 
@@ -69,22 +69,21 @@ program
         // 直接在这里读取并应用系统代理配置
         const systemProxy = await getSystemProxy();
         console.log('系统代理设置:', systemProxy);
-        
+
         const config = configManager.getConfig(); // 获取当前配置
         if (systemProxy.enabled && systemProxy.server) {
             // 将系统代理设置到获取到的 config 对象中
             config.proxy = parseProxyServer(systemProxy.server);
         }
 
-        console.log('🚀 开始检测最新防屏蔽地址...');
         logger.info('🚀 开始检测最新防屏蔽地址...');
-        
+
         // 复用爬虫的地址获取逻辑
         // 使用可能包含系统代理的 config 来创建 RequestHandler
         const requestHandler = new RequestHandler(config);
         const pageData = await requestHandler.getPage(config.base || config.BASE_URL);
         const antiBlockUrls = Parser.extractAntiBlockUrls(pageData?.body || '');
-        
+
         // 定义保存防屏蔽地址的文件路径
         const antiblockUrlsFilePath = `${process.env.HOME}/.jav-scrapy-antiblock-urls.json`;
         let existingUrls: string[] = [];
@@ -116,42 +115,12 @@ program
             }
 
         } else if (existingUrls.length > 0) {
-             logger.warn(`未找到新的防屏蔽地址，当前文件共有 ${existingUrls.length} 个记录`);
+            logger.warn(`未找到新的防屏蔽地址，当前文件共有 ${existingUrls.length} 个记录`);
         }
         else {
             logger.warn('未找到新的防屏蔽地址，且不存在历史记录。');
         }
 
-        // 移除更新主配置文件 base 字段的逻辑
-        // if (antiBlockUrls.length > 0) {
-        //     const newUrl = antiBlockUrls[Math.floor(Math.random() * antiBlockUrls.length)];
-        //     // 只更新并保存配置中的 base 字段
-        //     const configPath = `${process.env.HOME}/.config.json`;
-        //     let currentConfig = {};
-        //     try {
-        //         if (fs.existsSync(configPath)) {
-        //             currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        //         }
-        //     } catch (error) {
-        //         logger.error(`读取配置文件失败: ${error instanceof Error ? error.message : String(error)}`);
-        //         // 如果读取失败，使用当前内存中的config作为基础
-        //         currentConfig = config;
-        //     }
-        //     // 更新 base 字段
-        //     currentConfig = { ...currentConfig, base: newUrl };
-        //     try {
-        //         fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
-        //         logger.success(`防屏蔽地址已更新为：${chalk.underline.blue(newUrl)} 并已保存到配置文件`);
-        //     } catch (error) {
-        //         logger.error(`保存配置文件失败: ${error instanceof Error ? error.message : String(error)}`);
-        //     }
-        // } else {
-        //     logger.warn('未找到新的防屏蔽地址，使用备用地址');
-        //     const backupUrl = backupUrls[Math.floor(Math.random() * backupUrls.length)];
-        //     // 备份地址不自动保存到配置文件，只在当前运行中使用
-        //     // configManager.updateConfig({ base: backupUrl }); // 不在这里保存
-        //     logger.info(`本次使用备用地址：${backupUrl}`);
-        // }
 
     });
 
@@ -185,7 +154,7 @@ class JavScraper {
     }
 
     private getCurrentIndexPageUrl(): string {
-        const baseUrl = (this.config.base || this.config.BASE_URL).replace(/\/$/, ''); 
+        const baseUrl = (this.config.base || this.config.BASE_URL).replace(/\/$/, '');
         const pagePart = this.pageIndex === 1 ? '' : `/${this.pageIndex}`;
 
         if (this.config.search) {

@@ -40,7 +40,7 @@ class FileHandler {
    * @private
    * @returns {Promise<void>}
    */
-  private async ensureOutputDirExists() {
+  private async ensureOutputDirExists(): Promise<void> {
     try {
       await fs.promises.access(this.outputDir, fs.constants.F_OK);
     } catch {
@@ -54,7 +54,7 @@ class FileHandler {
    * @returns {Promise<void>}
    * @throws {Error} 如果 data 不是 FilmData 类型
    */
-  public async writeFilmDataToFile(data: FilmData) {
+  public async writeFilmDataToFile(data: FilmData): Promise<void> {
     // 校验 data 是否为 FilmData 类型
     if (typeof data !== 'object' || data === null) {
       throw new Error(`Invalid data provided: "${data}". Data must be a non-null object of type FilmData.`);
