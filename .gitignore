@@ -3,8 +3,8 @@
 .eslintrc
 /dist
 /test
-/.vscode
-/.trae
+/.vscode/
+/.trae/
 error.log
 combined.log
 bash.exe.stackdump
