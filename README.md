@@ -44,7 +44,7 @@ $ tsc --version
 
 ```bash
 # 克隆仓库
-$ git clone https://github.com/qiusli/jav-scrapy.git
+$ git clone https://github.com/raawaa/jav-scrapy.git
 
 # 进入项目目录
 $ cd jav-scrapy
