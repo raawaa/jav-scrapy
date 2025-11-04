@@ -1,18 +1,13 @@
-/**
- * RequestHandler 类用于处理网络请求，提供页面内容获取、XMLHttpRequest 请求发送等功能。
- * 它借助 axios 库进行 HTTP 请求，并使用 axios-retry 库实现请求重试机制。
- */
-import axios, { AxiosError } from 'axios';
-import axiosRetry from 'axios-retry';
-import tunnel from 'tunnel';
-import { Config } from '../types/interfaces';
-import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
-import path from 'path'; // 导入 path 模块，用于处理文件路径
-import fs from 'fs'; // 导入 fs 模块，用于文件操作
-import { USER_AGENTS } from './constants';
-import { ErrorHandler } from '../utils/errorHandler';
-import logger from './logger';
-import CookiesManager from '../utils/cookies';
+import axios, { AxiosError } from 'axios';
+import axiosRetry from 'axios-retry';
+import tunnel from 'tunnel';
+import { Config } from '../types/interfaces';
+import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
+import path from 'path'; // 导入 path 模块，用于处理文件路径
+import fs from 'fs'; // 导入 fs 模块，用于文件操作
+import { USER_AGENTS } from './constants';
+import { ErrorHandler } from '../utils/errorHandler';
+import logger from './logger';
 import CloudflareBypass from '../utils/cloudflareBypass';
 
 // 随机延迟函数
@@ -60,9 +55,10 @@ class RequestHandler {
   private config: Config;
   private retries: number;
     private retryDelay: number;
-    private cookiesManager: CookiesManager;
     private cloudflareBypass: CloudflareBypass | null = null;
     private cloudflareCookies: string | null = null;
+    private lastCookieRefresh: number = 0;
+    private cookieRefreshInterval: number = 30 * 60 * 1000; // 30分钟刷新一次cookies
 
   /**
    * 构造函数
@@ -128,19 +124,20 @@ class RequestHandler {
       }
     };
 
-    this.retries = 5;
-    this.retryDelay = 5000;
-    this.cookiesManager = CookiesManager.getInstance();
-
+    this.retries = 3; // 减少重试次数，避免过度请求
+    this.retryDelay = Math.max(this.config.delay || 2000, 3000); // 增加基础延迟，至少3秒
+
     // Cloudflare 绕过器将在需要时异步初始化
     
     // 配置axios重试
     axiosRetry(axios, {
-      retries: 5, // 重试次数
+      retries: this.retries, // 使用配置的重试次数
       retryDelay: (retryCount) => {
-        // 指数退避策略，加上随机延迟
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-        return delay + Math.floor(Math.random() * 1000); // 添加随机延迟
+        // 指数退避策略，加上随机延迟，基础延迟更长
+        const baseDelay = Math.max(this.retryDelay, 3000); // 至少3秒基础延迟
+        const exponentialDelay = Math.min(baseDelay * Math.pow(1.5, retryCount), 30000); // 1.5倍指数增长
+        const randomDelay = Math.floor(Math.random() * 2000); // 0-2秒随机延迟
+        return exponentialDelay + randomDelay;
       },
       retryCondition: (error: any) => {
         // 在以下情况下重试：
@@ -230,8 +227,6 @@ class RequestHandler {
       try {
         logger.debug(`开始请求页面: ${url} (尝试 ${attempts + 1}/${this.config.retryCount + 1})`);
         
-        // 尝试获取浏览器 Cookies
-        const cookies = await this.cookiesManager.getValidCookies('javbus');
         const headers = { ...this.requestConfig.headers };
         
         // 检查是否已手动设置了cookies
@@ -242,34 +237,8 @@ class RequestHandler {
             // 使用手动设置的cookies
             headers.Cookie = this.config.headers.Cookie;
             logger.debug(`使用手动设置的 Cookies: ${this.config.headers.Cookie}`);
-        } else if (cookies) {
-          // 过滤掉空值或无效值的cookies
-          const validCookies: Record<string, string> = {};
-          for (const [key, value] of Object.entries(cookies)) {
-            if (value && typeof value === 'string' && value.length > 0) {
-              // 验证cookie值是否只包含可打印字符
-              if (/^[\x20-\x7E]*$/.test(value)) {
-                validCookies[key] = value;
-              } else {
-                logger.debug(`跳过无效的 Cookie ${key}: 值包含非可打印字符`);
-              }
-            }
-          }
-          
-          // 将有效的 Cookies 转换为 Cookie 字符串
-          if (Object.keys(validCookies).length > 0) {
-            const cookieString = Object.entries(validCookies)
-              .map(([key, value]) => `${key}=${value}`)
-              .join('; ');
-            headers.Cookie = cookieString;
-            logger.debug(`使用有效的浏览器 Cookies: ${Object.keys(validCookies).join(', ')}`);
-          } else {
-            // 如果没有有效的cookies，使用默认的existmag=mag
-            headers.Cookie = 'existmag=mag';
-            logger.debug('使用默认 Cookie: existmag=mag');
-          }
         } else {
-          // 如果无法获取浏览器cookies，使用默认的existmag=mag
+          // 使用默认的existmag=mag
           headers.Cookie = 'existmag=mag';
           logger.debug('使用默认 Cookie: existmag=mag');
         }
@@ -315,99 +284,64 @@ class RequestHandler {
     return null;
   }
 
-  /**
-   * 发送 XMLHttpRequest 请求
-   * @param url 目标 URL
-   * @param options 可选参数
-   * @returns 包含状态码和响应内容的对象
-   */
-  async getXMLHttpRequest(url: string, options: Record<string, any> = {}) {
-    try {
-      logger.debug(`开始发送AJAX请求: ${url}`);
-
-      // 如果启用 Cloudflare 绕过且还没有获取 Cloudflare Cookies，先获取
-      if (this.config.useCloudflareBypass && !this.cloudflareCookies) {
-        await this.getCloudflareCookies();
-      }
-
-      // 尝试获取浏览器 Cookies
-      const cookies = await this.cookiesManager.getValidCookies('javbus');
-
-      // 构建AJAX专用请求头
-      const urlObj = new URL(url);
-      const headers: Record<string, string> = {
-        'authority': urlObj.hostname,
-        'method': 'GET',
-        'path': urlObj.pathname + urlObj.search,
-        'scheme': 'https',
-        'accept': '*/*',
-        'accept-encoding': 'gzip, deflate, br',
-        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7',
-        'cache-control': 'no-cache',
-        'sec-ch-ua': this.requestConfig.headers['sec-ch-ua'] || '"Chromium";v="120", "Not?A_Brand";v="99"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': this.requestConfig.headers['user-agent'],
-        'referer': new URL(this.config.base || this.config.BASE_URL).origin,
-        'X-Requested-With': 'XMLHttpRequest',
-        'Connection': 'keep-alive'
-      };
-
-      // Cookie 优先级：手动设置 > Cloudflare Cookies > 浏览器 Cookies > 默认 Cookies
-      const hasManualCookies = this.config.headers && this.config.headers.Cookie &&
-                              this.config.headers.Cookie !== 'existmag=mag';
-
-      let cookieSet = false;
-
-      if (hasManualCookies) {
-        // 使用安全Cookie设置方法
-        cookieSet = this.setCookieHeader(headers, this.config.headers.Cookie!);
-        if (cookieSet) {
-          logger.debug(`在XMLHttpRequest中使用手动设置的 Cookies`);
-        }
-      }
-
-      if (!cookieSet && this.cloudflareCookies) {
-        // 使用 Cloudflare 绕过获取的 Cookies
-        cookieSet = this.setCookieHeader(headers, this.cloudflareCookies);
-        if (cookieSet) {
-          logger.debug('在XMLHttpRequest中使用 Cloudflare Cookies');
-        }
-      }
-
-      if (!cookieSet && cookies && Object.keys(cookies).length > 0) {
-        // 过滤有效cookies并转换为字符串
-        const validCookies: Record<string, string> = {};
-        for (const [key, value] of Object.entries(cookies)) {
-          if (value && typeof value === 'string' && value.length > 0 && this.isValidCookieValue(value)) {
-            validCookies[key] = value;
-          }
-        }
-
-        if (Object.keys(validCookies).length > 0) {
-          try {
-            const cookieString = Object.entries(validCookies)
-              .map(([key, value]) => `${key}=${value}`)
-              .join('; ');
-
-            // 使用安全Cookie设置方法
-            cookieSet = this.setCookieHeader(headers, cookieString);
-            if (cookieSet) {
-              logger.debug(`在XMLHttpRequest中使用有效的浏览器 Cookies: ${Object.keys(validCookies).join(', ')}`);
-            }
-          } catch (error) {
-            logger.debug(`设置浏览器 Cookies 时出错: ${error instanceof Error ? error.message : String(error)}`);
-          }
-        }
-
-        // 如果所有Cookie都无效，使用默认Cookie
-        if (!cookieSet) {
-          headers.Cookie = 'existmag=mag';
-          logger.debug('在XMLHttpRequest中使用默认 Cookie: existmag=mag');
-        }
+  async getXMLHttpRequest(url: string, options: Record<string, any> = {}) {
+    try {
+      logger.debug(`开始发送AJAX请求: ${url}`);
+
+      // 如果启用 Cloudflare 绕过且还没有获取 Cloudflare Cookies，先获取
+      if (this.config.useCloudflareBypass && !this.cloudflareCookies) {
+        await this.getCloudflareCookies();
+      }
+
+      // 构建AJAX专用请求头
+      const urlObj = new URL(url);
+      const headers: Record<string, string> = {
+        'authority': urlObj.hostname,
+        'method': 'GET',
+        'path': urlObj.pathname + urlObj.search,
+        'scheme': 'https',
+        'accept': '*/*',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7',
+        'cache-control': 'no-cache',
+        'sec-ch-ua': this.requestConfig.headers['sec-ch-ua'] || '"Chromium";v="120", "Not?A_Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'user-agent': this.requestConfig.headers['user-agent'],
+        'referer': new URL(this.config.base || this.config.BASE_URL).origin,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Connection': 'keep-alive'
+      };
+
+      // Cookie 优先级：手动设置 > Cloudflare Cookies > 默认 Cookies
+      const hasManualCookies = this.config.headers && this.config.headers.Cookie &&
+                              this.config.headers.Cookie !== 'existmag=mag';
+
+      let cookieSet = false;
+
+      if (hasManualCookies) {
+        // 使用安全Cookie设置方法
+        cookieSet = this.setCookieHeader(headers, this.config.headers.Cookie!);
+        if (cookieSet) {
+          logger.debug(`在XMLHttpRequest中使用手动设置的 Cookies`);
+        }
+      }
+
+      if (!cookieSet && this.cloudflareCookies) {
+        // 使用 Cloudflare 绕过获取的 Cookies
+        cookieSet = this.setCookieHeader(headers, this.cloudflareCookies);
+        if (cookieSet) {
+          logger.debug('在XMLHttpRequest中使用 Cloudflare Cookies');
+        }
+      }
+
+      // 如果所有Cookie都无效，使用默认Cookie
+      if (!cookieSet) {
+        headers.Cookie = 'existmag=mag';
+        logger.debug('在XMLHttpRequest中使用默认 Cookie: existmag=mag');
       }
 
       logger.debug(`AJAX请求头信息: ${JSON.stringify({ ...headers, Cookie: headers.Cookie ? '[已设置]' : '[未设置]' })}`);
@@ -418,9 +352,13 @@ class RequestHandler {
         headers,
         // 添加重试配置
         'axios-retry': {
-          retries: 3,
+          retries: this.retries,
           retryDelay: (retryCount: number) => {
-            return Math.min(1000 * Math.pow(2, retryCount), 10000);
+            // AJAX请求使用更长的延迟，避免被检测
+            const baseDelay = Math.max(this.retryDelay, 4000); // 至少4秒基础延迟
+            const exponentialDelay = Math.min(baseDelay * Math.pow(1.8, retryCount), 25000); // 1.8倍指数增长
+            const randomDelay = Math.floor(Math.random() * 3000); // 0-3秒随机延迟
+            return exponentialDelay + randomDelay;
           },
           retryCondition: (error: any) => {
             const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) ||
@@ -645,6 +583,9 @@ class RequestHandler {
    */
   private async initCloudflareBypass(): Promise<void> {
     try {
+      logger.debug('开始初始化 Cloudflare 绕过器...');
+      logger.debug(`Cloudflare配置: headless=true, timeout=${this.requestConfig.timeout}, proxy=${this.requestConfig.proxy}`);
+      
       this.cloudflareBypass = new CloudflareBypass({
         headless: true,
         timeout: this.requestConfig.timeout,
@@ -654,6 +595,7 @@ class RequestHandler {
       logger.info('Cloudflare 绕过器初始化成功');
     } catch (error) {
       logger.warn(`Cloudflare 绕过器初始化失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Cloudflare初始化错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
       this.cloudflareBypass = null;
     }
   }
@@ -663,34 +605,55 @@ class RequestHandler {
    */
   private async getCloudflareCookies(): Promise<string | null> {
     if (!this.config.useCloudflareBypass) {
+      logger.debug('Cloudflare绕过未启用，跳过获取Cookies');
       return null;
+    }
+
+    const currentTime = Date.now();
+
+    // 检查是否需要刷新cookies（从未获取或超过刷新间隔）
+    if (this.cloudflareCookies && (currentTime - this.lastCookieRefresh) < this.cookieRefreshInterval) {
+      logger.debug(`使用缓存的 Cloudflare Cookies (剩余有效时间: ${Math.floor((this.cookieRefreshInterval - (currentTime - this.lastCookieRefresh)) / 1000 / 60)} 分钟)`);
+      return this.cloudflareCookies;
     }
 
     // 如果还没有初始化，先初始化
     if (!this.cloudflareBypass) {
+      logger.debug('Cloudflare绕过器未初始化，开始初始化...');
       await this.initCloudflareBypass();
     }
 
     if (!this.cloudflareBypass) {
+      logger.warn('Cloudflare绕过器初始化失败，无法获取Cookies');
       return null;
     }
 
     try {
       const baseUrl = this.config.base || this.config.BASE_URL;
-      logger.info('正在通过 Cloudflare 绕过获取 Cookies...');
+      if (this.cloudflareCookies) {
+        logger.info('Cloudflare Cookies 已过期，正在刷新...');
+      } else {
+        logger.info('正在通过 Cloudflare 绕过获取 Cookies...');
+      }
+      logger.debug(`目标URL: ${baseUrl}`);
 
       // 先尝试绕过 Cloudflare
       await this.cloudflareBypass.bypassCloudflare(baseUrl);
 
       // 获取 cookies
+      logger.debug('正在从页面获取Cookies...');
       const cookies = await this.cloudflareBypass.getCookies();
 
       if (cookies && cookies.trim().length > 0) {
         this.cloudflareCookies = cookies;
-        logger.info(`Cloudflare Cookies 获取成功: ${cookies.split(';').length} 个 cookies`);
+        this.lastCookieRefresh = currentTime;
+        logger.info(`Cloudflare Cookies 获取成功: ${cookies.split(';').length} 个 cookies，有效期 ${this.cookieRefreshInterval / 1000 / 60} 分钟`);
+        logger.debug(`获取到的Cookies: ${cookies}`);
 
         // 验证获取到的cookies是否有效
-        if (this.isValidCookieString(cookies)) {
+        const isValid = this.isValidCookieString(cookies);
+        logger.debug(`Cookie验证结果: ${isValid}`);
+        if (isValid) {
           return cookies;
         } else {
           logger.warn('获取到的 Cloudflare Cookies 包含无效字符');
@@ -702,26 +665,31 @@ class RequestHandler {
       }
     } catch (error) {
       logger.error(`获取 Cloudflare Cookies 失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
       return null;
     }
   }
 
-  /**
-   * 使用 Cloudflare 绕过器执行 AJAX 请求
-   */
-  private async executeAjaxWithCloudflare(url: string): Promise<string | null> {
-    if (!this.cloudflareBypass) {
-      return null;
-    }
-
-    try {
-      logger.info('正在使用 Cloudflare 绕过器执行 AJAX 请求...');
-      const result = await this.cloudflareBypass.executeAjax(url);
-      return result;
-    } catch (error) {
-      logger.error(`Cloudflare AJAX 请求失败: ${error instanceof Error ? error.message : String(error)}`);
-      return null;
-    }
+  /**
+   * 使用 Cloudflare 绕过器执行 AJAX 请求
+   */
+  private async executeAjaxWithCloudflare(url: string): Promise<string | null> {
+    if (!this.cloudflareBypass) {
+      logger.warn('Cloudflare绕过器未初始化，无法执行AJAX请求');
+      return null;
+    }
+
+    try {
+      logger.info('正在使用 Cloudflare 绕过器执行 AJAX 请求...');
+      logger.debug(`AJAX请求URL: ${url}`);
+      const result = await this.cloudflareBypass.executeAjax(url);
+      logger.debug(`Cloudflare AJAX请求完成，响应长度: ${result ? result.length : 0}`);
+      return result;
+    } catch (error) {
+      logger.error(`Cloudflare AJAX 请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
+      return null;
+    }
   }
 
   /**

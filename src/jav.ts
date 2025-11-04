@@ -145,6 +145,8 @@ class JavScraper {
     private config: Config;
     private pageIndex: number;
     private filmCount: number = 0;
+    private filmsQueued: number = 0; // 已加入队列的影片数
+    private filmsAttempted: number = 0; // 开始处理的影片数
     public multibar: cliProgress.MultiBar | null = null;
     public progressBar: cliProgress.SingleBar | null = null;
     private requestHandler: RequestHandler;
@@ -213,43 +215,72 @@ class JavScraper {
                 const links = event.data.links;
                 logger.debug(`第${this.pageIndex}页解析完成，找到 ${links.length} 部影片链接`);
                 this.logInfo(`第${this.pageIndex}页抓取到${links.length}部影片`);
-                
+
                 if (links.length === 0) {
                     logger.warn(`第${this.pageIndex}页未找到任何影片，可能需要检查页面内容或代理设置`);
                 }
-                
-                queueManager.getDetailPageQueue().push(links.map((link: string) => ({ link })));
+
+                // 计算剩余需要加入队列的影片数
+                if (this.config.limit > 0) {
+                    const remaining = this.config.limit - this.filmsQueued;
+                    if (remaining <= 0) {
+                        logger.debug(`已达到影片限制 ${this.config.limit}，停止添加新影片到队列`);
+                        return;
+                    }
+
+                    // 只加入所需数量的影片链接
+                    const linksToAdd = links.slice(0, remaining);
+                    this.filmsQueued += linksToAdd.length;
+
+                    logger.debug(`本页添加 ${linksToAdd.length} 个影片到队列，总共已加入 ${this.filmsQueued}/${this.config.limit} 个影片`);
+                    this.logInfo(`已添加 ${linksToAdd.length} 个影片到处理队列 (${this.filmsQueued}/${this.config.limit})`);
+
+                    queueManager.getDetailPageQueue().push(linksToAdd.map((link: string) => ({ link })));
+                } else {
+                    // 如果没有设置限制，添加所有链接
+                    this.filmsQueued += links.length;
+                    queueManager.getDetailPageQueue().push(links.map((link: string) => ({ link })));
+                }
             }
         });
 
         queueManager.on(QueueEventType.DETAIL_PAGE_START, (event) => {
             if (event.data && 'link' in event.data) {
-                logger.debug(`开始处理详情页: ${event.data.link}`);
+                this.filmsAttempted++;
+                logger.debug(`开始处理详情页: ${event.data.link} (第 ${this.filmsAttempted} 个影片)`);
                 this.logInfo(`开始处理详情页: ${event.data.link}`);
             }
         });
 
         queueManager.on(QueueEventType.DETAIL_PAGE_PROCESSED, (event) => {
-            this.filmCount++;
+            // 只有在未达到限制数量时才更新计数和继续处理
+            if (this.config.limit <= 0 || this.filmCount < this.config.limit) {
+                this.filmCount++;
 
-            if (event.data && 'filmData' in event.data) {
-                if (this.progressBar) {
-                    this.progressBar.update(this.filmCount);
-                    this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`);
-                } else {
-                    logger.debug(`影片数据已处理: ${event.data.filmData.title}`);
-                    this.logInfo(`已抓取 ${event.data.filmData.title}`);
-                }
+                if (event.data && 'filmData' in event.data) {
+                    if (this.progressBar) {
+                        // 确保进度条不超过限制数量
+                        const progressValue = Math.min(this.filmCount, this.config.limit);
+                        this.progressBar.update(progressValue);
+                        this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`);
+                    } else {
+                        logger.debug(`影片数据已处理: ${event.data.filmData.title}`);
+                        this.logInfo(`已抓取 ${event.data.filmData.title}`);
+                    }
 
-                if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
-                    logger.debug(`达到限制数量 ${this.config.limit}，停止抓取`);
-                    shouldStop = true;
-                    queueManager.getDetailPageQueue().kill();
+                    if (event.data && 'metadata' in event.data) {
+                        queueManager.getFileWriteQueue().push(event.data.filmData);
+                        queueManager.getImageDownloadQueue().push(event.data.metadata);
+                    }
                 }
-                if (event.data && 'metadata' in event.data) {
-                    queueManager.getFileWriteQueue().push(event.data.filmData);
-                    queueManager.getImageDownloadQueue().push(event.data.metadata);
-                }
+            }
+
+            // 检查是否达到限制数量
+            if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
+                logger.debug(`达到限制数量 ${this.config.limit}，停止抓取`);
+                shouldStop = true;
+                // 杀掉索引页队列，防止继续添加新的详情页任务
+                queueManager.getIndexPageQueue().kill();
             }
         });
 
@@ -264,6 +295,14 @@ class JavScraper {
                 this.logInfo(`正在抓取第${this.pageIndex}页: ${currentUrl}`);
                 await queueManager.getIndexPageQueue().push({ url: currentUrl });
                 this.pageIndex++;
+
+                // 检查是否达到限制数量，如果达到则停止循环
+                if (this.config.limit > 0 && this.filmsQueued >= this.config.limit) {
+                    logger.debug(`已加入队列的影片数达到限制 ${this.config.limit}，停止索引页抓取`);
+                    shouldStop = true;
+                    break;
+                }
+
                 // 添加随机延迟，避免请求过于频繁
                 const randomDelayMs = getRandomDelay(this.config.delay || 8, (this.config.delay || 8) + 7);
                 this.logInfo(`等待 ${Math.round(randomDelayMs / 1000)} 秒后继续...`);
@@ -272,7 +311,7 @@ class JavScraper {
                 const errorMessage = err instanceof Error ? err.message : String(err);
                 this.logInfo(`抓取第${this.pageIndex}页时出错: ${errorMessage}`);
                 logger.error(`页面抓取错误 [第${this.pageIndex}页]: ${errorMessage}`);
-                
+
                 // 如果是网络相关错误，使用指数退避等待更长时间再重试
                 if (errorMessage.includes('ECONNRESET') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ENOTFOUND')) {
                     const backoffDelay = getExponentialBackoffDelay(10000, 1, 30000);
@@ -290,29 +329,33 @@ class JavScraper {
         this.logInfo('抓取停止条件已满足，等待队列清空...');
         
         // 检查队列状态
+        const queueStats = queueManager.getQueueStats();
+        this.logInfo(`队列状态统计:`);
+        this.logInfo(`  索引页队列: ${queueStats.indexPageQueue.waiting} 等待中, ${queueStats.indexPageQueue.running} 运行中`);
+        this.logInfo(`  详情页队列: ${queueStats.detailPageQueue.waiting} 等待中, ${queueStats.detailPageQueue.running} 运行中`);
+        this.logInfo(`  文件写入队列: ${queueStats.fileWriteQueue.waiting} 等待中, ${queueStats.fileWriteQueue.running} 运行中`);
+        this.logInfo(`  图片下载队列: ${queueStats.imageDownloadQueue.waiting} 等待中, ${queueStats.imageDownloadQueue.running} 运行中`);
+
+        this.logInfo(`影片处理统计: 已加入队列 ${this.filmsQueued} 个, 开始处理 ${this.filmsAttempted} 个, 成功完成 ${this.filmCount} 个`);
+
+        // 等待所有队列完成
         const indexQueue = queueManager.getIndexPageQueue();
         const detailQueue = queueManager.getDetailPageQueue();
         const fileWriteQueue = queueManager.getFileWriteQueue();
         const imageDownloadQueue = queueManager.getImageDownloadQueue();
-        
-        this.logInfo(`队列状态 - 索引页队列: ${indexQueue.length()} 等待中`);
-        this.logInfo(`队列状态 - 详情页队列: ${detailQueue.length()} 等待中`);
-        this.logInfo(`队列状态 - 文件写入队列: ${fileWriteQueue.length()} 等待中`);
-        this.logInfo(`队列状态 - 图片下载队列: ${imageDownloadQueue.length()} 等待中`);
-        
-        // 等待所有队列完成
+
         this.logInfo('等待索引页队列完成...');
         await indexQueue.drain();
         this.logInfo('索引页队列已完成');
-        
+
         this.logInfo('等待详情页队列完成...');
         await detailQueue.drain();
         this.logInfo('详情页队列已完成');
-        
+
         this.logInfo('等待文件写入队列完成...');
         await fileWriteQueue.drain();
         this.logInfo('文件写入队列已完成');
-        
+
         this.logInfo('等待图片下载队列完成...');
         await imageDownloadQueue.drain();
         this.logInfo('图片下载队列已完成');

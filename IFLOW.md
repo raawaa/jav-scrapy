@@ -2,11 +2,12 @@
 
 ## 项目概述
 
-jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。
+jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。项目版本为 0.8.0，使用 CommonJS 模块系统。
 
 ### 主要技术栈
 - **语言**: TypeScript
 - **运行环境**: Node.js
+- **模块系统**: CommonJS
 - **核心依赖**: 
   - axios (HTTP 请求)
   - axios-retry (请求重试)
@@ -21,6 +22,13 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - sqlite3 (数据库访问)
   - winreg (Windows 注册表访问)
   - mkdirp (目录创建)
+  - user-home (用户主目录获取)
+  - cloudscraper (Cloudflare 绕过)
+
+### 开发依赖
+- **测试框架**: mocha + chai
+- **开发工具**: nodemon, ts-node
+- **类型定义**: @types/* 包提供完整的 TypeScript 支持
 
 ### 项目架构
 ```
@@ -79,6 +87,12 @@ npm test
 npm install -g . --force
 ```
 
+### 项目配置
+- TypeScript 编译目标：ES2017
+- 输出目录：./dist
+- 源码目录：./src
+- 支持装饰器和实验性元数据
+
 ## 使用方法
 
 ### 基本命令
@@ -123,6 +137,7 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 使用 winston 进行结构化日志记录
 - 添加信号处理（SIGINT, SIGTERM）确保资源正确清理
 - 使用专门的 ErrorHandler 模块处理不同类型的错误
+- 支持 getExponentialBackoffDelay 函数进行智能重试延迟计算
 
 ### 配置管理
 - 配置优先级：命令行参数 > 本地防屏蔽地址 > 系统代理 > 默认配置
@@ -189,18 +204,20 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 ### 请求延迟控制
 - 添加请求间隔时间设置（-d/--delay 参数）
 - 使用随机延迟（getRandomDelay 函数）避免过于频繁的请求
+- 默认延迟范围：5-15秒（可通过 constants.ts 配置）
+- 支持指数退避延迟算法（getExponentialBackoffDelay）
 
 ## 测试和调试
 
 ### 运行测试
 ```bash
-npm test
+npm test              # 使用 mocha 运行 test/*.test.js 文件
 ```
 
 ### 开发模式
 ```bash
 npm run dev           # 直接运行 TypeScript 代码
-npm run dev:watch     # 监听文件变化并自动重启
+npm run dev:watch     # 使用 nodemon 监听文件变化并自动重启
 ```
 
 ### 日志级别
@@ -208,6 +225,12 @@ npm run dev:watch     # 监听文件变化并自动重启
 
 ### 调试模式
 可以通过修改配置或环境变量来启用更详细的日志输出，帮助定位问题。
+
+### 测试框架
+- **Mocha**: 测试运行器
+- **Chai**: 断言库
+- **Nock**: HTTP 模拟和测试
+- 测试文件位于 test/ 目录，使用 .test.js 扩展名
 
 ## 部署说明
 
@@ -233,6 +256,8 @@ npm publish
 6. 添加了请求延迟参数（-d/--delay）以避免请求过于频繁被封禁
 7. 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
 8. 项目版本为 0.8.0，使用 CommonJS 模块系统
+9. 默认重试次数为 3 次，使用指数退避策略
+10. TypeScript 编译目标为 ES2017，确保在较新 Node.js 环境中运行
 
 ## 贡献者
 

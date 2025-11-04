@@ -71,6 +71,8 @@ class QueueManager {
      */
     public getImageDownloadQueue(): async.QueueObject<Metadata> {
         if (!this.imageDownloadQueue) {
+            // 图片下载队列使用较低的并发数，避免被检测
+            const imageConcurrency = Math.max(1, Math.floor(this.config.parallel / 2));
             this.imageDownloadQueue = async.queue(async (metadata: Metadata) => {
                 const baseUrl = this.config.base || this.config.BASE_URL;
                 const parsedUrl = new URL(baseUrl); // 解析 baseUrl 为 URL 对象
@@ -78,7 +80,7 @@ class QueueManager {
 
                 const imageUrl = `${domainOnly.replace(/\/+$/, '')}/${metadata.img.replace(/^\/+/, '')}`;
                 await this.requestHandler.downloadImage(imageUrl, metadata.title + '.jpg');
-            }, this.config.parallel);
+            }, imageConcurrency);
         }
         return this.imageDownloadQueue;
     }
@@ -90,6 +92,8 @@ class QueueManager {
     public getFileWriteQueue(): async.QueueObject<FilmData> {
         if (!this.fileWriteQueue) {
             logger.debug('QueueManager: 创建文件写入队列');
+            // 文件写入队列可以使用较高并发数（主要是本地IO操作）
+            const fileWriteConcurrency = Math.max(2, this.config.parallel * 2);
             this.fileWriteQueue = async.queue(async (filmData: FilmData) => {
                 logger.debug(`QueueManager: 开始文件写入任务，标题: ${filmData.title}`);
                 try {
@@ -99,7 +103,7 @@ class QueueManager {
                     logger.error(`QueueManager: 文件写入任务失败，标题: ${filmData.title}，错误: ${error instanceof Error ? error.message : String(error)}`);
                     throw error;
                 }
-            }, this.config.parallel);
+            }, fileWriteConcurrency);
             
             // 添加队列事件监听
             this.fileWriteQueue.error((error, task) => {
@@ -116,6 +120,8 @@ class QueueManager {
     public getDetailPageQueue(): async.QueueObject<DetailPageTask> {
         if (!this.detailPageQueue) {
             logger.debug('QueueManager: 创建详情页处理队列');
+            // 详情页队列使用较低的并发数，避免对服务器造成压力
+            const detailPageConcurrency = Math.max(1, Math.floor(this.config.parallel * 0.75));
             this.detailPageQueue = async.queue(async (task: DetailPageTask) => {
                 logger.debug(`QueueManager: 开始处理详情页任务: ${task.link}`);
                 try {
@@ -140,7 +146,8 @@ class QueueManager {
                     } else {
                         logger.warn(`QueueManager: 详情页响应为空: ${task.link}`);
                     }
-                    const randomDelay = getRandomDelay(1, 3); // 1-3秒随机延迟
+                    // 增加详情页处理后的延迟，避免请求过于频繁
+                    const randomDelay = getRandomDelay(Math.max(this.config.delay || 2, 3), Math.max((this.config.delay || 2) * 2, 6)); // 使用配置延迟或3-6秒
                     logger.debug(`QueueManager: 详情页任务完成，等待 ${randomDelay}ms`);
                     await new Promise(resolve => setTimeout(resolve, randomDelay));
                 } catch (error) {
@@ -148,7 +155,7 @@ class QueueManager {
                     ErrorHandler.handleGenericError(error, `处理详情页 ${task.link}`);
                     // 不中断队列处理，继续处理下一个任务
                 }
-            }, this.config.parallel);
+            }, detailPageConcurrency);
             
             // 添加队列事件监听
             this.detailPageQueue.error((error, task) => {
@@ -222,6 +229,50 @@ class QueueManager {
             this.eventHandlers.set(eventType, []);
         }
         this.eventHandlers.get(eventType)?.push(handler);
+    }
+
+    /**
+     * 获取队列状态统计信息
+     * @returns {Object} 包含各队列统计信息的对象
+     */
+    public getQueueStats(): {
+        indexPageQueue: { waiting: number; running: number };
+        detailPageQueue: { waiting: number; running: number };
+        fileWriteQueue: { waiting: number; running: number };
+        imageDownloadQueue: { waiting: number; running: number };
+    } {
+        return {
+            indexPageQueue: {
+                waiting: this.indexPageQueue?.length() || 0,
+                running: this.indexPageQueue?.running() || 0
+            },
+            detailPageQueue: {
+                waiting: this.detailPageQueue?.length() || 0,
+                running: this.detailPageQueue?.running() || 0
+            },
+            fileWriteQueue: {
+                waiting: this.fileWriteQueue?.length() || 0,
+                running: this.fileWriteQueue?.running() || 0
+            },
+            imageDownloadQueue: {
+                waiting: this.imageDownloadQueue?.length() || 0,
+                running: this.imageDownloadQueue?.running() || 0
+            }
+        };
+    }
+
+    /**
+     * 检查是否所有队列都已完成
+     * @returns {boolean} 如果所有队列都已完成返回 true
+     */
+    public areAllQueuesFinished(): boolean {
+        const stats = this.getQueueStats();
+        return (
+            stats.indexPageQueue.waiting === 0 && stats.indexPageQueue.running === 0 &&
+            stats.detailPageQueue.waiting === 0 && stats.detailPageQueue.running === 0 &&
+            stats.fileWriteQueue.waiting === 0 && stats.fileWriteQueue.running === 0 &&
+            stats.imageDownloadQueue.waiting === 0 && stats.imageDownloadQueue.running === 0
+        );
     }
 
     private emit(event: QueueEvent): void {

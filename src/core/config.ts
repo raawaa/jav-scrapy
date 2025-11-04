@@ -67,8 +67,15 @@ class ConfigManager {
         if (antiblockUrls.length > 0) {
             // 随机选择一个作为默认baseUrl
             const randomIndex = Math.floor(Math.random() * antiblockUrls.length);
-            this.config.base = antiblockUrls[randomIndex];
-            logger.info(`使用本地保存的防屏蔽地址作为 baseUrl: ${chalk.underline.blue(this.config.base)}`);
+            const selectedUrl = antiblockUrls[randomIndex];
+
+            // 统一设置所有URL字段
+            this.config.base = selectedUrl;
+            this.config.baseUrl = selectedUrl;
+            this.config.BASE_URL = selectedUrl.endsWith('/') ? selectedUrl.slice(0, -1) : selectedUrl; // 确保末尾没有/
+            this.config.headers.Referer = selectedUrl;
+
+            logger.info(`使用本地保存的防屏蔽地址作为 baseUrl: ${chalk.underline.blue(selectedUrl)}`);
         }
         
 
@@ -104,12 +111,18 @@ class ConfigManager {
             this.config.search = program.opts().search;
         }
         if (program.opts().base !== undefined && program.opts().base !== null) {
-            this.config.base = program.opts().base;
+            const baseParam = program.opts().base;
+            // 统一设置所有URL字段
+            this.config.base = baseParam;
+            this.config.baseUrl = baseParam;
+            this.config.BASE_URL = baseParam.endsWith('/') ? baseParam.slice(0, -1) : baseParam; // 确保末尾没有/
+
             try {
-                const baseUrl = new URL(program.opts().base);
+                const baseUrl = new URL(baseParam);
                 this.config.headers.Referer = `${baseUrl.protocol}//${baseUrl.hostname}/`;
             } catch (error) {
-                // 忽略解析错误，保持原有Referer
+                logger.warn(`无法解析base参数URL: ${baseParam}，使用默认Referer`);
+                // 保持原有Referer
             }
         }
         if (program.opts().nomag !== undefined && program.opts().nomag !== null) {
