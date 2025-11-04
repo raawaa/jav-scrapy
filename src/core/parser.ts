@@ -12,6 +12,7 @@
  */
 
 import { Config, Metadata, FilmData } from '../types/interfaces';
+import logger from './logger';
 
 class Parser {
   private config: Config;
@@ -27,8 +28,23 @@ class Parser {
    */
   static parsePageLinks(html: string): Array<string> {
     const $ = require('cheerio').load(html);
-
-    return $('a.movie-box').map((i: number, el: cheerio.Element) => $(el).attr('href')).get();
+    
+    // 检查页面内容是否为空
+    if (!html || html.length === 0) {
+      logger.warn('parsePageLinks: 接收到空的HTML内容');
+      return [];
+    }
+    
+    const links = $('a.movie-box').map((i: number, el: cheerio.Element) => $(el).attr('href')).get();
+    
+    logger.debug(`解析到 ${links.length} 个影片链接`);
+    if (links.length === 0) {
+      // 只在调试模式下输出完整HTML或其片段，避免日志过长
+      logger.debug('页面中未找到影片链接，页面内容片段 (前1000字符):');
+      logger.debug(html.substring(0, 1000));
+    }
+    
+    return links;
   }
 
 
@@ -40,17 +56,75 @@ class Parser {
    * @description 从页面 HTML 内容中提取影片的 gid、uc、img、标题、分类和演员信息
    */
   static parseMetadata(html: string) {
-    const $ = require('cheerio').load(html);
-    const script = $('script', 'body').eq(2).html();
+    if (!html || typeof html !== 'string') {
+      logger.warn('parseMetadata: HTML内容为空或不是字符串');
+      throw new Error('Invalid HTML content for metadata parsing');
+    }
 
-    const gidMatch = /gid\s+=\s+(\d+)/.exec(script);
-    const ucMatch = /uc\s+=\s(\d+)/.exec(script);
-    const imgRegex = /img\s+=\s+'([^']+)'/;
+    if (html.length === 0) {
+      logger.warn('parseMetadata: HTML内容长度为0');
+      throw new Error('Empty HTML content for metadata parsing');
+    }
+
+    const $ = require('cheerio').load(html);
+    const scripts = $('script', 'body');
+
+    logger.debug(`parseMetadata: 页面中找到 ${scripts.length} 个script标签`);
+
+    // 尝试不同的script位置
+    let script = null;
+    if (scripts.length >= 3) {
+      script = scripts.eq(2).html();
+      logger.debug('parseMetadata: 使用第3个script标签');
+    } else if (scripts.length >= 2) {
+      script = scripts.eq(1).html();
+      logger.debug('parseMetadata: 使用第2个script标签');
+    } else if (scripts.length >= 1) {
+      script = scripts.eq(0).html();
+      logger.debug('parseMetadata: 使用第1个script标签');
+    }
+
+    if (!script) {
+      logger.warn('parseMetadata: 未找到脚本内容，可能页面结构已改变');
+      logger.debug('页面内容片段 (前1000字符):');
+      logger.debug(html.substring(0, 1000));
+
+      // 检查是否有其他可能包含元数据的元素
+      const hasH3 = $('h3').length > 0;
+      const hasGenre = $('.genre').length > 0;
+      const hasStarBox = $('.star-box').length > 0;
+
+      logger.debug(`parseMetadata: 页面检查 - h3:${hasH3}, genre:${hasGenre}, starbox:${hasStarBox}`);
+
+      if (hasH3) {
+        logger.debug(`parseMetadata: 页面包含标题: ${$('h3').text()}`);
+      }
+
+      throw new Error('Failed to parse required metadata from script: no script found');
+    }
+
+    const gidMatch = /gid\s*=\s*(\d+)/.exec(script);
+    const ucMatch = /uc\s*=\s*(\d+)/.exec(script);
+    const imgRegex = /img\s*=\s*'([^']+)'/;
     const imgMatch = imgRegex.exec(script);
 
+    logger.debug(`解析脚本内容: gidMatch=${!!gidMatch}, ucMatch=${!!ucMatch}, imgMatch=${!!imgMatch}`);
+    logger.debug(`脚本长度: ${script.length} 字符`);
+
     if (!gidMatch || !ucMatch || !imgMatch) {
+      logger.warn('parseMetadata: 无法从脚本中解析出所需元数据');
+      logger.debug(`脚本内容: ${script.substring(0, 500)}`);
+
+      // 检查是否有其他可能的gid/uc提取方式
+      const bodyText = $('body').text();
+      const altGidMatch = /gid[:\s=]\s*(\d+)/.exec(bodyText);
+      const altUcMatch = /uc[:\s=]\s*(\d+)/.exec(bodyText);
+
+      logger.debug(`尝试替代解析: altGidMatch=${!!altGidMatch}, altUcMatch=${altUcMatch}`);
+
       throw new Error('Failed to parse required metadata from script');
     }
+    
     const metadata: Metadata = {
       gid: gidMatch[1],
       uc: ucMatch[1],
@@ -59,33 +133,116 @@ class Parser {
       category: this.parseCategories($),
       actress: this.parseActress($)
     };
+    
+    logger.debug(`解析到影片元数据: 标题=${metadata.title}, gid=${metadata.gid}, uc=${metadata.uc}`);
     return metadata;
   }
 
 
   /**
    * 解析HTML内容中的影片分类信息
-   * @param {string} html - 包含分类信息的HTML字符串
+   * @param {any} $ - Cheerio对象或包含分类信息的HTML字符串
    * @returns {Array<string>} 返回分类名称的数组
    * @description 从HTML中提取所有位于<span class="genre">标签内，
    * 且嵌套在<label><a>结构中的文本内容作为分类名称
    */
-  static parseCategories(html: string): Array<string> {
-    const $ = require('cheerio').load(html);
-    return $('span.genre label a').map((i: number, el: cheerio.Element) => $(el).text()).get();
+  static parseCategories($: any): Array<string> {
+    // 如果传入的是HTML字符串，则加载为Cheerio对象
+    if (typeof $ === 'string') {
+      if (!$ || $.length === 0) {
+        logger.warn('parseCategories: HTML内容为空或不是字符串');
+        return [];
+      }
+      $ = require('cheerio').load($);
+    } else if (!$ || typeof $ !== 'function') {
+      logger.warn('parseCategories: 传入的不是有效的Cheerio对象或HTML字符串');
+      return [];
+    }
+
+    // 检查页面是否包含关键HTML结构
+    const hasGenreElements = $('span.genre').length > 0;
+    const hasLabelElements = $('span.genre label').length > 0;
+    const hasAnchorElements = $('span.genre a').length > 0;
+
+    if (!hasGenreElements) {
+      logger.debug('parseCategories: 页面中没有找到 span.genre 元素');
+      logger.debug(`页面片段: ${html.substring(0, 500)}`);
+    }
+
+    if (!hasLabelElements && hasGenreElements) {
+      logger.debug('parseCategories: 找到 span.genre 但没有找到 label 元素');
+    }
+
+    if (!hasAnchorElements && hasLabelElements) {
+      logger.debug('parseCategories: 找到 label 但没有找到 a 元素');
+    }
+
+    const categories = $('span.genre label a').map((i: number, el: cheerio.Element) => $(el).text()).get();
+    logger.debug(`解析到 ${categories.length} 个分类: ${categories.join(', ')}`);
+
+    if (categories.length === 0 && hasGenreElements) {
+      logger.debug('parseCategories: 页面包含genre元素但未能解析到分类文本');
+      // 输出一些元素用于调试
+      const sampleGenre = $('span.genre').first();
+      if (sampleGenre.length > 0) {
+        logger.debug(`第一个genre元素HTML: ${sampleGenre.html()}`);
+      }
+    }
+
+    return categories;
   }
 
 
   /**
    * 解析HTML内容中的女演员信息
-   * @param {string} html - 包含演员信息的HTML字符串
+   * @param {any} $ - Cheerio对象或包含演员信息的HTML字符串
    * @returns {Array<string>} 返回女演员名称的数组
-   * @description 从HTML中提取所有具有onmouseover属性的<span class="genre">标签内，
-   * 嵌套在<a>标签中的文本内容作为女演员名称
+   * @description 从HTML中提取所有位于.star-name .a标签内的文本内容作为女演员名称
    */
-  static parseActress(html: string): Array<string> {
-    const $ = require('cheerio').load(html);
-    return $('span.genre[onmouseover] a').map((i: number, el: cheerio.Element) => $(el).text()).get();
+  static parseActress($: any): Array<string> {
+    // 如果传入的是HTML字符串，则加载为Cheerio对象
+    if (typeof $ === 'string') {
+      if (!$ || $.length === 0) {
+        logger.warn('parseActress: HTML内容为空或不是字符串');
+        return [];
+      }
+      $ = require('cheerio').load($);
+    } else if (!$ || typeof $ !== 'function') {
+      logger.warn('parseActress: 传入的不是有效的Cheerio对象或HTML字符串');
+      return [];
+    }
+
+    // 检查页面是否包含关键HTML结构
+    const hasStarNameElements = $('.star-name').length > 0;
+    const hasStarBoxElements = $('.star-box').length > 0;
+    const hasAnchorElements = $('.star-name a').length > 0;
+    const hasActressSection = html.includes('演員') || html.includes('女優');
+
+    if (!hasActressSection) {
+      logger.debug('parseActress: 页面中没有找到演员相关文字');
+    }
+
+    if (!hasStarNameElements && hasStarBoxElements) {
+      logger.debug('parseActress: 找到 star-box 但没有找到 star-name 元素');
+    }
+
+    if (!hasAnchorElements && hasStarNameElements) {
+      logger.debug('parseActress: 找到 star-name 但没有找到 a 元素');
+    }
+
+    const actresses = $('.star-name a').map((i: number, el: cheerio.Element) => $(el).text()).get();
+    logger.debug(`解析到 ${actresses.length} 个演员: ${actresses.join(', ')}`);
+
+    if (actresses.length === 0 && hasStarBoxElements) {
+      logger.debug('parseActress: 页面包含star-box元素但未能解析到演员信息');
+      // 输出一些元素用于调试
+      const sampleStarBox = $('.star-box').first();
+      if (sampleStarBox.length > 0) {
+        logger.debug(`第一个star-box元素HTML: ${sampleStarBox.html()}`);
+      }
+    }
+
+    return actresses;
   }
 
   /**

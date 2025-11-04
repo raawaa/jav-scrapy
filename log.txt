@@ -1,0 +1,222 @@
+
+> jav-scrapy@0.8.0 dev
+> ts-node src/jav.ts -p 1 -l 2 -d 8 --cloudflare -x http://127.0.0.1:10809
+
+[2025-11-04 19:34:43] [32MINFO[39M: 系统代理设置: {"enabled":false}
+[2025-11-04 19:34:43] [32MINFO[39M: 已启用 Cloudflare 绕过功能
+[2025-11-04 19:34:43] [34MDEBUG[39M: 程序配置初始化完成
+[2025-11-04 19:34:43] [34MDEBUG[39M: 完整配置: {
+  "retryCount": 3,
+  "retryDelay": 1000,
+  "BASE_URL": "https://www.javbus.com/",
+  "baseUrl": "https://www.javbus.com/",
+  "searchUrl": "/search",
+  "parallel": 1,
+  "headers": {
+    "Referer": "https://www.javbus.com/",
+    "Cookie": "existmag=mag"
+  },
+  "output": "/Users/yuwenjie/Code/jav-scrapy",
+  "timeout": 30000,
+  "search": null,
+  "base": null,
+  "nomag": false,
+  "allmag": false,
+  "nopic": false,
+  "limit": 2,
+  "delay": 8,
+  "proxy": "http://127.0.0.1:10809",
+  "useCloudflareBypass": true
+}
+[2025-11-04 19:34:43] [34MDEBUG[39M: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 19:34:43] [34MDEBUG[39M: 代理设置: http://127.0.0.1:10809
+[2025-11-04 19:34:43] [34MDEBUG[39M: 起始URL: https://www.javbus.com/
+[2025-11-04 19:34:43] [34MDEBUG[39M: 并行数: 1
+[2025-11-04 19:34:43] [34MDEBUG[39M: 超时时间: 30000ms
+[2025-11-04 19:34:43] [34MDEBUG[39M: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 19:34:43] [34MDEBUG[39M: 开始处理索引页任务: https://www.javbus.com
+[2025-11-04 19:34:43] [34MDEBUG[39M: 开始抓取索引页: https://www.javbus.com
+[2025-11-04 19:34:43] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com (尝试 1/4)
+[2025-11-04 19:34:43] [34MDEBUG[39M: 未找到加密密钥，将尝试读取未加密的cookies
+[2025-11-04 19:34:43] [34MDEBUG[39M: 浏览器 Chrome 的用户目录: /Users/yuwenjie/Library/Application Support/Google/Chrome
+[2025-11-04 19:34:43] [34MDEBUG[39M: 找到的Cookies文件: /Users/yuwenjie/Library/Application Support/Google/Chrome/Default/Cookies
+[2025-11-04 19:34:43] [34MDEBUG[39M: 未找到加密密钥，将尝试读取未加密的cookies
+[2025-11-04 19:34:43] [34MDEBUG[39M: 浏览器 Edge 的用户目录: /Users/yuwenjie/Library/Application Support/Microsoft Edge
+[2025-11-04 19:34:43] [34MDEBUG[39M: 找到的Cookies文件: /Users/yuwenjie/Library/Application Support/Microsoft Edge/Default/Cookies
+[2025-11-04 19:34:43] [34MDEBUG[39M: 跳过无效的 Cookie existmag: 值包含非可打印字符
+[2025-11-04 19:34:43] [34MDEBUG[39M: 跳过无效的 Cookie PHPSESSID: 值包含非可打印字符
+[2025-11-04 19:34:43] [32MINFO[39M: 成功获取到 www.javbus.com 的cookies，共 0 个
+[2025-11-04 19:34:43] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:34:43] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:34:44] [34MDEBUG[39M: 解析到 30 个影片链接
+[2025-11-04 19:34:44] [34MDEBUG[39M: 索引页 https://www.javbus.com 解析完成，共找到 30 条链接
+[2025-11-04 19:34:44] [34MDEBUG[39M: 第1页解析完成，找到 30 部影片链接
+[2025-11-04 19:34:44] [34MDEBUG[39M: 开始处理详情页: https://www.javbus.com/THU-063
+[2025-11-04 19:34:44] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com/THU-063 (尝试 1/4)
+[2025-11-04 19:34:44] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:34:44] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:34:45] [34MDEBUG[39M: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 19:34:45] [34MDEBUG[39M: 解析到影片元数据: 标题=THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛, gid=65752356085, uc=0
+[2025-11-04 19:34:45] [34MDEBUG[39M: 开始发送AJAX请求: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224
+[2025-11-04 19:34:45] [32MINFO[39M: 正在启动 Puppeteer 浏览器...
+[2025-11-04 19:34:45] [32MINFO[39M: 使用代理: http://127.0.0.1:10809
+[2025-11-04 19:34:45] [31MERROR[39M: [indexPageQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:34:46] [32MINFO[39M: Puppeteer 浏览器启动成功
+[2025-11-04 19:34:46] [32MINFO[39M: Cloudflare 绕过器初始化成功
+[2025-11-04 19:34:46] [32MINFO[39M: 正在通过 Cloudflare 绕过获取 Cookies...
+[2025-11-04 19:34:46] [32MINFO[39M: 正在访问页面: https://www.javbus.com/
+[2025-11-04 19:34:48] [32MINFO[39M: 页面状态码: 200
+[2025-11-04 19:34:48] [32MINFO[39M: 获取到 2 个 Cookies
+[2025-11-04 19:34:48] [32MINFO[39M: 获取到 2 个 Cookies
+[2025-11-04 19:34:48] [32MINFO[39M: Cloudflare Cookies 获取成功
+[2025-11-04 19:34:48] [34MDEBUG[39M: 在XMLHttpRequest中使用 Cloudflare Cookies
+[2025-11-04 19:34:48] [34MDEBUG[39M: AJAX请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[已设置]"}
+[2025-11-04 19:34:49] [33MWARN[39M: AJAX请求失败，正在重试 (1/3)... URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224, 错误: ERR_BAD_REQUEST
+[2025-11-04 19:34:52] [33MWARN[39M: AJAX请求失败，正在重试 (2/3)... URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224, 错误: ERR_BAD_REQUEST
+[2025-11-04 19:34:53] [34MDEBUG[39M: 开始处理索引页任务: https://www.javbus.com/page/2
+[2025-11-04 19:34:53] [34MDEBUG[39M: 开始抓取索引页: https://www.javbus.com/page/2
+[2025-11-04 19:34:53] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com/page/2 (尝试 1/4)
+[2025-11-04 19:34:53] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:34:53] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:34:54] [34MDEBUG[39M: 解析到 30 个影片链接
+[2025-11-04 19:34:54] [34MDEBUG[39M: 索引页 https://www.javbus.com/page/2 解析完成，共找到 30 条链接
+[2025-11-04 19:34:54] [34MDEBUG[39M: 第2页解析完成，找到 30 部影片链接
+[2025-11-04 19:34:55] [31MERROR[39M: [indexPageQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:34:56] [33MWARN[39M: AJAX请求失败，正在重试 (3/3)... URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224, 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:03] [34MDEBUG[39M: 开始处理索引页任务: https://www.javbus.com/page/3
+[2025-11-04 19:35:03] [34MDEBUG[39M: 开始抓取索引页: https://www.javbus.com/page/3
+[2025-11-04 19:35:03] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com/page/3 (尝试 1/4)
+[2025-11-04 19:35:03] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:35:03] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:35:03] [34MDEBUG[39M: 解析到 30 个影片链接
+[2025-11-04 19:35:03] [34MDEBUG[39M: 索引页 https://www.javbus.com/page/3 解析完成，共找到 30 条链接
+[2025-11-04 19:35:03] [34MDEBUG[39M: 第3页解析完成，找到 30 部影片链接
+[2025-11-04 19:35:04] [31MERROR[39M: [indexPageQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:35:05] [31MERROR[39M: AJAX请求失败: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224
+[2025-11-04 19:35:05] [31MERROR[39M: 错误详情: Request failed with status code 403
+[2025-11-04 19:35:05] [31MERROR[39M: 响应状态码: 403
+[2025-11-04 19:35:05] [31MERROR[39M: 响应头: {"date":"Tue, 04 Nov 2025 11:35:05 GMT","content-type":"text/html; charset=UTF-8","transfer-encoding":"chunked","connection":"keep-alive","cache-control":"private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0","expires":"Thu, 01 Jan 1970 00:00:01 GMT","referrer-policy":"same-origin","x-frame-options":"SAMEORIGIN","vary":"accept-encoding","report-to":"{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=tRJDl0R09S08nZO%2BR6ngoJX5UaXr1TK1dtGi2VKdvXmfM0hk73lF9FYX9YODoFuNvwpQjQDCA5068MQOM6Ml2cqSeVjZeV%2FkPPla\"}]}","nel":"{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}","server":"cloudflare","cf-ray":"9993ce50db635208-LAX"}
+[2025-11-04 19:35:05] [31MERROR[39M: 网络请求错误 [发送 XMLHttpRequest 到 https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224]: Request failed with status code 403
+[2025-11-04 19:35:05] [31MERROR[39M: 响应状态码: 403
+[2025-11-04 19:35:05] [31MERROR[39M: 请求URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224
+[2025-11-04 19:35:05] [33MWARN[39M: 403 Forbidden: 可能是反爬虫机制，建议：
+[2025-11-04 19:35:05] [33MWARN[39M:   1. 检查代理设置是否正确
+[2025-11-04 19:35:05] [33MWARN[39M:   2. 尝试更新防屏蔽地址 (jav update)
+[2025-11-04 19:35:05] [33MWARN[39M:   3. 增加请求延迟时间 (-d 参数)
+[2025-11-04 19:35:05] [33MWARN[39M: AJAX请求失败，这可能是因为：
+[2025-11-04 19:35:05] [33MWARN[39M:   1. 会话Cookie过期或无效
+[2025-11-04 19:35:05] [33MWARN[39M:   2. 网站检测到自动化行为
+[2025-11-04 19:35:05] [33MWARN[39M:   3. 请求头信息不正确
+[2025-11-04 19:35:05] [34MDEBUG[39M: 建议尝试：
+[2025-11-04 19:35:05] [34MDEBUG[39M:   1. 手动访问网站更新会话
+[2025-11-04 19:35:05] [34MDEBUG[39M:   2. 使用不同的代理服务器
+[2025-11-04 19:35:05] [34MDEBUG[39M:   3. 暂停一段时间后重试
+[2025-11-04 19:35:05] [34MDEBUG[39M: 响应头: {
+  "date": "Tue, 04 Nov 2025 11:35:05 GMT",
+  "content-type": "text/html; charset=UTF-8",
+  "transfer-encoding": "chunked",
+  "connection": "keep-alive",
+  "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+  "expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+  "referrer-policy": "same-origin",
+  "x-frame-options": "SAMEORIGIN",
+  "vary": "accept-encoding",
+  "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=tRJDl0R09S08nZO%2BR6ngoJX5UaXr1TK1dtGi2VKdvXmfM0hk73lF9FYX9YODoFuNvwpQjQDCA5068MQOM6Ml2cqSeVjZeV%2FkPPla\"}]}",
+  "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+  "server": "cloudflare",
+  "cf-ray": "9993ce50db635208-LAX"
+}
+[2025-11-04 19:35:05] [33MWARN[39M: 常规 AJAX 请求失败，错误: Request failed with status code 403
+[2025-11-04 19:35:05] [32MINFO[39M: 尝试使用 Cloudflare 绕过执行 AJAX 请求...
+[2025-11-04 19:35:05] [32MINFO[39M: 正在使用 Cloudflare 绕过器执行 AJAX 请求...
+[2025-11-04 19:35:05] [32MINFO[39M: 执行 AJAX 请求: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65752356085&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=224
+[2025-11-04 19:35:05] [32MINFO[39M: AJAX 请求成功
+[2025-11-04 19:35:05] [32MINFO[39M: Cloudflare 绕过 AJAX 请求成功
+[2025-11-04 19:35:05] [31MERROR[39M: [fileWriteQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:35:06] [33MWARN[39M: 请求失败，正在重试 (1/5)... 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:06] [31MERROR[39M: 错误 [处理详情页 https://www.javbus.com/THU-063]: callback is not a function
+[2025-11-04 19:35:06] [34MDEBUG[39M: 错误堆栈: TypeError: callback is not a function
+    at /Users/yuwenjie/Code/jav-scrapy/src/core/queueManager.ts:121:21
+[2025-11-04 19:35:06] [31MERROR[39M: [detailPageQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:35:06] [34MDEBUG[39M: 开始处理详情页: https://www.javbus.com/STH-110
+[2025-11-04 19:35:06] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com/STH-110 (尝试 1/4)
+[2025-11-04 19:35:06] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:35:06] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:35:07] [34MDEBUG[39M: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 19:35:07] [34MDEBUG[39M: 解析到影片元数据: 标题=STH-110 saraca(28)【素人ホイホイStayHome/自宅連れ込み/素人/お姉さん/巨乳/美尻/くびれ/潮吹き/騎乗位/顔射/ハメ撮り/ドキュメンタリー】, gid=65741356107, uc=0
+[2025-11-04 19:35:07] [34MDEBUG[39M: 开始发送AJAX请求: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664
+[2025-11-04 19:35:07] [34MDEBUG[39M: 在XMLHttpRequest中使用 Cloudflare Cookies
+[2025-11-04 19:35:07] [34MDEBUG[39M: AJAX请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[已设置]"}
+[2025-11-04 19:35:07] [33MWARN[39M: AJAX请求失败，正在重试 (1/3)... URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664, 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:09] [33MWARN[39M: 请求失败，正在重试 (2/5)... 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:10] [33MWARN[39M: AJAX请求失败，正在重试 (2/3)... URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664, 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:12] [34MDEBUG[39M: 开始处理索引页任务: https://www.javbus.com/page/4
+[2025-11-04 19:35:12] [34MDEBUG[39M: 开始抓取索引页: https://www.javbus.com/page/4
+[2025-11-04 19:35:12] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com/page/4 (尝试 1/4)
+[2025-11-04 19:35:12] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:35:12] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:35:13] [34MDEBUG[39M: 解析到 30 个影片链接
+[2025-11-04 19:35:13] [34MDEBUG[39M: 索引页 https://www.javbus.com/page/4 解析完成，共找到 30 条链接
+[2025-11-04 19:35:13] [34MDEBUG[39M: 第4页解析完成，找到 30 部影片链接
+[2025-11-04 19:35:14] [33MWARN[39M: 请求失败，正在重试 (3/5)... 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:14] [31MERROR[39M: [indexPageQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:35:15] [33MWARN[39M: AJAX请求失败，正在重试 (3/3)... URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664, 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:22] [34MDEBUG[39M: 开始处理索引页任务: https://www.javbus.com/page/5
+[2025-11-04 19:35:22] [34MDEBUG[39M: 开始抓取索引页: https://www.javbus.com/page/5
+[2025-11-04 19:35:22] [34MDEBUG[39M: 开始请求页面: https://www.javbus.com/page/5 (尝试 1/4)
+[2025-11-04 19:35:22] [34MDEBUG[39M: 使用默认 Cookie: existmag=mag
+[2025-11-04 19:35:22] [34MDEBUG[39M: 请求头信息: {"authority":"www.javbus.com","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36","referer":"https://www.javbus.com","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 19:35:23] [34MDEBUG[39M: 解析到 30 个影片链接
+[2025-11-04 19:35:23] [34MDEBUG[39M: 索引页 https://www.javbus.com/page/5 解析完成，共找到 30 条链接
+[2025-11-04 19:35:23] [34MDEBUG[39M: 第5页解析完成，找到 30 部影片链接
+[2025-11-04 19:35:23] [31MERROR[39M: AJAX请求失败: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664
+[2025-11-04 19:35:23] [31MERROR[39M: 错误详情: Request failed with status code 403
+[2025-11-04 19:35:23] [31MERROR[39M: 响应状态码: 403
+[2025-11-04 19:35:23] [31MERROR[39M: 响应头: {"date":"Tue, 04 Nov 2025 11:35:23 GMT","content-type":"text/html; charset=UTF-8","transfer-encoding":"chunked","connection":"keep-alive","cache-control":"private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0","expires":"Thu, 01 Jan 1970 00:00:01 GMT","referrer-policy":"same-origin","x-frame-options":"SAMEORIGIN","vary":"accept-encoding","report-to":"{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=PTc1nMJ6aUx8Htt1nSUpciC37kEs8pSMAhE78VDe3C9dBY9uQjoO9o9rTH%2FqUmTRrCIM%2FxbuMs%2FcTV0nnaDbJoTDHVIGvSSqzC9gj1k%3D\"}]}","nel":"{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}","server":"cloudflare","cf-ray":"9993cec408638ad4-LAX"}
+[2025-11-04 19:35:23] [31MERROR[39M: 网络请求错误 [发送 XMLHttpRequest 到 https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664]: Request failed with status code 403
+[2025-11-04 19:35:23] [31MERROR[39M: 响应状态码: 403
+[2025-11-04 19:35:23] [31MERROR[39M: 请求URL: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664
+[2025-11-04 19:35:23] [33MWARN[39M: 403 Forbidden: 可能是反爬虫机制，建议：
+[2025-11-04 19:35:23] [33MWARN[39M:   1. 检查代理设置是否正确
+[2025-11-04 19:35:23] [33MWARN[39M:   2. 尝试更新防屏蔽地址 (jav update)
+[2025-11-04 19:35:23] [33MWARN[39M:   3. 增加请求延迟时间 (-d 参数)
+[2025-11-04 19:35:23] [33MWARN[39M: AJAX请求失败，这可能是因为：
+[2025-11-04 19:35:23] [33MWARN[39M:   1. 会话Cookie过期或无效
+[2025-11-04 19:35:23] [33MWARN[39M:   2. 网站检测到自动化行为
+[2025-11-04 19:35:23] [33MWARN[39M:   3. 请求头信息不正确
+[2025-11-04 19:35:23] [34MDEBUG[39M: 建议尝试：
+[2025-11-04 19:35:23] [34MDEBUG[39M:   1. 手动访问网站更新会话
+[2025-11-04 19:35:23] [34MDEBUG[39M:   2. 使用不同的代理服务器
+[2025-11-04 19:35:23] [34MDEBUG[39M:   3. 暂停一段时间后重试
+[2025-11-04 19:35:23] [34MDEBUG[39M: 响应头: {
+  "date": "Tue, 04 Nov 2025 11:35:23 GMT",
+  "content-type": "text/html; charset=UTF-8",
+  "transfer-encoding": "chunked",
+  "connection": "keep-alive",
+  "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+  "expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+  "referrer-policy": "same-origin",
+  "x-frame-options": "SAMEORIGIN",
+  "vary": "accept-encoding",
+  "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=PTc1nMJ6aUx8Htt1nSUpciC37kEs8pSMAhE78VDe3C9dBY9uQjoO9o9rTH%2FqUmTRrCIM%2FxbuMs%2FcTV0nnaDbJoTDHVIGvSSqzC9gj1k%3D\"}]}",
+  "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+  "server": "cloudflare",
+  "cf-ray": "9993cec408638ad4-LAX"
+}
+[2025-11-04 19:35:23] [33MWARN[39M: 常规 AJAX 请求失败，错误: Request failed with status code 403
+[2025-11-04 19:35:23] [32MINFO[39M: 尝试使用 Cloudflare 绕过执行 AJAX 请求...
+[2025-11-04 19:35:23] [32MINFO[39M: 正在使用 Cloudflare 绕过器执行 AJAX 请求...
+[2025-11-04 19:35:23] [32MINFO[39M: 执行 AJAX 请求: https://www.javbus.com/ajax/uncledatoolsbyajax.php?gid=65741356107&lang=zh&img=/pics/cover/brgj_b.jpg&uc=0&floor=664
+[2025-11-04 19:35:23] [32MINFO[39M: AJAX 请求成功
+[2025-11-04 19:35:23] [32MINFO[39M: Cloudflare 绕过 AJAX 请求成功
+[2025-11-04 19:35:23] [34MDEBUG[39M: 达到限制数量 2，停止抓取
+[2025-11-04 19:35:23] [33MWARN[39M: 请求失败，正在重试 (4/5)... 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:23] [33MWARN[39M: 请求失败，正在重试 (5/5)... 错误: ERR_BAD_REQUEST
+[2025-11-04 19:35:23] [31MERROR[39M: 文件操作错误 [保存图片: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛.jpg]: Request failed with status code 403
+[2025-11-04 19:35:23] [31MERROR[39M: 错误代码: ERR_BAD_REQUEST
+[2025-11-04 19:35:23] [31MERROR[39M: [imageDownloadQueue] 处理任务时出错: Request failed with status code 403
+[2025-11-04 19:35:24] [31MERROR[39M: [indexPageQueue] 处理任务时出错: callback is not a function
+[2025-11-04 19:35:24] [31MERROR[39M: 错误 [处理详情页 https://www.javbus.com/STH-110]: callback is not a function
+[2025-11-04 19:35:24] [34MDEBUG[39M: 错误堆栈: TypeError: callback is not a function
+    at /Users/yuwenjie/Code/jav-scrapy/src/core/queueManager.ts:121:21
+资源清理完成。

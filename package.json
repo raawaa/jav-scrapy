@@ -12,11 +12,16 @@
     "axios-retry": "^4.5.0",
     "chalk": "^5.4.1",
     "cli-progress": "^3.12.0",
+    "cloudscraper": "^4.6.0",
     "commander": "12.1.0",
     "http-proxy-agent": "7.0.2",
     "https-proxy-agent": "^7.0.6",
     "mkdirp": "^3.0.1",
+    "puppeteer": "^24.28.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "socks-proxy-agent": "^8.0.5",
+    "sqlite3": "^5.1.7",
     "tunnel": "^0.0.6",
     "user-home": "^2.0.0",
     "winreg": "^1.2.5",
@@ -33,6 +38,8 @@
     "cheerio": "^1.0.0",
     "mocha": "^10.2.0",
     "nock": "^13.5.3",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "bin": {
@@ -46,6 +53,8 @@
     "test": "mocha test/*.test.js",
     "prepublish": "npm run build",
     "prepare": "npm run build",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "ts-node src/jav.ts",
+    "dev:watch": "nodemon --exec ts-node src/jav.ts"
   }
 }

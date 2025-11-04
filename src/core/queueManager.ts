@@ -5,6 +5,8 @@ import logger from './logger';
 import RequestHandler from './requestHandler';
 import FileHandler from './fileHandler';
 import Parser from './parser';
+import { ErrorHandler } from '../utils/errorHandler';
+import { getRandomDelay } from './constants';
 
 
 export interface QueueTask {
@@ -69,15 +71,13 @@ class QueueManager {
      */
     public getImageDownloadQueue(): async.QueueObject<Metadata> {
         if (!this.imageDownloadQueue) {
-            this.imageDownloadQueue = async.queue(async (metadata: Metadata, callback) => {
+            this.imageDownloadQueue = async.queue(async (metadata: Metadata) => {
                 const baseUrl = this.config.base || this.config.BASE_URL;
                 const parsedUrl = new URL(baseUrl); // 解析 baseUrl 为 URL 对象
-                const domainOnly = `${parsedUrl.protocol}//${parsedUrl.hostname}`; // 提取域名部分            
-
+                const domainOnly = `${parsedUrl.protocol}//${parsedUrl.hostname}`; // 提取域名部分
 
                 const imageUrl = `${domainOnly.replace(/\/+$/, '')}/${metadata.img.replace(/^\/+/, '')}`;
                 await this.requestHandler.downloadImage(imageUrl, metadata.title + '.jpg');
-                callback();
             }, this.config.parallel);
         }
         return this.imageDownloadQueue;
@@ -89,9 +89,8 @@ class QueueManager {
      */
     public getFileWriteQueue(): async.QueueObject<FilmData> {
         if (!this.fileWriteQueue) {
-            this.fileWriteQueue = async.queue(async (filmData: FilmData, callback) => {
+            this.fileWriteQueue = async.queue(async (filmData: FilmData) => {
                 await this.fileHandler.writeFilmDataToFile(filmData);
-                callback();
             }, this.config.parallel);
         }
         return this.fileWriteQueue;
@@ -103,7 +102,7 @@ class QueueManager {
      */
     public getDetailPageQueue(): async.QueueObject<DetailPageTask> {
         if (!this.detailPageQueue) {
-            this.detailPageQueue = async.queue(async (task: DetailPageTask, callback) => {
+            this.detailPageQueue = async.queue(async (task: DetailPageTask) => {
                 try {
                     this.emit({ type: QueueEventType.DETAIL_PAGE_START, data: { link: task.link } }); // 触发页面请求事件
                     const response = await this.requestHandler.getPage(task.link);
@@ -116,12 +115,11 @@ class QueueManager {
                             data: { filmData, metadata }
                         });
                     }
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    callback();
+                    const randomDelay = getRandomDelay(1, 3); // 1-3秒随机延迟
+                await new Promise(resolve => setTimeout(resolve, randomDelay));
                 } catch (error) {
-                    console.error(`处理详情页 ${task.link} 时出错:`, error);
+                    ErrorHandler.handleGenericError(error, `处理详情页 ${task.link}`);
                     // 不中断队列处理，继续处理下一个任务
-                    callback();
                 }
             }, this.config.parallel);
         }
@@ -134,18 +132,34 @@ class QueueManager {
      */
     public getIndexPageQueue(): async.QueueObject<IndexPageTask> {
         if (!this.indexPageQueue) {
-            this.indexPageQueue = async.queue(async (task: IndexPageTask, callback) => {
-                // logger.info(`开始抓取 ${task.url} `);
+            this.indexPageQueue = async.queue(async (task: IndexPageTask) => {
+                logger.debug(`开始处理索引页任务: ${task.url}`);
                 this.emit({ type: QueueEventType.INDEX_PAGE_START, data: { link: task.url } }); // 触发页面请求事件
                 const response = await this.requestHandler.getPage(task.url);
-                const links: string[] = response?.body ? Parser.parsePageLinks(response.body) : [];
-                // logger.info(`第 ${task.url} 页抓取完成，共找到 ${links.length} 条链接`);
+
+                if (!response || !response.body) {
+                    logger.warn(`索引页 ${task.url} 返回空内容`);
+                    this.emit({
+                        type: QueueEventType.INDEX_PAGE_PROCESSED,
+                        data: { links: [] }
+                    });
+                    return;
+                }
+
+                const links: string[] = Parser.parsePageLinks(response.body);
+                logger.debug(`索引页 ${task.url} 解析完成，共找到 ${links.length} 条链接`);
+
+                if (links.length === 0) {
+                    logger.warn(`索引页 ${task.url} 未解析到任何影片链接`);
+                    logger.debug(`页面内容片段 (前1000字符): ${response.body.substring(0, 1000)}`);
+                }
+
                 this.emit({
                     type: QueueEventType.INDEX_PAGE_PROCESSED,
                     data: { links }
                 });
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                callback();
+                const randomDelay = getRandomDelay(1, 3); // 1-3秒随机延迟
+                await new Promise(resolve => setTimeout(resolve, randomDelay));
             }, this.config.parallel);
         }
         return this.indexPageQueue;

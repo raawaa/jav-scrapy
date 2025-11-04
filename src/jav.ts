@@ -14,6 +14,8 @@ import RequestHandler from './core/requestHandler';
 import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
 import fs from 'fs';
 import * as path from 'path';
+import { ErrorHandler } from './utils/errorHandler';
+import { getRandomDelay, getExponentialBackoffDelay } from './core/constants';
 
 
 program
@@ -29,26 +31,37 @@ program
     .option('-s, --search <string>', '搜索关键词，可只抓取搜索结果的磁链或封面')
     .option('-b, --base <url>', '自定义抓取的起始页')
     .option('-x, --proxy <url>', '使用代理服务器, 例：-x http://127.0.0.1:8087')
+    .option('-d, --delay <num>', '设置请求间隔时间(秒)。默认值：2秒')
     .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .option('-N, --nopic', '不抓取图片')
+    .option('-c, --cookies <string>', '手动设置Cookies，格式: "key1=value1; key2=value2"')
+    .option('--cloudflare', '启用 Cloudflare 绕过功能')
     .action(async (options, program) => {
         const configManager = new ConfigManager();
         await configManager.updateFromProgram(program);
         const PROGRAM_CONFIG = configManager.getConfig();
+        
+        // 设置默认延迟为2秒
+        if (!PROGRAM_CONFIG.delay) {
+            PROGRAM_CONFIG.delay = 2;
+        }
+
+        logger.debug('程序配置初始化完成');
+        logger.debug(`完整配置: ${JSON.stringify(PROGRAM_CONFIG, null, 2)}`);
 
         const requestHandler = new RequestHandler(PROGRAM_CONFIG);
-        const scraper = new JavScraper(PROGRAM_CONFIG);
+        const scraper = new JavScraper(PROGRAM_CONFIG, requestHandler);
 
         // 添加信号处理
         process.on('SIGINT', () => {
-            console.log('\n收到退出信号，正在清理资源...');
+            logger.info('\n收到退出信号，正在清理资源...');
             scraper.destroy();
             process.exit(0);
         });
 
         process.on('SIGTERM', () => {
-            console.log('\n收到终止信号，正在清理资源...');
+            logger.info('\n收到终止信号，正在清理资源...');
             scraper.destroy();
             process.exit(0);
         });
@@ -56,7 +69,7 @@ program
         try {
             await scraper.mainExecution();
         } catch (error) {
-            console.error('程序执行出错:', error);
+            ErrorHandler.handleGenericError(error, '程序执行');
             scraper.destroy();
             process.exit(1);
         }
@@ -69,7 +82,7 @@ program
         const configManager = new ConfigManager();
         // 直接在这里读取并应用系统代理配置
         const systemProxy = await getSystemProxy();
-        console.log('系统代理设置:', systemProxy);
+        logger.info(`系统代理设置: ${JSON.stringify(systemProxy)}`);
 
         const config = configManager.getConfig(); // 获取当前配置
         if (systemProxy.enabled && systemProxy.server) {
@@ -113,7 +126,7 @@ program
                 fs.writeFileSync(antiblockUrlsFilePath, JSON.stringify(allUrls, null, 2));
                 logger.success(`检测到 ${antiBlockUrls.length} 个新的防屏蔽地址，已更新到文件: ${chalk.underline.blue(antiblockUrlsFilePath)}`);
             } catch (error) {
-                logger.error(`保存防屏蔽地址文件失败: ${error instanceof Error ? error.message : String(error)}`);
+                ErrorHandler.handleFileError(error, '保存防屏蔽地址文件');
             }
 
         } else if (existingUrls.length > 0) {
@@ -132,10 +145,12 @@ class JavScraper {
     private filmCount: number = 0;
     public multibar: cliProgress.MultiBar | null = null;
     public progressBar: cliProgress.SingleBar | null = null;
+    private requestHandler: RequestHandler;
 
-    constructor(config: Config) {
+    constructor(config: Config, requestHandler?: RequestHandler) {
         this.config = config;
         this.pageIndex = 1;
+        this.requestHandler = requestHandler || new RequestHandler(config);
         if (this.config.limit > 0) {
             this.multibar = new cliProgress.MultiBar({
                 format: '下载进度 |{bar}| {percentage}% | {value}/{total} 部影片 | 剩余: {eta}s',
@@ -174,58 +189,98 @@ class JavScraper {
             this.logInfo(`目标抓取数量: ${this.config.limit} 部影片`);
         }
         this.logInfo(`使用配置: ${JSON.stringify(this.config, null, 2)}`);
+        
+        // 输出更详细的配置信息
+        logger.debug(`代理设置: ${this.config.proxy || '未设置'}`);
+        logger.debug(`起始URL: ${this.config.base || this.config.BASE_URL}`);
+        logger.debug(`并行数: ${this.config.parallel}`);
+        logger.debug(`超时时间: ${this.config.timeout}ms`);
 
         const queueManager = new QueueManager(this.config);
         let shouldStop = false;
 
         queueManager.on(QueueEventType.INDEX_PAGE_START, (event) => {
-            this.logInfo(`开始抓取第${this.pageIndex}页: ${event.data.link}`);
+            if (event.data && 'link' in event.data) {
+                logger.debug(`开始抓取索引页: ${event.data.link}`);
+                this.logInfo(`正在抓取第${this.pageIndex}页: ${event.data.link}`);
+            }
         });
 
         queueManager.on(QueueEventType.INDEX_PAGE_PROCESSED, (event) => {
-            const links = event.data.links;
-            this.logInfo(`第${this.pageIndex}页抓取到${links.length}部影片`);
-            queueManager.getDetailPageQueue().push(links.map((link: string) => ({ link })));
+            if (event.data && 'links' in event.data) {
+                const links = event.data.links;
+                logger.debug(`第${this.pageIndex}页解析完成，找到 ${links.length} 部影片链接`);
+                this.logInfo(`第${this.pageIndex}页抓取到${links.length}部影片`);
+                
+                if (links.length === 0) {
+                    logger.warn(`第${this.pageIndex}页未找到任何影片，可能需要检查页面内容或代理设置`);
+                }
+                
+                queueManager.getDetailPageQueue().push(links.map((link: string) => ({ link })));
+            }
         });
 
         queueManager.on(QueueEventType.DETAIL_PAGE_START, (event) => {
-            this.logInfo(`开始处理详情页: ${event.data.link}`);
+            if (event.data && 'link' in event.data) {
+                logger.debug(`开始处理详情页: ${event.data.link}`);
+                this.logInfo(`开始处理详情页: ${event.data.link}`);
+            }
         });
 
         queueManager.on(QueueEventType.DETAIL_PAGE_PROCESSED, (event) => {
             this.filmCount++;
 
-            if (this.progressBar) {
-                this.progressBar.update(this.filmCount);
-                this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`);
-            } else {
-                this.logInfo(`已抓取 ${event.data.filmData.title}`);
-            }
+            if (event.data && 'filmData' in event.data) {
+                if (this.progressBar) {
+                    this.progressBar.update(this.filmCount);
+                    this.logInfo(`${chalk.yellowBright('已处理:')} ${event.data.filmData.title}`);
+                } else {
+                    logger.debug(`影片数据已处理: ${event.data.filmData.title}`);
+                    this.logInfo(`已抓取 ${event.data.filmData.title}`);
+                }
 
-            if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
-                shouldStop = true;
-                queueManager.getDetailPageQueue().kill();
-            }
-            if (!shouldStop) {
-                queueManager.getFileWriteQueue().push(event.data.filmData);
-                queueManager.getImageDownloadQueue().push(event.data.metadata);
+                if (this.config.limit > 0 && this.filmCount >= this.config.limit) {
+                    logger.debug(`达到限制数量 ${this.config.limit}，停止抓取`);
+                    shouldStop = true;
+                    queueManager.getDetailPageQueue().kill();
+                }
+                if (!shouldStop && event.data && 'metadata' in event.data) {
+                    queueManager.getFileWriteQueue().push(event.data.filmData);
+                    queueManager.getImageDownloadQueue().push(event.data.metadata);
+                }
             }
         });
 
-        const handleQueueError = QueueManager.createErrorHandler;
-        queueManager.getIndexPageQueue().error(handleQueueError('indexPageQueue'));
-        queueManager.getDetailPageQueue().error(handleQueueError('detailPageQueue'));
-        queueManager.getFileWriteQueue().error(handleQueueError('fileWriteQueue'));
-        queueManager.getImageDownloadQueue().error(handleQueueError('imageDownloadQueue'));
+        queueManager.getIndexPageQueue().error(QueueManager.createErrorHandler('indexPageQueue'));
+        queueManager.getDetailPageQueue().error(QueueManager.createErrorHandler('detailPageQueue'));
+        queueManager.getFileWriteQueue().error(QueueManager.createErrorHandler('fileWriteQueue'));
+        queueManager.getImageDownloadQueue().error(QueueManager.createErrorHandler('imageDownloadQueue'));
 
         while (!shouldStop) {
             try {
-                await queueManager.getIndexPageQueue().push({ url: this.getCurrentIndexPageUrl() });
+                const currentUrl = this.getCurrentIndexPageUrl();
+                this.logInfo(`正在抓取第${this.pageIndex}页: ${currentUrl}`);
+                await queueManager.getIndexPageQueue().push({ url: currentUrl });
                 this.pageIndex++;
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // 添加随机延迟，避免请求过于频繁
+                const randomDelayMs = getRandomDelay(this.config.delay || 8, (this.config.delay || 8) + 7);
+                this.logInfo(`等待 ${Math.round(randomDelayMs / 1000)} 秒后继续...`);
+                await new Promise(resolve => setTimeout(resolve, randomDelayMs));
             } catch (err) {
-                this.logInfo(`抓取第${this.pageIndex}页时出错: ${err instanceof Error ? err.message : String(err)}`);
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                this.logInfo(`抓取第${this.pageIndex}页时出错: ${errorMessage}`);
+                logger.error(`页面抓取错误 [第${this.pageIndex}页]: ${errorMessage}`);
+                
+                // 如果是网络相关错误，使用指数退避等待更长时间再重试
+                if (errorMessage.includes('ECONNRESET') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ENOTFOUND')) {
+                    const backoffDelay = getExponentialBackoffDelay(10000, 1, 30000);
+                    this.logInfo(`检测到网络错误，等待 ${Math.round(backoffDelay / 1000)} 秒后重试...`);
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                } else {
+                    const errorDelay = getRandomDelay(5, 10);
+                    this.logInfo(`等待 ${Math.round(errorDelay / 1000)} 秒后重试...`);
+                    await new Promise(resolve => setTimeout(resolve, errorDelay));
+                }
             }
         }
 

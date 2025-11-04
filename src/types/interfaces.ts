@@ -30,6 +30,8 @@ interface Config {
   timeout?: number;
   searchUrl: string;
   limit: number;
+  delay: number; // 添加延迟参数
+  useCloudflareBypass?: boolean; // 是否启用 Cloudflare 绕过
 }
 
 interface IndexPageTask {

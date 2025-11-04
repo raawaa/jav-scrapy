@@ -20,6 +20,8 @@ import logger from './logger'; // 引入日志记录器模块
 import fs from 'fs'; // 引入文件系统模块
 import chalk from 'chalk'; // 引入 chalk 库用于美化输出
 import * as path from 'path';
+import { DEFAULT_CONFIG, BASE_URL, DEFAULT_HEADERS } from './constants';
+import { ErrorHandler } from '../utils/errorHandler';
 
 
 class ConfigManager {
@@ -28,25 +30,26 @@ class ConfigManager {
 
     constructor() {
         this.config = {
-            retryCount: 3,
-            retryDelay: 1000,
-            BASE_URL: 'https://www.javbus.com/',
-            baseUrl: 'https://www.javbus.com/',
-            searchUrl: '/search',
-            parallel: 2,
+            retryCount: DEFAULT_CONFIG.retryCount,
+            retryDelay: DEFAULT_CONFIG.retryDelay,
+            BASE_URL: BASE_URL,
+            baseUrl: BASE_URL,
+            searchUrl: DEFAULT_CONFIG.searchUrl,
+            parallel: DEFAULT_CONFIG.parallel,
             headers: {
-                Referer: 'https://www.javbus.com/',
-                Cookie: 'existmag=mag'
+                ...DEFAULT_HEADERS
             },
             output: process.cwd(),
-            timeout: 30000,
+            timeout: DEFAULT_CONFIG.timeout,
             search: null,
             base: null,
             nomag: false,
             allmag: false,
             nopic: false,
             limit: 0,
-            proxy: undefined
+            delay: 2, // 添加默认延迟参数
+            proxy: undefined,
+            useCloudflareBypass: false // 默认不启用 Cloudflare 绕过
         };
         this.configPath = `${process.env.HOME}/.config.json`; // 配置文件路径
     }
@@ -54,7 +57,7 @@ class ConfigManager {
     public async updateFromProgram(program: Command): Promise<void> {
         // 先读取系统代理设置
         const systemProxy = await getSystemProxy();
-        console.log('系统代理设置:', systemProxy);
+        logger.info(`系统代理设置: ${JSON.stringify(systemProxy)}`);
         if (systemProxy.enabled && systemProxy.server) {
             this.config.proxy = parseProxyServer(systemProxy.server);
         }
@@ -73,8 +76,27 @@ class ConfigManager {
         if (program.opts().proxy) {
             this.config.proxy = program.opts().proxy;
         }
-        this.config.parallel = parseInt(program.opts().parallel) || 2;
-        this.config.timeout = parseInt(program.opts().timeout) || 30000;
+        if (program.opts().cookies) {
+            // 解析手动设置的cookies
+            const cookiesObj: Record<string, string> = {};
+            const cookiesStr = program.opts().cookies;
+            const cookiesPairs = cookiesStr.split(';').map((pair: string) => pair.trim());
+            
+            for (const pair of cookiesPairs) {
+                const [key, value] = pair.split('=');
+                if (key && value) {
+                    cookiesObj[key.trim()] = value.trim();
+                }
+            }
+            
+            // 更新请求头中的Cookie
+            if (Object.keys(cookiesObj).length > 0) {
+                this.config.headers.Cookie = program.opts().cookies;
+                logger.info(`使用手动设置的 Cookies: ${Object.keys(cookiesObj).join(', ')}`);
+            }
+        }
+        this.config.parallel = parseInt(program.opts().parallel) || DEFAULT_CONFIG.parallel;
+        this.config.timeout = parseInt(program.opts().timeout) || DEFAULT_CONFIG.timeout;
         if (program.opts().output !== undefined && program.opts().output !== null) {
             this.config.output = program.opts().output;
         }
@@ -102,13 +124,26 @@ class ConfigManager {
         if(program.opts().limit!== undefined && program.opts().limit!== null){
             this.config.limit = parseInt(program.opts().limit);
         }
+        if(program.opts().delay!== undefined && program.opts().delay!== null){
+            this.config.delay = parseInt(program.opts().delay);
+        }
+
+        // 处理 Cloudflare 绕过选项
+        if (program.opts().cloudflare) {
+            this.config.useCloudflareBypass = true;
+            logger.info('已启用 Cloudflare 绕过功能');
+        }
     }
 
     public updateConfig(newConfig: Partial<Config>): void {
         logger.debug(`正在保存配置到: ${this.configPath}`);
         this.config = { ...this.config, ...newConfig };
-        fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
-        logger.debug('配置保存成功');
+        try {
+            fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
+            logger.debug('配置保存成功');
+        } catch (error) {
+            ErrorHandler.handleFileError(error, '更新配置文件');
+        }
     }
 
     public getConfig() {

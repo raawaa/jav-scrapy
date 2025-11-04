@@ -1,0 +1,226 @@
+# iFlow 项目上下文文档
+
+## 项目概述
+
+jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。
+
+### 主要技术栈
+- **语言**: TypeScript
+- **运行环境**: Node.js
+- **核心依赖**: 
+  - axios (HTTP 请求)
+  - axios-retry (请求重试)
+  - commander (命令行解析)
+  - cli-progress (进度条显示)
+  - winston (日志记录)
+  - cheerio (HTML 解析)
+  - async (异步流程控制)
+  - tunnel/socks-proxy-agent (代理支持)
+  - chalk (控制台美化)
+  - cloudscraper (绕过 Cloudflare)
+  - sqlite3 (数据库访问)
+  - winreg (Windows 注册表访问)
+  - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制)
+
+### 项目架构
+```
+src/
+├── jav.ts                  # 主入口文件，包含命令行接口和主要逻辑
+├── core/                   # 核心模块
+│   ├── config.ts           # 配置管理
+│   ├── constants.ts        # 常量定义
+│   ├── fileHandler.ts      # 文件处理
+│   ├── logger.ts           # 日志系统
+│   ├── parser.ts           # HTML 解析
+│   ├── queueManager.ts     # 队列管理
+│   └── requestHandler.ts   # HTTP 请求处理
+├── types/                  # 类型定义
+│   └── interfaces.ts       # 接口定义
+└── utils/                  # 工具函数
+    ├── cloudflareBypass.ts # Cloudflare 绕过处理
+    ├── cookies.ts          # 浏览器 Cookies 读取
+    ├── errorHandler.ts     # 错误处理
+    └── systemProxy.ts      # 系统代理检测
+```
+
+## 构建和运行
+
+### 环境要求
+- Node.js (建议最新 LTS 版本)
+- TypeScript (全局安装)
+
+### 安装依赖
+```bash
+npm install
+```
+
+### 编译 TypeScript 代码
+```bash
+npm run build
+```
+
+### 开发模式运行
+```bash
+npm run dev
+```
+
+### 运行测试
+```bash
+npm test
+```
+
+### 全局安装
+```bash
+npm install -g . --force
+```
+
+## 使用方法
+
+### 基本命令
+```bash
+# 基本抓取（等同于 jav crawl）
+jav
+
+# 更新防屏蔽地址
+jav update
+
+# 指定参数抓取
+jav -l 10 -o ~/downloads -p 5 -s "关键词"
+```
+
+### 主要命令行选项
+- `-p, --parallel <num>`: 并发连接数（默认：2）
+- `-t, --timeout <num>`: 连接超时时间（毫秒，默认：30000）
+- `-l, --limit <num>`: 抓取影片数量上限（默认：0，全部）
+- `-o, --output <path>`: 结果保存路径（默认：当前目录）
+- `-s, --search <string>`: 搜索关键词
+- `-b, --base <url>`: 自定义起始页URL
+- `-x, --proxy <url>`: 使用代理服务器
+- `-d, --delay <num>`: 设置请求间隔时间（秒，默认：2秒）
+- `-n, --nomag`: 是否抓取尚无磁链的影片
+- `-a, --allmag`: 是否抓取影片的所有磁链
+- `-N, --nopic`: 不抓取图片
+- `-c, --cookies <string>`: 手动设置Cookies，格式: "key1=value1; key2=value2"
+- `--cloudflare`: 启用 Cloudflare 绕过功能
+
+## 开发约定
+
+### 代码风格
+- 使用 TypeScript 进行类型安全编程
+- 采用模块化设计，每个功能模块独立
+- 使用 async/await 处理异步操作
+- 遵循语义化版本控制
+- 使用 ESLint 和 Prettier 保持代码风格一致
+
+### 错误处理
+- 使用 try-catch 包装可能出错的代码块
+- 实现重试机制（默认重试5次，可配置，使用指数退避策略）
+- 使用 winston 进行结构化日志记录
+- 添加信号处理（SIGINT, SIGTERM）确保资源正确清理
+- 使用专门的 ErrorHandler 模块处理不同类型的错误
+
+### 配置管理
+- 配置优先级：命令行参数 > 本地防屏蔽地址 > 系统代理 > 默认配置
+- 防屏蔽地址保存在 `~/.jav-scrapy-antiblock-urls.json`
+- 支持系统代理自动检测和手动代理设置
+- 添加请求延迟参数（默认2秒）以避免请求过于频繁
+- 支持手动设置Cookies和Cloudflare绕过功能
+
+### 队列管理
+- 使用多个队列处理不同类型的任务（索引页、详情页、文件写入、图片下载）
+- 实现事件驱动的任务处理机制
+- 支持并发控制和优雅停止
+- 使用 async 库管理异步任务队列
+
+## 特色功能
+
+### 进度条显示
+当使用 `-l` 参数指定下载数量时，会显示实时进度条，包括：
+- 当前进度百分比
+- 已完成/总数量
+- 预计剩余时间
+- 优雅的资源清理机制
+
+### 防屏蔽地址管理
+- 自动检测并保存防屏蔽地址
+- 支持本地地址优先使用
+- 通过 `jav update` 命令更新地址列表
+
+### 智能文件名处理
+- 自动处理过长或含非法字符的文件名
+- 确保图片保存成功
+
+### 浏览器 Cookies 支持
+- 从 Chromium 系浏览器中提取网站的 Cookies
+- 支持 Chrome、Edge、Chromium、Vivaldi 等浏览器
+- 提高请求成功率
+
+### 代理支持
+- 自动检测系统代理设置（macOS、Windows）
+- 支持 HTTP/HTTPS 代理
+- 支持手动指定代理服务器
+
+### Cloudflare 防护绕过
+- 集成 Puppeteer + Stealth 插件绕过 Cloudflare 防护
+- 自动处理反爬虫机制
+- 随机 User-Agent 和浏览器指纹（包括 Sec-CH-UA 头部）
+
+### 高级请求头伪装
+- 模拟真实浏览器指纹（Sec-CH-UA 头部）
+- 智能 Cookie 管理（优先级：手动设置 > Cloudflare Cookies > 浏览器 Cookies > 默认 Cookies）
+- 支持手动设置和验证 Cookies 字符串
+
+### 智能重试机制
+- 使用指数退避策略进行重试
+- 失败时自动更换 User-Agent
+- 支持多种错误类型的重试（网络错误、5xx、429、403等）
+- 智能 Cookie 验证和过滤
+
+## 测试和调试
+
+### 运行测试
+```bash
+npm test
+```
+
+### 开发模式
+```bash
+npm run dev           # 直接运行 TypeScript 代码
+npm run dev:watch     # 监听文件变化并自动重启
+```
+
+### 日志级别
+项目使用 winston 进行日志管理，支持不同级别的日志输出，便于调试和问题排查。
+
+### 调试模式
+可以通过修改配置或环境变量来启用更详细的日志输出，帮助定位问题。
+
+## 部署说明
+
+### 编译发布
+```bash
+npm run build
+npm publish
+```
+
+### 全局安装
+项目支持全局安装，安装后可在任何位置使用 `jav` 命令。
+
+### Windows 自动化安装
+提供 `install.bat` 脚本，支持 Windows 用户一键安装。
+
+## 注意事项
+
+1. 程序会自动检测并使用系统代理设置
+2. 抓取图片时会自动简化文件名以避免保存失败
+3. 建议定期运行 `jav update` 更新防屏蔽地址
+4. 使用 Ctrl+C 可以安全中断程序执行
+5. 项目仅用于学习和研究目的，请遵守相关法律法规
+6. 添加了请求延迟参数（-d/--delay）以避免请求过于频繁被封禁
+7. 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
+
+## 贡献者
+
+- [@qiusli](https://github.com/qiusli)
+- [@Eddie104](https://github.com/Eddie104)
+- [@leongfeng](https://github.com/leongfeng)
