@@ -19,8 +19,6 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - tunnel/socks-proxy-agent/http-proxy-agent (代理支持)
   - chalk (控制台美化)
   - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制)
-  - sqlite3 (数据库访问)
-  - winreg (Windows 注册表访问)
   - mkdirp (目录创建)
   - user-home (用户主目录获取)
   - cloudscraper (Cloudflare 绕过)
@@ -46,7 +44,6 @@ src/
 │   └── interfaces.ts       # 接口定义
 └── utils/                  # 工具函数
     ├── cloudflareBypass.ts # Cloudflare 绕过处理
-    ├── cookies.ts          # 浏览器 Cookies 读取
     ├── errorHandler.ts     # 错误处理
     └── systemProxy.ts      # 系统代理检测
 ```
@@ -170,11 +167,6 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 自动处理过长或含非法字符的文件名
 - 确保图片保存成功
 
-### 浏览器 Cookies 支持
-- 从 Chromium 系浏览器中提取网站的 Cookies
-- 支持 Chrome、Edge、Chromium、Vivaldi 等浏览器
-- 提高请求成功率
-
 ### 代理支持
 - 自动检测系统代理设置（macOS、Windows）
 - 支持 HTTP/HTTPS 代理
@@ -206,6 +198,11 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 使用随机延迟（getRandomDelay 函数）避免过于频繁的请求
 - 默认延迟范围：5-15秒（可通过 constants.ts 配置）
 - 支持指数退避延迟算法（getExponentialBackoffDelay）
+
+### 队列统计与监控
+- 实时显示各队列状态（等待中、运行中任务数量）
+- 提供影片处理统计信息（已加入队列、开始处理、成功完成的数量）
+- 支持优雅等待所有队列任务完成后再退出
 
 ## 测试和调试
 
@@ -258,6 +255,7 @@ npm publish
 8. 项目版本为 0.8.0，使用 CommonJS 模块系统
 9. 默认重试次数为 3 次，使用指数退避策略
 10. TypeScript 编译目标为 ES2017，确保在较新 Node.js 环境中运行
+11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
 
 ## 贡献者
 
