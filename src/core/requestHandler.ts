@@ -218,99 +218,101 @@ class RequestHandler {
     });
   }
 
-  /**
-   * 获取指定 URL 的页面内容
-   * @param url 目标 URL
-   * @param options 可选参数
-   * @returns 包含状态码和页面内容的对象
-   */
-  async getPage(url: string, options: Record<string, any> = {}) {
-    let attempts = 0;
-    while (attempts <= this.config.retryCount) {
-      try {
-        logger.debug(`开始请求页面: ${url} (尝试 ${attempts + 1}/${this.config.retryCount + 1})`);
-        
-        // 尝试获取浏览器 Cookies
-        const cookies = await this.cookiesManager.getValidCookies('javbus');
-        const headers = { ...this.requestConfig.headers };
-        
-        // 检查是否已手动设置了cookies
-        const hasManualCookies = this.config.headers && this.config.headers.Cookie && 
-                                this.config.headers.Cookie !== 'existmag=mag';
-        
-        if (hasManualCookies) {
-            // 使用手动设置的cookies
-            headers.Cookie = this.config.headers.Cookie;
-            logger.debug(`使用手动设置的 Cookies: ${this.config.headers.Cookie}`);
-        } else if (cookies) {
-          // 过滤掉空值或无效值的cookies
-          const validCookies: Record<string, string> = {};
-          for (const [key, value] of Object.entries(cookies)) {
-            if (value && typeof value === 'string' && value.length > 0) {
-              // 验证cookie值是否只包含可打印字符
-              if (/^[\x20-\x7E]*$/.test(value)) {
-                validCookies[key] = value;
-              } else {
-                logger.debug(`跳过无效的 Cookie ${key}: 值包含非可打印字符`);
-              }
-            }
-          }
-          
-          // 将有效的 Cookies 转换为 Cookie 字符串
-          if (Object.keys(validCookies).length > 0) {
-            const cookieString = Object.entries(validCookies)
-              .map(([key, value]) => `${key}=${value}`)
-              .join('; ');
-            headers.Cookie = cookieString;
-            logger.debug(`使用有效的浏览器 Cookies: ${Object.keys(validCookies).join(', ')}`);
-          } else {
-            // 如果没有有效的cookies，使用默认的existmag=mag
-            headers.Cookie = 'existmag=mag';
-            logger.debug('使用默认 Cookie: existmag=mag');
-          }
-        } else {
-          // 如果无法获取浏览器cookies，使用默认的existmag=mag
-          headers.Cookie = 'existmag=mag';
-          logger.debug('使用默认 Cookie: existmag=mag');
-        }
-        
-        logger.debug(`请求头信息: ${JSON.stringify(headers)}`);
-        
-        // 使用 axios 发送请求
-        const mergedOptions = {
-          ...this.requestConfig,
-          ...options,
-          url,
-          headers
-        };
-        const response = await axios.get(mergedOptions.url, {
-          timeout: mergedOptions.timeout,
-          headers: mergedOptions.headers
-        });
-        return { statusCode: response.status, body: response.data };
-      } catch (error) {
-        const err = error as AxiosError;
-        logger.error(`请求页面 ${url} 失败: ${err.message}`);
-        if (err.response) {
-          logger.error(`响应状态码: ${err.response.status}`);
-          if (err.response.data) {
-            const responseData = err.response.data as any;
-            // 如果是字符串且长度较短，记录详细内容
-            if (typeof responseData === 'string' && responseData.length < 1000) {
-              logger.error(`响应内容 (前500字符): ${responseData.substring(0, 500)}`);
-            }
-          }
-        }
-        
-        if (axiosRetry.isNetworkOrIdempotentRequestError(err) ||
-          (err.response?.status && [500, 429, 403].includes(err.response.status))) {
-          await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts)));
-          attempts++;
-        } else {
-          throw err;
-        }
-      }
-    }
+  /**
+   * 获取指定 URL 的页面内容
+   * @param url 目标 URL
+   * @param options 可选参数
+   * @returns 包含状态码和页面内容的对象
+   */
+  async getPage(url: string, options: Record<string, any> = {}): Promise<{ statusCode: number; body: string } | null> {
+    let attempts = 0;
+    while (attempts <= this.config.retryCount) {
+      try {
+        logger.debug(`开始请求页面: ${url} (尝试 ${attempts + 1}/${this.config.retryCount + 1})`);
+        
+        // 尝试获取浏览器 Cookies
+        const cookies = await this.cookiesManager.getValidCookies('javbus');
+        const headers = { ...this.requestConfig.headers };
+        
+        // 检查是否已手动设置了cookies
+        const hasManualCookies = this.config.headers && this.config.headers.Cookie && 
+                                this.config.headers.Cookie !== 'existmag=mag';
+        
+        if (hasManualCookies) {
+            // 使用手动设置的cookies
+            headers.Cookie = this.config.headers.Cookie;
+            logger.debug(`使用手动设置的 Cookies: ${this.config.headers.Cookie}`);
+        } else if (cookies) {
+          // 过滤掉空值或无效值的cookies
+          const validCookies: Record<string, string> = {};
+          for (const [key, value] of Object.entries(cookies)) {
+            if (value && typeof value === 'string' && value.length > 0) {
+              // 验证cookie值是否只包含可打印字符
+              if (/^[\x20-\x7E]*$/.test(value)) {
+                validCookies[key] = value;
+              } else {
+                logger.debug(`跳过无效的 Cookie ${key}: 值包含非可打印字符`);
+              }
+            }
+          }
+          
+          // 将有效的 Cookies 转换为 Cookie 字符串
+          if (Object.keys(validCookies).length > 0) {
+            const cookieString = Object.entries(validCookies)
+              .map(([key, value]) => `${key}=${value}`)
+              .join('; ');
+            headers.Cookie = cookieString;
+            logger.debug(`使用有效的浏览器 Cookies: ${Object.keys(validCookies).join(', ')}`);
+          } else {
+            // 如果没有有效的cookies，使用默认的existmag=mag
+            headers.Cookie = 'existmag=mag';
+            logger.debug('使用默认 Cookie: existmag=mag');
+          }
+        } else {
+          // 如果无法获取浏览器cookies，使用默认的existmag=mag
+          headers.Cookie = 'existmag=mag';
+          logger.debug('使用默认 Cookie: existmag=mag');
+        }
+        
+        logger.debug(`请求头信息: ${JSON.stringify(headers)}`);
+        
+        // 使用 axios 发送请求
+        const mergedOptions = {
+          ...this.requestConfig,
+          ...options,
+          url,
+          headers
+        };
+        const response = await axios.get(mergedOptions.url, {
+          timeout: mergedOptions.timeout,
+          headers: mergedOptions.headers
+        });
+        return { statusCode: response.status, body: response.data };
+      } catch (error) {
+        const err = error as AxiosError;
+        logger.error(`请求页面 ${url} 失败: ${err.message}`);
+        if (err.response) {
+          logger.error(`响应状态码: ${err.response.status}`);
+          if (err.response.data) {
+            const responseData = err.response.data as any;
+            // 如果是字符串且长度较短，记录详细内容
+            if (typeof responseData === 'string' && responseData.length < 1000) {
+              logger.error(`响应内容 (前500字符): ${responseData.substring(0, 500)}`);
+            }
+          }
+        }
+        
+        if (axiosRetry.isNetworkOrIdempotentRequestError(err) ||
+          (err.response?.status && [500, 429, 403].includes(err.response.status))) {
+          await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts)));
+          attempts++;
+        } else {
+          throw err;
+        }
+      }
+    }
+    // 如果所有重试都失败了，返回 null
+    return null;
   }
 
   /**
@@ -401,10 +403,11 @@ class RequestHandler {
           }
         }
 
-      // 如果所有Cookie都无效，使用默认Cookie
-      if (!cookieSet) {
-        headers.Cookie = 'existmag=mag';
-        logger.debug('在XMLHttpRequest中使用默认 Cookie: existmag=mag');
+        // 如果所有Cookie都无效，使用默认Cookie
+        if (!cookieSet) {
+          headers.Cookie = 'existmag=mag';
+          logger.debug('在XMLHttpRequest中使用默认 Cookie: existmag=mag');
+        }
       }
 
       logger.debug(`AJAX请求头信息: ${JSON.stringify({ ...headers, Cookie: headers.Cookie ? '[已设置]' : '[未设置]' })}`);
@@ -485,7 +488,7 @@ class RequestHandler {
    * @param metadata 元数据对象
    * @returns 最大文件大小对应的磁力链接，如果没有找到则返回 null
    */
-  public async fetchMagnet(metadata: Metadata) {
+  public async fetchMagnet(metadata: Metadata): Promise<string | null> {
     // 使用配置中的 BASE_URL 作为默认值，而不是空字符串
     const baseUrl = this.config.base || this.config.BASE_URL;
     const parsedBaseUrl = new URL(baseUrl);
@@ -520,16 +523,28 @@ class RequestHandler {
     }
 
     if (!response) {
+      logger.error('fetchMagnet: 响应为空，返回null');
       return null;
     }
+
+    logger.debug(`fetchMagnet: AJAX响应内容长度: ${response.body.length}`);
+    logger.debug(`fetchMagnet: AJAX响应内容前500字符: ${response.body.substring(0, 500)}`);
 
     const magnetLinks = [...new Set(response.body.match(/magnet:\?xt=urn:btih:[A-F0-9]+&dn=[^&"']+/gi))];
     const sizes = response.body.match(/\d+(\.\d+)?[GM]B/g);
 
+    logger.debug(`fetchMagnet: 解析到 ${magnetLinks ? magnetLinks.length : 0} 个磁力链接`);
+    logger.debug(`fetchMagnet: 解析到 ${sizes ? sizes.length : 0} 个文件大小`);
+
     if (!magnetLinks || !sizes) {
-      logger.debug(`未找到磁力链接，响应内容: ${response.body.substring(0, 200)}`);
+      logger.error(`fetchMagnet: 未找到磁力链接或文件大小，响应内容: ${response.body.substring(0, 500)}`);
       return null;
     }
+
+    // 打印所有解析到的磁力链接
+    magnetLinks.forEach((link, index) => {
+      logger.debug(`fetchMagnet: 磁力链接 ${index + 1}: ${link.substring(0, 100)}...`);
+    });
 
     const parsedPairs = magnetLinks.map((magnetLink, index) => {
       const sizeStr = sizes[index];
@@ -542,7 +557,14 @@ class RequestHandler {
       return (prev.size > current.size) ? prev : current;
     }, parsedPairs[0]);
 
-    return maxSizePair ? maxSizePair.magnetLink : null;
+    const finalMagnetLink = maxSizePair ? maxSizePair.magnetLink : null;
+    if (finalMagnetLink) {
+      logger.info(`fetchMagnet: 返回最大磁力链接: ${finalMagnetLink.substring(0, 100)}...`);
+    } else {
+      logger.error('fetchMagnet: 未能确定最大磁力链接，返回null');
+    }
+
+    return finalMagnetLink;
   }
 
   /**

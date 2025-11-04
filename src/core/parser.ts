@@ -166,7 +166,7 @@ class Parser {
 
     if (!hasGenreElements) {
       logger.debug('parseCategories: 页面中没有找到 span.genre 元素');
-      logger.debug(`页面片段: ${html.substring(0, 500)}`);
+      logger.debug(`页面片段: ${$.html ? $.html().substring(0, 500) : '无法获取HTML内容'}`);
     }
 
     if (!hasLabelElements && hasGenreElements) {
@@ -216,7 +216,7 @@ class Parser {
     const hasStarNameElements = $('.star-name').length > 0;
     const hasStarBoxElements = $('.star-box').length > 0;
     const hasAnchorElements = $('.star-name a').length > 0;
-    const hasActressSection = html.includes('演員') || html.includes('女優');
+    const hasActressSection = $.html ? ($.html().includes('演員') || $.html().includes('女優')) : false;
 
     if (!hasActressSection) {
       logger.debug('parseActress: 页面中没有找到演员相关文字');

@@ -15,12 +15,12 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - winston (日志记录)
   - cheerio (HTML 解析)
   - async (异步流程控制)
-  - tunnel/socks-proxy-agent (代理支持)
+  - tunnel/socks-proxy-agent/http-proxy-agent (代理支持)
   - chalk (控制台美化)
-  - cloudscraper (绕过 Cloudflare)
+  - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制)
   - sqlite3 (数据库访问)
   - winreg (Windows 注册表访问)
-  - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制)
+  - mkdirp (目录创建)
 
 ### 项目架构
 ```
@@ -62,6 +62,11 @@ npm run build
 ### 开发模式运行
 ```bash
 npm run dev
+```
+
+### 开发模式监听运行
+```bash
+npm run dev:watch
 ```
 
 ### 运行测试
@@ -114,7 +119,7 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 
 ### 错误处理
 - 使用 try-catch 包装可能出错的代码块
-- 实现重试机制（默认重试5次，可配置，使用指数退避策略）
+- 实现重试机制（默认重试3次，可配置，使用指数退避策略）
 - 使用 winston 进行结构化日志记录
 - 添加信号处理（SIGINT, SIGTERM）确保资源正确清理
 - 使用专门的 ErrorHandler 模块处理不同类型的错误
@@ -176,6 +181,15 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 支持多种错误类型的重试（网络错误、5xx、429、403等）
 - 智能 Cookie 验证和过滤
 
+### 系统代理自动检测
+- 支持 macOS 系统代理检测（通过 scutil）
+- 支持 Windows 系统代理检测（通过注册表）
+- 自动应用检测到的代理设置
+
+### 请求延迟控制
+- 添加请求间隔时间设置（-d/--delay 参数）
+- 使用随机延迟（getRandomDelay 函数）避免过于频繁的请求
+
 ## 测试和调试
 
 ### 运行测试
@@ -207,7 +221,7 @@ npm publish
 项目支持全局安装，安装后可在任何位置使用 `jav` 命令。
 
 ### Windows 自动化安装
-提供 `install.bat` 脚本，支持 Windows 用户一键安装。
+提供 `install.bat` 和 `install.ps1` 脚本，支持 Windows 用户一键安装。
 
 ## 注意事项
 
@@ -218,6 +232,7 @@ npm publish
 5. 项目仅用于学习和研究目的，请遵守相关法律法规
 6. 添加了请求延迟参数（-d/--delay）以避免请求过于频繁被封禁
 7. 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
+8. 项目版本为 0.8.0，使用 CommonJS 模块系统
 
 ## 贡献者
 

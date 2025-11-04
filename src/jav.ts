@@ -3,7 +3,6 @@
 import logger from './core/logger';
 import { program } from 'commander';
 import ConfigManager from './core/config';
-import { version } from '../package.json';
 import QueueManager from './core/queueManager';
 import { QueueEventType } from './core/queueManager';
 import { Config } from './types/interfaces';
@@ -16,6 +15,9 @@ import fs from 'fs';
 import * as path from 'path';
 import { ErrorHandler } from './utils/errorHandler';
 import { getRandomDelay, getExponentialBackoffDelay } from './core/constants';
+
+// 版本号
+const version = '0.8.0';
 
 
 program
@@ -244,7 +246,7 @@ class JavScraper {
                     shouldStop = true;
                     queueManager.getDetailPageQueue().kill();
                 }
-                if (!shouldStop && event.data && 'metadata' in event.data) {
+                if (event.data && 'metadata' in event.data) {
                     queueManager.getFileWriteQueue().push(event.data.filmData);
                     queueManager.getImageDownloadQueue().push(event.data.metadata);
                 }
@@ -286,10 +288,34 @@ class JavScraper {
 
         // 在 shouldStop 变为 true 后，等待所有队列任务完成
         this.logInfo('抓取停止条件已满足，等待队列清空...');
-        queueManager.getIndexPageQueue().idle();
-        queueManager.getDetailPageQueue().idle();
-        queueManager.getFileWriteQueue().idle();
-        queueManager.getImageDownloadQueue().idle();
+        
+        // 检查队列状态
+        const indexQueue = queueManager.getIndexPageQueue();
+        const detailQueue = queueManager.getDetailPageQueue();
+        const fileWriteQueue = queueManager.getFileWriteQueue();
+        const imageDownloadQueue = queueManager.getImageDownloadQueue();
+        
+        this.logInfo(`队列状态 - 索引页队列: ${indexQueue.length()} 等待中`);
+        this.logInfo(`队列状态 - 详情页队列: ${detailQueue.length()} 等待中`);
+        this.logInfo(`队列状态 - 文件写入队列: ${fileWriteQueue.length()} 等待中`);
+        this.logInfo(`队列状态 - 图片下载队列: ${imageDownloadQueue.length()} 等待中`);
+        
+        // 等待所有队列完成
+        this.logInfo('等待索引页队列完成...');
+        await indexQueue.drain();
+        this.logInfo('索引页队列已完成');
+        
+        this.logInfo('等待详情页队列完成...');
+        await detailQueue.drain();
+        this.logInfo('详情页队列已完成');
+        
+        this.logInfo('等待文件写入队列完成...');
+        await fileWriteQueue.drain();
+        this.logInfo('文件写入队列已完成');
+        
+        this.logInfo('等待图片下载队列完成...');
+        await imageDownloadQueue.drain();
+        this.logInfo('图片下载队列已完成');
 
         this.logInfo('所有抓取任务完成。');
         this.destroy(); // 调用 cleanup 方法并输出完成信息

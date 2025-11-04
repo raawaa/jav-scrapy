@@ -89,9 +89,22 @@ class QueueManager {
      */
     public getFileWriteQueue(): async.QueueObject<FilmData> {
         if (!this.fileWriteQueue) {
+            logger.debug('QueueManager: 创建文件写入队列');
             this.fileWriteQueue = async.queue(async (filmData: FilmData) => {
-                await this.fileHandler.writeFilmDataToFile(filmData);
+                logger.debug(`QueueManager: 开始文件写入任务，标题: ${filmData.title}`);
+                try {
+                    await this.fileHandler.writeFilmDataToFile(filmData);
+                    logger.debug(`QueueManager: 文件写入任务完成，标题: ${filmData.title}`);
+                } catch (error) {
+                    logger.error(`QueueManager: 文件写入任务失败，标题: ${filmData.title}，错误: ${error instanceof Error ? error.message : String(error)}`);
+                    throw error;
+                }
             }, this.config.parallel);
+            
+            // 添加队列事件监听
+            this.fileWriteQueue.error((error, task) => {
+                logger.error(`QueueManager: 文件写入队列错误，任务: ${task.title}，错误: ${error instanceof Error ? error.message : String(error)}`);
+            });
         }
         return this.fileWriteQueue;
     }
@@ -102,26 +115,45 @@ class QueueManager {
      */
     public getDetailPageQueue(): async.QueueObject<DetailPageTask> {
         if (!this.detailPageQueue) {
+            logger.debug('QueueManager: 创建详情页处理队列');
             this.detailPageQueue = async.queue(async (task: DetailPageTask) => {
+                logger.debug(`QueueManager: 开始处理详情页任务: ${task.link}`);
                 try {
                     this.emit({ type: QueueEventType.DETAIL_PAGE_START, data: { link: task.link } }); // 触发页面请求事件
                     const response = await this.requestHandler.getPage(task.link);
                     if (response?.body) {
+                        logger.debug(`QueueManager: 成功获取详情页内容，长度: ${response.body.length}`);
                         const metadata = Parser.parseMetadata(response.body);
+                        logger.debug(`QueueManager: 解析到影片元数据，标题: ${metadata.title}`);
                         const magnet = await this.requestHandler.fetchMagnet(metadata);
+                        if (magnet) {
+                            logger.debug(`QueueManager: 成功获取磁力链接`);
+                        } else {
+                            logger.warn(`QueueManager: 未能获取磁力链接`);
+                        }
                         const filmData = Parser.parseFilmData(metadata, magnet as string, task.link);
+                        logger.debug(`QueueManager: 解析影片数据完成`);
                         this.emit({
                             type: QueueEventType.DETAIL_PAGE_PROCESSED,
                             data: { filmData, metadata }
                         });
+                    } else {
+                        logger.warn(`QueueManager: 详情页响应为空: ${task.link}`);
                     }
                     const randomDelay = getRandomDelay(1, 3); // 1-3秒随机延迟
-                await new Promise(resolve => setTimeout(resolve, randomDelay));
+                    logger.debug(`QueueManager: 详情页任务完成，等待 ${randomDelay}ms`);
+                    await new Promise(resolve => setTimeout(resolve, randomDelay));
                 } catch (error) {
+                    logger.error(`QueueManager: 详情页处理失败: ${task.link}，错误: ${error instanceof Error ? error.message : String(error)}`);
                     ErrorHandler.handleGenericError(error, `处理详情页 ${task.link}`);
                     // 不中断队列处理，继续处理下一个任务
                 }
             }, this.config.parallel);
+            
+            // 添加队列事件监听
+            this.detailPageQueue.error((error, task) => {
+                logger.error(`QueueManager: 详情页队列错误，任务: ${task.link}，错误: ${error instanceof Error ? error.message : String(error)}`);
+            });
         }
         return this.detailPageQueue;
     }

@@ -2797,3 +2797,401 @@
 [2025-11-04 19:50:58] INFO: AJAX 请求成功，状态码: 200
 [2025-11-04 19:50:58] INFO: Cloudflare 绕过 AJAX 请求成功
 [2025-11-04 19:50:58] DEBUG: 达到限制数量 1，停止抓取
+[2025-11-04 20:53:40] INFO: 系统代理设置: {"enabled":true,"server":"127.0.0.1:10809","override":"localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;127.0.0.1;<local>"}
+[2025-11-04 20:53:40] INFO: 使用本地保存的防屏蔽地址作为 baseUrl: [4m[34mhttps://www.javsee.ink[39m[24m
+[2025-11-04 20:53:40] DEBUG: 程序配置初始化完成
+[2025-11-04 20:53:40] DEBUG: 完整配置: {
+  "retryCount": 3,
+  "retryDelay": 1000,
+  "BASE_URL": "https://www.javbus.com/",
+  "baseUrl": "https://www.javbus.com/",
+  "searchUrl": "/search",
+  "parallel": 1,
+  "headers": {
+    "Referer": "https://www.javbus.com/",
+    "Cookie": "existmag=mag"
+  },
+  "output": "D:\\Code\\jav-scrapy",
+  "timeout": 30000,
+  "search": null,
+  "base": "https://www.javsee.ink",
+  "nomag": false,
+  "allmag": false,
+  "nopic": false,
+  "limit": 1,
+  "delay": 2,
+  "proxy": "http://127.0.0.1:10809",
+  "useCloudflareBypass": false
+}
+[2025-11-04 20:53:40] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 20:53:40] DEBUG: 代理设置: http://127.0.0.1:10809
+[2025-11-04 20:53:40] DEBUG: 起始URL: https://www.javsee.ink
+[2025-11-04 20:53:40] DEBUG: 并行数: 1
+[2025-11-04 20:53:40] DEBUG: 超时时间: 30000ms
+[2025-11-04 20:53:40] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 20:53:40] DEBUG: 开始处理索引页任务: https://www.javsee.ink
+[2025-11-04 20:53:40] DEBUG: 开始抓取索引页: https://www.javsee.ink
+[2025-11-04 20:53:40] DEBUG: 开始请求页面: https://www.javsee.ink (尝试 1/4)
+[2025-11-04 20:53:40] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 20:53:40] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 20:53:40] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 20:53:40] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260820282'
+[2025-11-04 20:53:40] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260820287'
+[2025-11-04 20:53:40] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 20:53:40] DEBUG: 请求头信息: {"authority":"www.javsee.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0","referer":"https://www.javsee.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 20:53:47] DEBUG: 解析到 30 个影片链接
+[2025-11-04 20:53:47] DEBUG: 索引页 https://www.javsee.ink 解析完成，共找到 30 条链接
+[2025-11-04 20:53:47] DEBUG: 第1页解析完成，找到 30 部影片链接
+[2025-11-04 20:53:47] DEBUG: 开始处理详情页: https://www.javsee.ink/THU-063
+[2025-11-04 20:53:47] DEBUG: 开始请求页面: https://www.javsee.ink/THU-063 (尝试 1/4)
+[2025-11-04 20:53:47] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 20:53:47] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 20:53:47] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 20:53:47] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260827030'
+[2025-11-04 20:53:47] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260827031'
+[2025-11-04 20:53:47] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 20:53:47] DEBUG: 请求头信息: {"authority":"www.javsee.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0","referer":"https://www.javsee.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 20:53:47] DEBUG: parseMetadata: 页面中找到 22 个script标签
+[2025-11-04 20:53:47] DEBUG: parseMetadata: 使用第3个script标签
+[2025-11-04 20:53:47] DEBUG: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 20:53:47] DEBUG: 脚本长度: 75 字符
+[2025-11-04 20:53:47] DEBUG: 解析到 7 个分类: フルハイビジョン(FHD), 合集, 4小時以上作品, 業餘, 無毛, 苗條, 深喉
+[2025-11-04 20:53:47] DEBUG: 解析到 10 个演员: 八掛うみ, 中森ななみ, 野々浦暖, 釈アリス, 瀬緒凛, 七嶋舞, 美ノ嶋めぐり, 松岡すず, 流川夕, 蒼乃美月
+[2025-11-04 20:53:47] DEBUG: 解析到影片元数据: 标题=THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛, gid=65752360832, uc=0
+[2025-11-04 20:53:47] DEBUG: 开始发送AJAX请求: https://www.javsee.ink/ajax/uncledatoolsbyajax.php?gid=65752360832&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=844
+[2025-11-04 20:53:47] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 20:53:47] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 20:53:47] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 20:53:47] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260827557'
+[2025-11-04 20:53:47] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260827558'
+[2025-11-04 20:53:47] DEBUG: AJAX请求头信息: {"authority":"www.javsee.ink","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65752360832&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=844","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0","referer":"https://www.javsee.ink","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[未设置]"}
+[2025-11-04 20:53:48] DEBUG: AJAX请求成功: https://www.javsee.ink/ajax/uncledatoolsbyajax.php?gid=65752360832&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=844, 状态码: 200
+[2025-11-04 20:53:48] DEBUG: 达到限制数量 1，停止抓取
+[2025-11-04 20:55:23] INFO: 系统代理设置: {"enabled":true,"server":"127.0.0.1:10809","override":"localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;127.0.0.1;<local>"}
+[2025-11-04 20:55:23] INFO: 使用本地保存的防屏蔽地址作为 baseUrl: [4m[34mhttps://www.fanbus.ink[39m[24m
+[2025-11-04 20:55:23] DEBUG: 程序配置初始化完成
+[2025-11-04 20:55:23] DEBUG: 完整配置: {
+  "retryCount": 3,
+  "retryDelay": 1000,
+  "BASE_URL": "https://www.javbus.com/",
+  "baseUrl": "https://www.javbus.com/",
+  "searchUrl": "/search",
+  "parallel": 1,
+  "headers": {
+    "Referer": "https://www.javbus.com/",
+    "Cookie": "existmag=mag"
+  },
+  "output": "D:\\Code\\jav-scrapy",
+  "timeout": 30000,
+  "search": null,
+  "base": "https://www.fanbus.ink",
+  "nomag": false,
+  "allmag": false,
+  "nopic": false,
+  "limit": 1,
+  "delay": 2,
+  "proxy": "http://127.0.0.1:10809",
+  "useCloudflareBypass": false
+}
+[2025-11-04 20:55:23] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 20:55:23] DEBUG: 代理设置: http://127.0.0.1:10809
+[2025-11-04 20:55:23] DEBUG: 起始URL: https://www.fanbus.ink
+[2025-11-04 20:55:23] DEBUG: 并行数: 1
+[2025-11-04 20:55:23] DEBUG: 超时时间: 30000ms
+[2025-11-04 20:55:23] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 20:55:23] DEBUG: 开始处理索引页任务: https://www.fanbus.ink
+[2025-11-04 20:55:23] DEBUG: 开始抓取索引页: https://www.fanbus.ink
+[2025-11-04 20:55:23] DEBUG: 开始请求页面: https://www.fanbus.ink (尝试 1/4)
+[2025-11-04 20:55:23] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 20:55:23] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 20:55:23] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 20:55:23] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260923686'
+[2025-11-04 20:55:23] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260923687'
+[2025-11-04 20:55:23] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 20:55:23] DEBUG: 请求头信息: {"authority":"www.fanbus.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"122\", \"Google Chrome\";v=\"122\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/122.0","referer":"https://www.fanbus.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 20:55:24] DEBUG: 解析到 30 个影片链接
+[2025-11-04 20:55:24] DEBUG: 索引页 https://www.fanbus.ink 解析完成，共找到 30 条链接
+[2025-11-04 20:55:24] DEBUG: 第1页解析完成，找到 30 部影片链接
+[2025-11-04 20:55:24] DEBUG: 开始处理详情页: https://www.fanbus.ink/THU-063
+[2025-11-04 20:55:24] DEBUG: 开始请求页面: https://www.fanbus.ink/THU-063 (尝试 1/4)
+[2025-11-04 20:55:24] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 20:55:24] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 20:55:24] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 20:55:24] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260924806'
+[2025-11-04 20:55:24] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260924810'
+[2025-11-04 20:55:24] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 20:55:24] DEBUG: 请求头信息: {"authority":"www.fanbus.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"122\", \"Google Chrome\";v=\"122\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/122.0","referer":"https://www.fanbus.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 20:55:25] DEBUG: parseMetadata: 页面中找到 22 个script标签
+[2025-11-04 20:55:25] DEBUG: parseMetadata: 使用第3个script标签
+[2025-11-04 20:55:25] DEBUG: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 20:55:25] DEBUG: 脚本长度: 75 字符
+[2025-11-04 20:55:25] DEBUG: 解析到 7 个分类: フルハイビジョン(FHD), 合集, 4小時以上作品, 業餘, 無毛, 苗條, 深喉
+[2025-11-04 20:55:25] DEBUG: 解析到 10 个演员: 八掛うみ, 中森ななみ, 野々浦暖, 釈アリス, 瀬緒凛, 七嶋舞, 美ノ嶋めぐり, 松岡すず, 流川夕, 蒼乃美月
+[2025-11-04 20:55:25] DEBUG: 解析到影片元数据: 标题=THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛, gid=65752360929, uc=0
+[2025-11-04 20:55:25] DEBUG: 开始发送AJAX请求: https://www.fanbus.ink/ajax/uncledatoolsbyajax.php?gid=65752360929&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=433
+[2025-11-04 20:55:25] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 20:55:25] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 20:55:25] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 20:55:25] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260925516'
+[2025-11-04 20:55:25] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762260925517'
+[2025-11-04 20:55:25] DEBUG: AJAX请求头信息: {"authority":"www.fanbus.ink","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65752360929&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=433","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"122\", \"Google Chrome\";v=\"122\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/122.0","referer":"https://www.fanbus.ink","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[未设置]"}
+[2025-11-04 20:55:26] DEBUG: AJAX请求成功: https://www.fanbus.ink/ajax/uncledatoolsbyajax.php?gid=65752360929&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=433, 状态码: 200
+[2025-11-04 20:55:26] DEBUG: 达到限制数量 1，停止抓取
+[2025-11-04 21:00:51] INFO: 系统代理设置: {"enabled":true,"server":"127.0.0.1:10809","override":"localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;127.0.0.1;<local>"}
+[2025-11-04 21:00:51] INFO: 使用本地保存的防屏蔽地址作为 baseUrl: https://www.busjav.ink
+[2025-11-04 21:00:51] DEBUG: 程序配置初始化完成
+[2025-11-04 21:00:51] DEBUG: 完整配置: {
+  "retryCount": 3,
+  "retryDelay": 1000,
+  "BASE_URL": "https://www.javbus.com/",
+  "baseUrl": "https://www.javbus.com/",
+  "searchUrl": "/search",
+  "parallel": 1,
+  "headers": {
+    "Referer": "https://www.javbus.com/",
+    "Cookie": "existmag=mag"
+  },
+  "output": "D:\\Code\\jav-scrapy",
+  "timeout": 30000,
+  "search": null,
+  "base": "https://www.busjav.ink",
+  "nomag": false,
+  "allmag": false,
+  "nopic": false,
+  "limit": 1,
+  "delay": 2,
+  "proxy": "http://127.0.0.1:10809",
+  "useCloudflareBypass": false
+}
+[2025-11-04 21:00:51] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 21:00:51] DEBUG: 代理设置: http://127.0.0.1:10809
+[2025-11-04 21:00:51] DEBUG: 起始URL: https://www.busjav.ink
+[2025-11-04 21:00:51] DEBUG: 并行数: 1
+[2025-11-04 21:00:51] DEBUG: 超时时间: 30000ms
+[2025-11-04 21:00:51] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 21:00:51] DEBUG: 开始处理索引页任务: https://www.busjav.ink
+[2025-11-04 21:00:51] DEBUG: 开始抓取索引页: https://www.busjav.ink
+[2025-11-04 21:00:51] DEBUG: 开始请求页面: https://www.busjav.ink (尝试 1/4)
+[2025-11-04 21:00:51] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:00:51] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:00:51] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:00:51] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261251611'
+[2025-11-04 21:00:51] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261251611'
+[2025-11-04 21:00:51] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 21:00:51] DEBUG: 请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"123\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36","referer":"https://www.busjav.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 21:00:52] DEBUG: 解析到 30 个影片链接
+[2025-11-04 21:00:52] DEBUG: 索引页 https://www.busjav.ink 解析完成，共找到 30 条链接
+[2025-11-04 21:00:52] DEBUG: 第1页解析完成，找到 30 部影片链接
+[2025-11-04 21:00:52] DEBUG: 开始处理详情页: https://www.busjav.ink/THU-063
+[2025-11-04 21:00:52] DEBUG: 开始请求页面: https://www.busjav.ink/THU-063 (尝试 1/4)
+[2025-11-04 21:00:52] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:00:52] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:00:52] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:00:52] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261252777'
+[2025-11-04 21:00:52] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261252778'
+[2025-11-04 21:00:52] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 21:00:52] DEBUG: 请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"123\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36","referer":"https://www.busjav.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 21:00:53] DEBUG: parseMetadata: 页面中找到 22 个script标签
+[2025-11-04 21:00:53] DEBUG: parseMetadata: 使用第3个script标签
+[2025-11-04 21:00:53] DEBUG: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 21:00:53] DEBUG: 脚本长度: 75 字符
+[2025-11-04 21:00:53] DEBUG: 解析到 7 个分类: フルハイビジョン(FHD), 合集, 4小時以上作品, 業餘, 無毛, 苗條, 深喉
+[2025-11-04 21:00:53] DEBUG: 解析到 10 个演员: 八掛うみ, 中森ななみ, 野々浦暖, 釈アリス, 瀬緒凛, 七嶋舞, 美ノ嶋めぐり, 松岡すず, 流川夕, 蒼乃美月
+[2025-11-04 21:00:53] DEBUG: 解析到影片元数据: 标题=THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛, gid=65752361258, uc=0
+[2025-11-04 21:00:53] DEBUG: 开始发送AJAX请求: https://www.busjav.ink/ajax/uncledatoolsbyajax.php?gid=65752361258&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=6
+[2025-11-04 21:00:53] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:00:53] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:00:53] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:00:53] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261253783'
+[2025-11-04 21:00:53] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261253784'
+[2025-11-04 21:00:53] DEBUG: AJAX请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65752361258&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=6","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Chromium\";v=\"123\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36","referer":"https://www.busjav.ink","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[未设置]"}
+[2025-11-04 21:00:54] DEBUG: AJAX请求成功: https://www.busjav.ink/ajax/uncledatoolsbyajax.php?gid=65752361258&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=6, 状态码: 200
+[2025-11-04 21:00:54] DEBUG: 达到限制数量 1，停止抓取
+[2025-11-04 21:05:53] INFO: 系统代理设置: {"enabled":true,"server":"127.0.0.1:10809","override":"localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;127.0.0.1;<local>"}
+[2025-11-04 21:05:53] INFO: 使用本地保存的防屏蔽地址作为 baseUrl: https://www.busjav.ink
+[2025-11-04 21:05:53] DEBUG: 程序配置初始化完成
+[2025-11-04 21:05:53] DEBUG: 完整配置: {
+  "retryCount": 3,
+  "retryDelay": 1000,
+  "BASE_URL": "https://www.javbus.com/",
+  "baseUrl": "https://www.javbus.com/",
+  "searchUrl": "/search",
+  "parallel": 1,
+  "headers": {
+    "Referer": "https://www.javbus.com/",
+    "Cookie": "existmag=mag"
+  },
+  "output": "D:\\Code\\jav-scrapy",
+  "timeout": 30000,
+  "search": null,
+  "base": "https://www.busjav.ink",
+  "nomag": false,
+  "allmag": false,
+  "nopic": false,
+  "limit": 1,
+  "delay": 2,
+  "proxy": "http://127.0.0.1:10809",
+  "useCloudflareBypass": false
+}
+[2025-11-04 21:05:53] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 21:05:53] DEBUG: 代理设置: http://127.0.0.1:10809
+[2025-11-04 21:05:53] DEBUG: 起始URL: https://www.busjav.ink
+[2025-11-04 21:05:53] DEBUG: 并行数: 1
+[2025-11-04 21:05:53] DEBUG: 超时时间: 30000ms
+[2025-11-04 21:05:53] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 21:05:53] DEBUG: QueueManager: 创建详情页处理队列
+[2025-11-04 21:05:53] DEBUG: QueueManager: 创建文件写入队列
+[2025-11-04 21:05:53] DEBUG: 开始处理索引页任务: https://www.busjav.ink
+[2025-11-04 21:05:53] DEBUG: 开始抓取索引页: https://www.busjav.ink
+[2025-11-04 21:05:53] DEBUG: 开始请求页面: https://www.busjav.ink (尝试 1/4)
+[2025-11-04 21:05:53] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:05:53] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:05:53] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:05:53] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261553199'
+[2025-11-04 21:05:53] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261553199'
+[2025-11-04 21:05:53] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 21:05:53] DEBUG: 请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Microsoft Edge\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/119.0.0.0 Safari/537.36","referer":"https://www.busjav.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 21:05:54] DEBUG: 解析到 30 个影片链接
+[2025-11-04 21:05:54] DEBUG: 索引页 https://www.busjav.ink 解析完成，共找到 30 条链接
+[2025-11-04 21:05:54] DEBUG: 第1页解析完成，找到 30 部影片链接
+[2025-11-04 21:05:54] DEBUG: QueueManager: 开始处理详情页任务: https://www.busjav.ink/THU-063
+[2025-11-04 21:05:54] DEBUG: 开始处理详情页: https://www.busjav.ink/THU-063
+[2025-11-04 21:05:54] DEBUG: 开始请求页面: https://www.busjav.ink/THU-063 (尝试 1/4)
+[2025-11-04 21:05:54] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:05:54] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:05:54] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:05:54] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261554070'
+[2025-11-04 21:05:54] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261554070'
+[2025-11-04 21:05:54] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 21:05:54] DEBUG: 请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Microsoft Edge\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/119.0.0.0 Safari/537.36","referer":"https://www.busjav.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 21:05:54] DEBUG: QueueManager: 成功获取详情页内容，长度: 55646
+[2025-11-04 21:05:54] DEBUG: parseMetadata: 页面中找到 22 个script标签
+[2025-11-04 21:05:54] DEBUG: parseMetadata: 使用第3个script标签
+[2025-11-04 21:05:54] DEBUG: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 21:05:54] DEBUG: 脚本长度: 75 字符
+[2025-11-04 21:05:54] DEBUG: 解析到 7 个分类: フルハイビジョン(FHD), 合集, 4小時以上作品, 業餘, 無毛, 苗條, 深喉
+[2025-11-04 21:05:54] DEBUG: 解析到 10 个演员: 八掛うみ, 中森ななみ, 野々浦暖, 釈アリス, 瀬緒凛, 七嶋舞, 美ノ嶋めぐり, 松岡すず, 流川夕, 蒼乃美月
+[2025-11-04 21:05:54] DEBUG: 解析到影片元数据: 标题=THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛, gid=65752361559, uc=0
+[2025-11-04 21:05:54] DEBUG: QueueManager: 解析到影片元数据，标题: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛
+[2025-11-04 21:05:54] DEBUG: 开始发送AJAX请求: https://www.busjav.ink/ajax/uncledatoolsbyajax.php?gid=65752361559&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=863
+[2025-11-04 21:05:54] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:05:54] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:05:54] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:05:54] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261554589'
+[2025-11-04 21:05:54] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261554589'
+[2025-11-04 21:05:54] DEBUG: AJAX请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65752361559&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=863","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Microsoft Edge\";v=\"119\", \"Not?A_Brand\";v=\"99\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/119.0.0.0 Safari/537.36","referer":"https://www.busjav.ink","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[未设置]"}
+[2025-11-04 21:05:55] DEBUG: AJAX请求成功: https://www.busjav.ink/ajax/uncledatoolsbyajax.php?gid=65752361559&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=863, 状态码: 200
+[2025-11-04 21:05:55] DEBUG: fetchMagnet: AJAX响应内容长度: 3090
+[2025-11-04 21:05:55] DEBUG: fetchMagnet: AJAX响应内容前500字符:        
+            <tr onmouseover="this.style.backgroundColor='#F4F9FD';this.style.cursor='pointer';" onmouseout="this.style.backgroundColor='#FFFFFF'" height="35px" style=" border-top:#DDDDDD solid 1px">
+                <td width="70%" onclick="window.open('magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063','_self')">
+                	<a style="color:#333" rel="nofollow" title="滑鼠右鍵點擊並選擇【複製連結網址】" href="magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=TH
+[2025-11-04 21:05:55] DEBUG: fetchMagnet: 解析到 2 个磁力链接
+[2025-11-04 21:05:55] DEBUG: fetchMagnet: 解析到 2 个文件大小
+[2025-11-04 21:05:55] DEBUG: fetchMagnet: 磁力链接 1: magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063...
+[2025-11-04 21:05:55] DEBUG: fetchMagnet: 磁力链接 2: magnet:?xt=urn:btih:C4A787E0BDBFED8D5C4A40013FF86B23EB95ADBD&dn=THU-063...
+[2025-11-04 21:05:55] INFO: fetchMagnet: 返回最大磁力链接: magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063...
+[2025-11-04 21:05:55] DEBUG: QueueManager: 成功获取磁力链接
+[2025-11-04 21:05:55] DEBUG: QueueManager: 解析影片数据完成
+[2025-11-04 21:05:55] DEBUG: 达到限制数量 1，停止抓取
+[2025-11-04 21:05:55] DEBUG: QueueManager: 详情页任务完成，等待 2525ms
+[2025-11-04 21:06:38] INFO: 系统代理设置: {"enabled":true,"server":"127.0.0.1:10809","override":"localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;127.0.0.1;<local>"}
+[2025-11-04 21:06:38] INFO: 使用本地保存的防屏蔽地址作为 baseUrl: https://www.busjav.ink
+[2025-11-04 21:06:38] DEBUG: 程序配置初始化完成
+[2025-11-04 21:06:38] DEBUG: 完整配置: {
+  "retryCount": 3,
+  "retryDelay": 1000,
+  "BASE_URL": "https://www.javbus.com/",
+  "baseUrl": "https://www.javbus.com/",
+  "searchUrl": "/search",
+  "parallel": 1,
+  "headers": {
+    "Referer": "https://www.javbus.com/",
+    "Cookie": "existmag=mag"
+  },
+  "output": "D:\\Code\\jav-scrapy",
+  "timeout": 30000,
+  "search": null,
+  "base": "https://www.busjav.ink",
+  "nomag": false,
+  "allmag": false,
+  "nopic": false,
+  "limit": 1,
+  "delay": 2,
+  "proxy": "http://127.0.0.1:10809",
+  "useCloudflareBypass": false
+}
+[2025-11-04 21:06:38] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 21:06:38] DEBUG: 代理设置: http://127.0.0.1:10809
+[2025-11-04 21:06:38] DEBUG: 起始URL: https://www.busjav.ink
+[2025-11-04 21:06:38] DEBUG: 并行数: 1
+[2025-11-04 21:06:38] DEBUG: 超时时间: 30000ms
+[2025-11-04 21:06:38] DEBUG: RequestHandler constructor - proxy config: http://127.0.0.1:10809
+[2025-11-04 21:06:38] DEBUG: QueueManager: 创建详情页处理队列
+[2025-11-04 21:06:38] DEBUG: QueueManager: 创建文件写入队列
+[2025-11-04 21:06:38] DEBUG: 开始处理索引页任务: https://www.busjav.ink
+[2025-11-04 21:06:38] DEBUG: 开始抓取索引页: https://www.busjav.ink
+[2025-11-04 21:06:38] DEBUG: 开始请求页面: https://www.busjav.ink (尝试 1/4)
+[2025-11-04 21:06:38] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:06:38] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:06:38] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:06:38] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261598762'
+[2025-11-04 21:06:38] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261598762'
+[2025-11-04 21:06:38] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 21:06:38] DEBUG: 请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"121\", \"Google Chrome\";v=\"121\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0","referer":"https://www.busjav.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 21:06:39] DEBUG: 解析到 30 个影片链接
+[2025-11-04 21:06:39] DEBUG: 索引页 https://www.busjav.ink 解析完成，共找到 30 条链接
+[2025-11-04 21:06:39] DEBUG: 第1页解析完成，找到 30 部影片链接
+[2025-11-04 21:06:39] DEBUG: QueueManager: 开始处理详情页任务: https://www.busjav.ink/THU-063
+[2025-11-04 21:06:39] DEBUG: 开始处理详情页: https://www.busjav.ink/THU-063
+[2025-11-04 21:06:39] DEBUG: 开始请求页面: https://www.busjav.ink/THU-063 (尝试 1/4)
+[2025-11-04 21:06:39] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:06:39] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:06:39] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:06:39] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261599789'
+[2025-11-04 21:06:39] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261599789'
+[2025-11-04 21:06:39] DEBUG: 使用默认 Cookie: existmag=mag
+[2025-11-04 21:06:39] DEBUG: 请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/","scheme":"https","accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"121\", \"Google Chrome\";v=\"121\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"document","sec-fetch-mode":"navigate","sec-fetch-site":"none","sec-fetch-user":"?1","upgrade-insecure-requests":"1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0","referer":"https://www.busjav.ink","Cookie":"existmag=mag","Connection":"keep-alive"}
+[2025-11-04 21:06:40] DEBUG: QueueManager: 成功获取详情页内容，长度: 55591
+[2025-11-04 21:06:40] DEBUG: parseMetadata: 页面中找到 22 个script标签
+[2025-11-04 21:06:40] DEBUG: parseMetadata: 使用第3个script标签
+[2025-11-04 21:06:40] DEBUG: 解析脚本内容: gidMatch=true, ucMatch=true, imgMatch=true
+[2025-11-04 21:06:40] DEBUG: 脚本长度: 75 字符
+[2025-11-04 21:06:40] DEBUG: 解析到 7 个分类: フルハイビジョン(FHD), 合集, 4小時以上作品, 業餘, 無毛, 苗條, 深喉
+[2025-11-04 21:06:40] DEBUG: 解析到 10 个演员: 八掛うみ, 中森ななみ, 野々浦暖, 釈アリス, 瀬緒凛, 七嶋舞, 美ノ嶋めぐり, 松岡すず, 流川夕, 蒼乃美月
+[2025-11-04 21:06:40] DEBUG: 解析到影片元数据: 标题=THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛, gid=65752361604, uc=0
+[2025-11-04 21:06:40] DEBUG: QueueManager: 解析到影片元数据，标题: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛
+[2025-11-04 21:06:40] DEBUG: 开始发送AJAX请求: https://www.busjav.ink/ajax/uncledatoolsbyajax.php?gid=65752361604&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=192
+[2025-11-04 21:06:40] WARN: Windows 平台的 Cookies 解密功能有限
+[2025-11-04 21:06:40] DEBUG: 浏览器 Edge 的用户目录: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data
+[2025-11-04 21:06:40] DEBUG: 找到的Cookies文件: C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies, C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Profile 1\Network\Cookies
+[2025-11-04 21:06:40] WARN: 无法解析 Cookies 文件 C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies: EBUSY: resource busy or locked, copyfile 'C:\Users\yuwen\AppData\Local\Microsoft\Edge\User Data\Default\Network\Cookies' -> 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261600266'
+[2025-11-04 21:06:40] DEBUG: 删除临时文件失败: EBUSY: resource busy or locked, unlink 'C:\Users\yuwen\AppData\Local\Temp\cookies_1762261600267'
+[2025-11-04 21:06:40] DEBUG: AJAX请求头信息: {"authority":"www.busjav.ink","method":"GET","path":"/ajax/uncledatoolsbyajax.php?gid=65752361604&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=192","scheme":"https","accept":"*/*","accept-encoding":"gzip, deflate, br","accept-language":"zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7","cache-control":"no-cache","sec-ch-ua":"\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"121\", \"Google Chrome\";v=\"121\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"Windows\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0","referer":"https://www.busjav.ink","X-Requested-With":"XMLHttpRequest","Connection":"keep-alive","Cookie":"[未设置]"}
+[2025-11-04 21:06:40] DEBUG: AJAX请求成功: https://www.busjav.ink/ajax/uncledatoolsbyajax.php?gid=65752361604&lang=zh&img=/pics/cover/brj6_b.jpg&uc=0&floor=192, 状态码: 200
+[2025-11-04 21:06:40] DEBUG: fetchMagnet: AJAX响应内容长度: 3090
+[2025-11-04 21:06:40] DEBUG: fetchMagnet: AJAX响应内容前500字符:        
+            <tr onmouseover="this.style.backgroundColor='#F4F9FD';this.style.cursor='pointer';" onmouseout="this.style.backgroundColor='#FFFFFF'" height="35px" style=" border-top:#DDDDDD solid 1px">
+                <td width="70%" onclick="window.open('magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063','_self')">
+                	<a style="color:#333" rel="nofollow" title="滑鼠右鍵點擊並選擇【複製連結網址】" href="magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=TH
+[2025-11-04 21:06:40] DEBUG: fetchMagnet: 解析到 2 个磁力链接
+[2025-11-04 21:06:40] DEBUG: fetchMagnet: 解析到 2 个文件大小
+[2025-11-04 21:06:40] DEBUG: fetchMagnet: 磁力链接 1: magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063...
+[2025-11-04 21:06:40] DEBUG: fetchMagnet: 磁力链接 2: magnet:?xt=urn:btih:C4A787E0BDBFED8D5C4A40013FF86B23EB95ADBD&dn=THU-063...
+[2025-11-04 21:06:40] INFO: fetchMagnet: 返回最大磁力链接: magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063...
+[2025-11-04 21:06:40] DEBUG: QueueManager: 成功获取磁力链接
+[2025-11-04 21:06:40] DEBUG: QueueManager: 解析影片数据完成
+[2025-11-04 21:06:40] DEBUG: 达到限制数量 1，停止抓取
+[2025-11-04 21:06:40] DEBUG: QueueManager: 详情页任务完成，等待 2646ms
+[2025-11-04 21:06:40] DEBUG: QueueManager: 开始文件写入任务，标题: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛
+[2025-11-04 21:06:40] DEBUG: FileHandler: 开始写入影片数据，标题: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛
+[2025-11-04 21:06:40] DEBUG: FileHandler: 输出目录: D:\Code\jav-scrapy
+[2025-11-04 21:06:40] DEBUG: FileHandler: 文件路径: D:\Code\jav-scrapy\filmData.json
+[2025-11-04 21:06:40] DEBUG: FileHandler: 文件不存在，将创建新文件
+[2025-11-04 21:06:40] DEBUG: FileHandler: 检查重复数据，是否重复: false
+[2025-11-04 21:06:40] DEBUG: FileHandler: 添加新数据到数组，当前总数: 1
+[2025-11-04 21:06:40] DEBUG: FileHandler: JSON数据长度: 470 字符
+[2025-11-04 21:06:40] INFO: FileHandler: 影片数据成功写入文件: D:\Code\jav-scrapy\filmData.json
+[2025-11-04 21:06:40] INFO: FileHandler: 影片标题: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛
+[2025-11-04 21:06:40] INFO: FileHandler: 磁力链接: magnet:?xt=urn:btih:E2BAB130A955D438F54D366DD1D985BCBC6917AF&dn=THU-063...
+[2025-11-04 21:06:40] DEBUG: QueueManager: 文件写入任务完成，标题: THU-063 天然成分由来 絶対的美少女汁120% 8時間 BEST VOL.10 八掛うみ 中森ななみ 野々浦暖 釈アリス 瀬緒凛

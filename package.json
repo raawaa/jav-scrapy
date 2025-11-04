@@ -28,19 +28,20 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "@types/async": "^3.2.24",
+    "@types/async": "^3.2.25",
     "@types/cheerio": "^0.22.35",
-    "@types/node": "^22.15.3",
+    "@types/node": "^24.10.0",
+    "@types/puppeteer-core": "^5.4.0",
     "@types/user-home": "^2.0.2",
     "@types/winreg": "^1.2.36",
     "async": "^3.2.6",
-    "chai": "^4.3.10",
-    "cheerio": "^1.0.0",
-    "mocha": "^10.2.0",
-    "nock": "^13.5.3",
+    "chai": "^6.2.0",
+    "cheerio": "^1.1.2",
+    "mocha": "^11.7.4",
+    "nock": "^14.0.10",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "bin": {
     "jav": "./dist/jav.js"

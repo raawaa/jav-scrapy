@@ -60,46 +60,57 @@ class FileHandler {
       throw new Error(`Invalid data provided: "${data}". Data must be a non-null object of type FilmData.`);
     }
 
+    logger.debug(`FileHandler: 开始写入影片数据，标题: ${data.title}`);
+    logger.debug(`FileHandler: 输出目录: ${this.outputDir}`);
+
     try {
       // 定义文件路径
       const filePath = path.join(this.outputDir, 'filmData.json');
+      logger.debug(`FileHandler: 文件路径: ${filePath}`);
 
       // 读取现有文件内容（如果存在）
       let existingData: FilmData[] = [];
       if (fs.existsSync(filePath)) {
+        logger.debug(`FileHandler: 文件已存在，读取现有内容`);
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         try {
           existingData = JSON.parse(fileContent);
           if (!Array.isArray(existingData)) {
             existingData = [existingData];
           }
+          logger.debug(`FileHandler: 读取到 ${existingData.length} 条现有数据`);
         } catch {
           existingData = [];
           logger.warn(`Invalid JSON format in ${filePath}, using empty array as default`);
         }
+      } else {
+        logger.debug(`FileHandler: 文件不存在，将创建新文件`);
       }
 
       // 检查是否已存在相同 title 的数据
       const isDuplicate = existingData.some(item => item.title === data.title);
+      logger.debug(`FileHandler: 检查重复数据，是否重复: ${isDuplicate}`);
 
       if (!isDuplicate) {
         // 添加新数据
         existingData.push(data);
+        logger.debug(`FileHandler: 添加新数据到数组，当前总数: ${existingData.length}`);
 
         // 将完整数据转换为格式化的 JSON 字符串
         const jsonData = JSON.stringify(existingData, null, 2);
+        logger.debug(`FileHandler: JSON数据长度: ${jsonData.length} 字符`);
 
         // 写入文件
         fs.writeFileSync(filePath, jsonData);
-
-        // logger.info(`Film data successfully written to ${filePath}`);
+        logger.info(`FileHandler: 影片数据成功写入文件: ${filePath}`);
+        logger.info(`FileHandler: 影片标题: ${data.title}`);
+        logger.info(`FileHandler: 磁力链接: ${data.magnet ? data.magnet.substring(0, 100) + '...' : '无'}`);
       } else {
-        // logger.info(`Skipped duplicate film data with title: ${data.title}`);
+        logger.info(`FileHandler: 跳过重复影片数据，标题: ${data.title}`);
       }
-
-      // 写入文件
     } catch (error) {
-      logger.error(`Failed to write film data: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`FileHandler: 写入影片数据失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`FileHandler: 错误详情: ${error instanceof Error ? error.stack : String(error)}`);
       throw error;
     }
   }

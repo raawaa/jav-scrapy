@@ -5,7 +5,7 @@
 
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { Browser, Page } from 'puppeteer';
+import puppeteerCore from 'puppeteer-extra';
 import logger from '../core/logger';
 import fs from 'fs';
 import path from 'path';
@@ -22,8 +22,8 @@ interface CloudflareConfig {
 }
 
 class CloudflareBypass {
-  private browser: Browser | null = null;
-  private page: Page | null = null;
+  private browser: any = null;
+  private page: any = null;
   private config: CloudflareConfig;
 
   constructor(config: CloudflareConfig = {}) {
@@ -156,7 +156,7 @@ class CloudflareBypass {
       // 获取当前页面的 Cookies
       const cookies = await this.page.cookies();
       const cookieString = cookies
-        .map(cookie => `${cookie.name}=${cookie.value}`)
+        .map((cookie: any) => `${cookie.name}=${cookie.value}`)
         .join('; ');
 
       logger.info(`获取到 ${cookies.length} 个 Cookies`);
@@ -179,7 +179,7 @@ class CloudflareBypass {
     try {
       const cookies = await this.page.cookies();
       const cookieString = cookies
-        .map(cookie => `${cookie.name}=${cookie.value}`)
+        .map((cookie: any) => `${cookie.name}=${cookie.value}`)
         .join('; ');
 
       logger.info(`获取到 ${cookies.length} 个 Cookies`);
@@ -220,7 +220,7 @@ class CloudflareBypass {
 
       // 使用原生JavaScript Promise，避免TypeScript编译后的__awaiter问题
       // 在页面上下文中直接执行AJAX请求，这样可以正确使用页面的cookies
-      const result = await this.page.evaluate((ajaxUrl) => {
+      const result = await this.page.evaluate((ajaxUrl: string) => {
         return new Promise(function(resolve: any, reject: any) {
           var xhr = new XMLHttpRequest();
           xhr.open('GET', ajaxUrl, true);
