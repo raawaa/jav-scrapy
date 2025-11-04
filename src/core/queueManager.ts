@@ -6,7 +6,7 @@ import RequestHandler from './requestHandler';
 import FileHandler from './fileHandler';
 import Parser from './parser';
 import { ErrorHandler } from '../utils/errorHandler';
-import { getRandomDelay } from './constants';
+import { delayManager, DelayType } from '../utils/delayManager';
 
 
 export interface QueueTask {
@@ -110,11 +110,8 @@ class QueueManager {
                     const downloadTime = Date.now() - startTime;
                     logger.info(`QueueManager: [图片下载] 完成下载: ${metadata.title} (耗时: ${Math.round(downloadTime/1000)}s)`);
 
-                    // 图片下载后添加延迟，避免请求过于频繁
-                    const imageDelay = getRandomDelay(2, 5); // 2-5秒随机延迟
-                    logger.debug(`QueueManager: [图片下载] 任务完成: ${metadata.title}，等待 ${Math.round(imageDelay/1000)} 秒后处理下一任务`);
-                    await new Promise(resolve => setTimeout(resolve, imageDelay));
-                    logger.debug(`QueueManager: [图片下载] 延迟等待完成: ${metadata.title}`);
+                    // 延迟由外部管理器处理，任务完成后立即释放
+                    logger.debug(`QueueManager: [图片下载] 任务完成: ${metadata.title}`);
                 } catch (error) {
                     const failedTime = Date.now() - startTime;
                     logger.error(`QueueManager: [图片下载] 任务失败: ${metadata.title} (耗时: ${Math.round(failedTime/1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);
@@ -231,11 +228,8 @@ class QueueManager {
                         logger.warn(`QueueManager: [详情页] 页面响应为空: ${task.link}`);
                     }
 
-                    // 增加详情页处理后的延迟，避免请求过于频繁
-                    const randomDelay = getRandomDelay(Math.max(this.config.delay || 2, 3), Math.max((this.config.delay || 2) * 2, 6));
-                    logger.debug(`QueueManager: [详情页] 开始延迟等待: ${task.link}，等待 ${Math.round(randomDelay/1000)} 秒`);
-                    await new Promise(resolve => setTimeout(resolve, randomDelay));
-                    logger.debug(`QueueManager: [详情页] 延迟等待完成: ${task.link}`);
+                    // 延迟由外部管理器处理，任务完成后立即释放
+                    logger.debug(`QueueManager: [详情页] 任务完成: ${task.link}`);
 
                 } catch (error) {
                     const failedTime = Date.now() - startTime;
@@ -305,10 +299,8 @@ class QueueManager {
                         data: { links }
                     });
 
-                    const randomDelay = getRandomDelay(1, 3);
-                    logger.debug(`QueueManager: [索引页] 开始延迟等待: ${task.url}，等待 ${Math.round(randomDelay/1000)} 秒`);
-                    await new Promise(resolve => setTimeout(resolve, randomDelay));
-                    logger.debug(`QueueManager: [索引页] 延迟等待完成: ${task.url}`);
+                    // 延迟由外部管理器处理，任务完成后立即释放
+                    logger.debug(`QueueManager: [索引页] 任务完成: ${task.url}`);
 
                 } catch (error) {
                     const failedTime = Date.now() - startTime;
@@ -449,6 +441,10 @@ class QueueManager {
         logger.info('QueueManager: 开始关闭队列管理器...');
         this.isShuttingDown = true;
 
+        // 关闭延迟管理器
+        logger.debug('QueueManager: 正在关闭延迟管理器...');
+        this.interruptAllDelays();
+
         if (this.queueStatsInterval) {
             clearInterval(this.queueStatsInterval);
             this.queueStatsInterval = null;
@@ -480,6 +476,62 @@ class QueueManager {
         }
 
         logger.info('QueueManager: 队列管理器关闭完成');
+    }
+
+    /**
+     * 创建延迟任务
+     */
+    public async createDelay(type: DelayType, id?: string): Promise<void> {
+        return delayManager.createDelay(type, id);
+    }
+
+    /**
+     * 获取延迟统计信息
+     */
+    public getDelayStats(): {
+        total: number;
+        byType: Record<DelayType, number>;
+        averageRemainingTime: number;
+    } {
+        return delayManager.getDelayStats();
+    }
+
+    /**
+     * 检查是否有活跃的延迟
+     */
+    public hasActiveDelays(): boolean {
+        return delayManager.hasActiveDelays();
+    }
+
+    /**
+     * 等待所有延迟完成
+     */
+    public async waitForDelays(): Promise<void> {
+        await delayManager.waitForAllDelays();
+    }
+
+    /**
+     * 中断所有延迟
+     */
+    public interruptAllDelays(): number {
+        return delayManager.interruptAllDelays();
+    }
+
+    /**
+     * 改进的队列完成检查 - 区分实际工作和延迟
+     */
+    public areWorkQueuesFinished(): boolean {
+        const stats = this.getQueueStats();
+        return (
+            stats.indexPageQueue.waiting === 0 &&
+            stats.indexPageQueue.running === 0 &&
+            stats.detailPageQueue.waiting === 0 &&
+            stats.detailPageQueue.running === 0 &&
+            stats.fileWriteQueue.waiting === 0 &&
+            stats.fileWriteQueue.running === 0 &&
+            stats.imageDownloadQueue.waiting === 0 &&
+            stats.imageDownloadQueue.running === 0
+        );
     }
 
     /**

@@ -15,6 +15,7 @@ import fs from 'fs';
 import * as path from 'path';
 import { ErrorHandler } from './utils/errorHandler';
 import { getRandomDelay, getExponentialBackoffDelay } from './core/constants';
+import { delayManager, DelayType } from './utils/delayManager';
 
 // 版本号
 const version = '0.8.0';
@@ -136,7 +137,7 @@ class JavScraper {
     private filmsAttempted: number = 0; // 开始处理的影片数
     public multibar: cliProgress.MultiBar | null = null;
     public progressBar: cliProgress.SingleBar | null = null;
-    private requestHandler: RequestHandler;
+    private requestHandler: RequestHandler | null = null;
 
     constructor(config: Config, requestHandler?: RequestHandler) {
         this.config = config;
@@ -196,13 +197,18 @@ class JavScraper {
 
         // 添加信号处理
         const setupSignalHandlers = () => {
-            const handleShutdown = (signal: string) => {
+            const handleShutdown = async (signal: string) => {
                 logger.info(`mainExecution: 收到${signal}信号，开始优雅退出...`);
                 logger.info(`mainExecution: 最终队列状态: ${queueManager.getDetailedQueueStatus()}`);
                 queueManager.shutdown();
-                this.destroy();
-                logger.info(`mainExecution: ${signal}信号处理完成`);
-                process.exit(0);
+                try {
+                    await this.destroy();
+                    logger.info(`mainExecution: ${signal}信号处理完成`);
+                    process.exit(0);
+                } catch (error) {
+                    logger.error(`mainExecution: 销毁过程中发生错误: ${error instanceof Error ? error.message : String(error)}`);
+                    process.exit(1);
+                }
             };
 
             process.on('SIGINT', () => handleShutdown('SIGINT'));
@@ -363,155 +369,61 @@ class JavScraper {
         this.logInfo(`影片处理统计: 已加入队列 ${this.filmsQueued} 个, 开始处理 ${this.filmsAttempted} 个, 成功完成 ${this.filmCount} 个`);
         logger.debug(`mainExecution: 详细队列状态: ${queueManager.getDetailedQueueStatus()}`);
 
-        // 设置队列等待超时监控
-        const QUEUE_WAIT_TIMEOUT = 10 * 60 * 1000; // 10分钟超时
-        const queueWaitStartTime = Date.now();
-        let lastQueueActivityTime = Date.now();
+        // 使用新的状态检测等待所有工作队列完成
+        this.logInfo('等待所有工作队列完成...');
+        logger.info(`mainExecution: 开始使用精确状态检测等待队列完成`);
 
-        const checkQueueTimeout = () => {
-            const now = Date.now();
-            const totalWaitTime = now - queueWaitStartTime;
-            const timeSinceLastActivity = now - lastQueueActivityTime;
-
-            if (totalWaitTime > QUEUE_WAIT_TIMEOUT) {
-                logger.error(`mainExecution: 队列等待超时 (${Math.round(totalWaitTime/1000)}s)，强制退出`);
-                logger.error(`mainExecution: 最终队列状态: ${queueManager.getDetailedQueueStatus()}`);
-                return true;
-            }
-
-            if (timeSinceLastActivity > 60000) { // 1分钟无活动
-                logger.warn(`mainExecution: 队列已 ${Math.round(timeSinceLastActivity/1000)}s 无活动`);
-                logger.warn(`mainExecution: 当前队列状态: ${queueManager.getDetailedQueueStatus()}`);
-            }
-
-            return false;
-        };
-
-        // 等待所有队列完成
-        const indexQueue = queueManager.getIndexPageQueue();
-        const detailQueue = queueManager.getDetailPageQueue();
-        const fileWriteQueue = queueManager.getFileWriteQueue();
-        const imageDownloadQueue = queueManager.getImageDownloadQueue();
-
-        this.logInfo('等待索引页队列完成...');
-        logger.info(`mainExecution: 开始等待索引页队列完成`);
-        logger.debug(`mainExecution: 索引队列drain操作 - 当前状态: 等待=${indexQueue.length()}, 运行=${indexQueue.running()}`);
-        let indexWaitCount = 0;
-        let lastIndexStatus = '';
-
-        const indexCheckInterval = setInterval(() => {
+        let waitCount = 0;
+        const queueCheckInterval = setInterval(() => {
+            waitCount++;
+            const areFinished = queueManager.areWorkQueuesFinished();
+            const delayStats = queueManager.hasActiveDelays();
             const stats = queueManager.getQueueStats();
-            indexWaitCount++;
-            const currentStatus = `等待:${stats.indexPageQueue.waiting}, 运行:${stats.indexPageQueue.running}`;
 
-            if (currentStatus !== lastIndexStatus) {
-                lastQueueActivityTime = Date.now(); // 更新活动时间
-                lastIndexStatus = currentStatus;
-                this.logInfo(`[索引队列等待 ${indexWaitCount}] ${currentStatus}`);
-                logger.debug(`mainExecution: 索引队列详细信息: 总数=${indexQueue.length() + indexQueue.running()}, 并发=${this.config.parallel}`);
+            this.logInfo(`[队列等待 ${waitCount}] 工作队列${areFinished ? '已完成' : '进行中'}, 延迟${delayStats ? '进行中' : '已完成'}`);
+            logger.debug(`mainExecution: 索引:等待${stats.indexPageQueue.waiting}+运行${stats.indexPageQueue.running}, ` +
+                       `详情:等待${stats.detailPageQueue.waiting}+运行${stats.detailPageQueue.running}, ` +
+                       `文件:等待${stats.fileWriteQueue.waiting}+运行${stats.fileWriteQueue.running}, ` +
+                       `图片:等待${stats.imageDownloadQueue.waiting}+运行${stats.imageDownloadQueue.running}`);
+
+            if (areFinished && !delayStats) {
+                clearInterval(queueCheckInterval);
+                logger.debug('mainExecution: 队列状态检测interval清理完成');
             }
+        }, 2000);
 
-            // 检查超时
-            if (checkQueueTimeout()) {
-                clearInterval(indexCheckInterval);
-                throw new Error('索引页队列等待超时');
-            }
-
-            if (stats.indexPageQueue.waiting === 0 && stats.indexPageQueue.running === 0) {
-                clearInterval(indexCheckInterval);
-                logger.debug('mainExecution: 索引队列interval清理完成');
-            }
-        }, 3000);
-
-        try {
-            const indexDrainStart = Date.now();
-            await indexQueue.drain();
-            const indexDrainTime = Math.round((Date.now() - indexDrainStart) / 1000);
-            clearInterval(indexCheckInterval);
-            this.logInfo('索引页队列已完成');
-            logger.info(`mainExecution: 索引页队列drain成功完成 (耗时: ${indexDrainTime}s)`);
-        } catch (error) {
-            logger.error(`mainExecution: 索引页队列drain失败: ${error instanceof Error ? error.message : String(error)}`);
-            clearInterval(indexCheckInterval);
-            throw error;
+        // 等待工作队列完成（使用新的检测方法）
+        const queueWaitStart = Date.now();
+        while (!queueManager.areWorkQueuesFinished()) {
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        this.logInfo('等待详情页队列完成...');
-        logger.info(`mainExecution: 开始等待详情页队列完成`);
-        let detailWaitCount = 0;
-        let lastDetailStatus = '';
-        const detailCheckInterval = setInterval(() => {
-            const stats = queueManager.getQueueStats();
-            detailWaitCount++;
-            const currentStatus = `等待:${stats.detailPageQueue.waiting}, 运行:${stats.detailPageQueue.running}`;
+        const queueWaitTime = Math.round((Date.now() - queueWaitStart) / 1000);
+        this.logInfo('所有工作队列已完成');
+        logger.info(`mainExecution: 工作队列完成 (耗时: ${queueWaitTime}s)`);
 
-            if (currentStatus !== lastDetailStatus) {
-                lastQueueActivityTime = Date.now(); // 更新活动时间
-                lastDetailStatus = currentStatus;
-                this.logInfo(`[详情队列等待 ${detailWaitCount}] ${currentStatus}`);
-                logger.debug(`mainExecution: 详情队列详细信息: ${queueManager.getDetailedQueueStatus()}`);
-            }
+        // 等待所有延迟完成
+        this.logInfo('等待所有延迟完成...');
+        const delayWaitStart = Date.now();
+        await queueManager.waitForDelays();
+        const delayWaitTime = Math.round((Date.now() - delayWaitStart) / 1000);
+        this.logInfo('所有延迟已完成');
+        logger.info(`mainExecution: 延迟等待完成 (耗时: ${delayWaitTime}s)`);
 
-            // 检查超时
-            if (checkQueueTimeout()) {
-                clearInterval(detailCheckInterval);
-                throw new Error('详情页队列等待超时');
-            }
-
-            if (stats.detailPageQueue.waiting === 0 && stats.detailPageQueue.running === 0) {
-                clearInterval(detailCheckInterval);
-                logger.debug('mainExecution: 详情队列interval清理完成');
-            }
-        }, 3000);
-
-        try {
-            const detailDrainStart = Date.now();
-            await detailQueue.drain();
-            const detailDrainTime = Math.round((Date.now() - detailDrainStart) / 1000);
-            clearInterval(detailCheckInterval);
-            this.logInfo('详情页队列已完成');
-            logger.info(`mainExecution: 详情页队列drain成功完成 (耗时: ${detailDrainTime}s)`);
-        } catch (error) {
-            logger.error(`mainExecution: 详情页队列drain失败: ${error instanceof Error ? error.message : String(error)}`);
-            clearInterval(detailCheckInterval);
-            throw error;
-        }
-
-        this.logInfo('等待文件写入队列完成...');
-        let fileWriteWaitCount = 0;
-        const fileWriteCheckInterval = setInterval(() => {
-            const stats = queueManager.getQueueStats();
-            fileWriteWaitCount++;
-            this.logInfo(`[文件写入队列等待 ${fileWriteWaitCount}] 等待: ${stats.fileWriteQueue.waiting}, 运行: ${stats.fileWriteQueue.running}`);
-            if (stats.fileWriteQueue.waiting === 0 && stats.fileWriteQueue.running === 0) {
-                clearInterval(fileWriteCheckInterval);
-            }
-        }, 3000);
-        await fileWriteQueue.drain();
-        this.logInfo('文件写入队列已完成');
-
-        this.logInfo('等待图片下载队列完成...');
-        let imageWaitCount = 0;
-        const imageCheckInterval = setInterval(() => {
-            const stats = queueManager.getQueueStats();
-            imageWaitCount++;
-            this.logInfo(`[图片下载队列等待 ${imageWaitCount}] 等待: ${stats.imageDownloadQueue.waiting}, 运行: ${stats.imageDownloadQueue.running}`);
-            if (stats.imageDownloadQueue.waiting === 0 && stats.imageDownloadQueue.running === 0) {
-                clearInterval(imageCheckInterval);
-            }
-        }, 3000);
-        await imageDownloadQueue.drain();
-        this.logInfo('图片下载队列已完成');
+        // 清理检查interval
+        clearInterval(queueCheckInterval);
 
         this.logInfo('所有抓取任务完成。');
         const totalExecutionTime = Math.round((Date.now() - executionStartTime) / 1000);
         logger.info(`mainExecution: 程序执行完成，总耗时: ${totalExecutionTime}s`);
         logger.info(`mainExecution: 最终统计 - 加入队列: ${this.filmsQueued}, 开始处理: ${this.filmsAttempted}, 成功完成: ${this.filmCount}`);
-        this.destroy(); // 调用 cleanup 方法并输出完成信息
+        await this.destroy(); // 调用 cleanup 方法并输出完成信息
     }
 
-    private cleanup(): void {
+    private async cleanup(): Promise<void> {
         logger.debug(`mainExecution: 开始清理资源`);
+
+        // 清理进度条
         if (this.progressBar) {
             this.progressBar.stop();
             this.progressBar = null;
@@ -522,14 +434,42 @@ class JavScraper {
             this.multibar = null;
             logger.debug(`mainExecution: 多进度条已停止`);
         }
+
+        // 关闭RequestHandler (这会关闭Cloudflare绕过器和Puppeteer浏览器)
+        if (this.requestHandler) {
+            try {
+                await this.requestHandler.close();
+                this.requestHandler = null;
+                logger.debug(`mainExecution: RequestHandler已关闭`);
+            } catch (error) {
+                logger.warn(`mainExecution: 关闭RequestHandler失败: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
+        // 关闭延迟管理器
+        if (delayManager) {
+            try {
+                delayManager.shutdown();
+                logger.debug(`mainExecution: 延迟管理器已关闭`);
+            } catch (error) {
+                logger.warn(`mainExecution: 关闭延迟管理器失败: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
         logger.debug(`mainExecution: 资源清理完成`);
     }
 
-    public destroy(): void {
+    public async destroy(): Promise<void> {
         logger.info(`mainExecution: 开始销毁程序实例`);
-        this.cleanup();
+        await this.cleanup();
         console.log('资源清理完成。');
         logger.info(`mainExecution: 程序实例销毁完成`);
+
+        // 在正常完成时退出进程
+        setTimeout(() => {
+            logger.info('mainExecution: 进程即将退出');
+            process.exit(0);
+        }, 100);
     }
 }
 
