@@ -22,6 +22,7 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - mkdirp (目录创建)
   - user-home (用户主目录获取)
   - cloudscraper (Cloudflare 绕过)
+  - winreg (Windows 注册表操作)
 
 ### 开发依赖
 - **测试框架**: mocha + chai
@@ -44,6 +45,7 @@ src/
 │   └── interfaces.ts       # 接口定义
 └── utils/                  # 工具函数
     ├── cloudflareBypass.ts # Cloudflare 绕过处理
+    ├── delayManager.ts     # 延迟管理器
     ├── errorHandler.ts     # 错误处理
     └── systemProxy.ts      # 系统代理检测
 ```
@@ -193,6 +195,16 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 支持 Windows 系统代理检测（通过注册表）
 - 自动应用检测到的代理设置
 
+### 延迟管理系统
+- 新增延迟管理器（DelayManager），提供精细化的请求间隔控制
+- 支持不同类型请求的差异化延迟设置：
+  - 索引页请求：1-3秒
+  - 详情页请求：3-6秒
+  - 图片下载：2-5秒
+  - 错误重试：5-10秒
+- 支持可中断的延迟机制，实现优雅的程序退出
+- 提供延迟统计和监控功能
+
 ### 请求延迟控制
 - 添加请求间隔时间设置（-d/--delay 参数）
 - 使用随机延迟（getRandomDelay 函数）避免过于频繁的请求
@@ -256,6 +268,7 @@ npm publish
 9. 默认重试次数为 3 次，使用指数退避策略
 10. TypeScript 编译目标为 ES2017，确保在较新 Node.js 环境中运行
 11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
+12. 新增的延迟管理器支持更精细的请求间隔控制和优雅退出机制
 
 ## 贡献者
 

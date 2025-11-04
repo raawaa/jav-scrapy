@@ -55,6 +55,24 @@
     "prepare": "npm run build",
     "build": "tsc",
     "dev": "ts-node src/jav.ts",
-    "dev:watch": "nodemon --exec ts-node src/jav.ts"
+    "dev:watch": "nodemon --exec ts-node src/jav.ts",
+    "preinstall": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raawaa/jav-scrapy.git"
+  },
+  "keywords": [
+    "crawler",
+    "scrapy",
+    "jav",
+    "magnet",
+    "torrent",
+    "nodejs",
+    "typescript"
+  ],
+  "homepage": "https://github.com/raawaa/jav-scrapy#readme",
+  "bugs": {
+    "url": "https://github.com/raawaa/jav-scrapy/issues"
   }
 }
