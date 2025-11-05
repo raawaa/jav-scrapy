@@ -1,3 +1,10 @@
+## [0.8.5](https://github.com/raawaa/jav-scrapy/compare/v0.8.4...v0.8.5) (2025-11-05)
+
+
+### Bug Fixes
+
+* update Windows binary build process in GitHub Actions ([5870560](https://github.com/raawaa/jav-scrapy/commit/587056073e2a4fa564285d8e363eeee0b0ab07d3))
+
 ## [0.8.4](https://github.com/raawaa/jav-scrapy/compare/v0.8.3...v0.8.4) (2025-11-05)
 
 
