@@ -1,3 +1,10 @@
+## [0.8.3](https://github.com/raawaa/jav-scrapy/compare/v0.8.2...v0.8.3) (2025-11-05)
+
+
+### Bug Fixes
+
+* correct sed command syntax in GitHub Actions workflow ([8161103](https://github.com/raawaa/jav-scrapy/commit/81611038c5239e616f6fccc723b406eb498bd683))
+
 ## [0.8.2](https://github.com/raawaa/jav-scrapy/compare/v0.8.1...v0.8.2) (2025-11-05)
 
 
