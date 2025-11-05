@@ -1,3 +1,10 @@
+## [0.8.4](https://github.com/raawaa/jav-scrapy/compare/v0.8.3...v0.8.4) (2025-11-05)
+
+
+### Bug Fixes
+
+* improve Windows installer script to handle encoding and version detection ([0a2e8e9](https://github.com/raawaa/jav-scrapy/commit/0a2e8e9f361c800b078aa1680f133ec340b6a221))
+
 ## [0.8.3](https://github.com/raawaa/jav-scrapy/compare/v0.8.2...v0.8.3) (2025-11-05)
 
 
