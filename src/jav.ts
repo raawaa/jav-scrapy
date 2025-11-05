@@ -284,7 +284,12 @@ class JavScraper {
 
                     if (event.data && 'metadata' in event.data) {
                         queueManager.getFileWriteQueue().push(event.data.filmData);
-                        queueManager.getImageDownloadQueue().push(event.data.metadata);
+                        // 只有在 nopic 为 false 时才下载图片
+                        if (!this.config.nopic) {
+                            queueManager.getImageDownloadQueue().push(event.data.metadata);
+                        } else {
+                            logger.debug(`跳过图片下载 (nopic=true): ${event.data.metadata.title}`);
+                        }
                     }
                 }
             }

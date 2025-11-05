@@ -14,20 +14,17 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - commander (命令行解析)
   - cli-progress (进度条显示)
   - winston (日志记录)
-  - cheerio (HTML 解析)
-  - async (异步流程控制)
-  - tunnel/socks-proxy-agent/http-proxy-agent (代理支持)
   - chalk (控制台美化)
   - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制)
-  - mkdirp (目录创建)
-  - user-home (用户主目录获取)
-  - cloudscraper (Cloudflare 绕过)
+  - tunnel (代理支持)
   - winreg (Windows 注册表操作)
 
 ### 开发依赖
-- **测试框架**: mocha + chai
 - **开发工具**: nodemon, ts-node
 - **类型定义**: @types/* 包提供完整的 TypeScript 支持
+- **HTML解析**: cheerio
+- **异步流程控制**: async
+- **测试工具**: mocha + chai + nock (测试框架，但当前无测试目录)
 
 ### 项目架构
 ```
@@ -91,6 +88,8 @@ npm install -g . --force
 - 输出目录：./dist
 - 源码目录：./src
 - 支持装饰器和实验性元数据
+- 模块解析：node
+- 启用 ES 模块互操作和一致性检查
 
 ## 使用方法
 
@@ -196,7 +195,7 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 自动应用检测到的代理设置
 
 ### 延迟管理系统
-- 新增延迟管理器（DelayManager），提供精细化的请求间隔控制
+- 集中式延迟管理器（DelayManager），提供精细化的请求间隔控制
 - 支持不同类型请求的差异化延迟设置：
   - 索引页请求：1-3秒
   - 详情页请求：3-6秒
@@ -204,6 +203,7 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
   - 错误重试：5-10秒
 - 支持可中断的延迟机制，实现优雅的程序退出
 - 提供延迟统计和监控功能
+- 使用 getRandomDelay 和 getExponentialBackoffDelay 函数实现智能延迟算法
 
 ### 请求延迟控制
 - 添加请求间隔时间设置（-d/--delay 参数）
@@ -215,12 +215,13 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 实时显示各队列状态（等待中、运行中任务数量）
 - 提供影片处理统计信息（已加入队列、开始处理、成功完成的数量）
 - 支持优雅等待所有队列任务完成后再退出
+- 增强的队列管理功能，支持更好的任务调度和错误恢复
 
 ## 测试和调试
 
 ### 运行测试
 ```bash
-npm test              # 使用 mocha 运行 test/*.test.js 文件
+npm test              # 使用 mocha 运行测试 (注意：当前项目中无测试目录)
 ```
 
 ### 开发模式
@@ -235,11 +236,11 @@ npm run dev:watch     # 使用 nodemon 监听文件变化并自动重启
 ### 调试模式
 可以通过修改配置或环境变量来启用更详细的日志输出，帮助定位问题。
 
-### 测试框架
+### 测试工具
 - **Mocha**: 测试运行器
 - **Chai**: 断言库
 - **Nock**: HTTP 模拟和测试
-- 测试文件位于 test/ 目录，使用 .test.js 扩展名
+- 注意：虽然 package.json 中配置了测试脚本和依赖，但当前项目代码中没有 test/ 目录和测试文件
 
 ## 部署说明
 
@@ -268,7 +269,9 @@ npm publish
 9. 默认重试次数为 3 次，使用指数退避策略
 10. TypeScript 编译目标为 ES2017，确保在较新 Node.js 环境中运行
 11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
-12. 新增的延迟管理器支持更精细的请求间隔控制和优雅退出机制
+12. 集中式延迟管理器支持更精细的请求间隔控制和优雅退出机制
+13. 项目已清理未使用的依赖项，优化了包大小和加载性能
+14. 虽然配置了测试框架，但当前无测试文件，需要时可以添加测试目录
 
 ## 贡献者
 

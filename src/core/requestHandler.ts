@@ -567,22 +567,33 @@ class RequestHandler {
       return { magnetLink, size: sizeInMB };
     });
 
-    const maxSizePair = parsedPairs.reduce((prev, current) => {
-      return (prev.size > current.size) ? prev : current;
-    }, parsedPairs[0]);
-
     const calculateTime = Date.now() - calculateStartTime;
     const totalTime = Date.now() - fetchStartTime;
 
-    logger.debug(`fetchMagnet: 最大文件计算完成: ${metadata.title} (耗时: ${Math.round(calculateTime/1000)}s)`);
+    logger.debug(`fetchMagnet: 磁力链接处理完成: ${metadata.title} (耗时: ${Math.round(calculateTime/1000)}s)`);
 
-    const finalMagnetLink = maxSizePair ? maxSizePair.magnetLink : null;
-    if (finalMagnetLink) {
-      logger.info(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
-      logger.info(`fetchMagnet: 返回最大磁力链接: ${finalMagnetLink.substring(0, 100)}...`);
+    let finalMagnetLink: string | null = null;
+    
+    if (this.config.allmag) {
+      // 返回所有磁力链接，用换行符分隔
+      finalMagnetLink = parsedPairs.map(pair => pair.magnetLink).join('\n');
+      logger.info(`fetchMagnet: 成功获取所有磁力链接: ${metadata.title} (共${parsedPairs.length}个) (总耗时: ${Math.round(totalTime/1000)}s)`);
+      logger.debug(`fetchMagnet: 返回所有磁力链接，预览: ${finalMagnetLink.substring(0, 200)}...`);
     } else {
-      logger.error(`fetchMagnet: 未能确定最大磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
+      // 返回最大的磁力链接（默认行为）
+      const maxSizePair = parsedPairs.reduce((prev, current) => {
+        return (prev.size > current.size) ? prev : current;
+      }, parsedPairs[0]);
+      
+      finalMagnetLink = maxSizePair ? maxSizePair.magnetLink : null;
+      if (finalMagnetLink) {
+        logger.info(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
+        logger.info(`fetchMagnet: 返回最大磁力链接: ${finalMagnetLink.substring(0, 100)}...`);
+      } else {
+        logger.error(`fetchMagnet: 未能确定最大磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
+      }
     }
+    
     return finalMagnetLink;
   }
   /**
