@@ -1,3 +1,38 @@
+# [0.8.0](https://github.com/raawaa/jav-scrapy/compare/v0.7.0...v0.8.0) (2025-11-05)
+
+
+### Bug Fixes
+
+* **axios/proxy:** 通过请求拦截器修复HTTP代理访问HTTPS网站的连接问题 ([fc04263](https://github.com/raawaa/jav-scrapy/commit/fc04263987f24494f15ff409b5fa9ce2e5eb1d09))
+* **config:** 当用户手动设置了baseURL时，自动将请求头referer配置为新的baseurl ([738e8c1](https://github.com/raawaa/jav-scrapy/commit/738e8c145f5a0b975bdd2403765f0d8498cef3bd))
+* **config:** 更新请求头中的Referer和Cookie配置 ([4bbeb47](https://github.com/raawaa/jav-scrapy/commit/4bbeb47d38544860c8acc5e1a661d3eec85780db))
+* meta.category always return an empty array ([9a42963](https://github.com/raawaa/jav-scrapy/commit/9a4296362ae194e7678bb8bf83bf0df9b1f2feb2))
+* **requestHandler:** 在下载图片前检查文件是否存在 ([c14c49f](https://github.com/raawaa/jav-scrapy/commit/c14c49fe4067e966451fe8c151d88496eb6e0544))
+* **requestHandler:** 增加对https代理的支持 ([de7b11a](https://github.com/raawaa/jav-scrapy/commit/de7b11a1d3bbc695f79936f62d23c9bc4a293983))
+* 修复 -N/--nopic 和 -a/--allmag 参数功能 ([484b28d](https://github.com/raawaa/jav-scrapy/commit/484b28df8129b5bfe073ea90e71decd969d12ffa))
+* 修复semantic-release配置中的分支名称从main改为master ([623be69](https://github.com/raawaa/jav-scrapy/commit/623be69a734876b90fc53777a3a31ab65e9b13a3))
+* 升级GitHub Actions中的Node.js版本到20以满足semantic-release要求 ([062860c](https://github.com/raawaa/jav-scrapy/commit/062860c35152658c19b364fa50d8ad23c628bdc9))
+* 添加master分支支持到GitHub Actions workflow ([8dad9a1](https://github.com/raawaa/jav-scrapy/commit/8dad9a1d7241f03c6677e1388fe32687f3535e86))
+* 移除semantic-release中的npm插件以避免NPM token错误 ([cf59267](https://github.com/raawaa/jav-scrapy/commit/cf592678394946a83b6b24c6c768a3b996e86ff1))
+* 重构配置管理和URL生成逻辑，修复配置初始化错误 ([7de26be](https://github.com/raawaa/jav-scrapy/commit/7de26be47ea9b93c307fe7c2b2bea04ece2d8414))
+
+
+### Features
+
+* **config:** 重构防屏蔽地址加载逻辑 ([8f9365e](https://github.com/raawaa/jav-scrapy/commit/8f9365ea5c71b1d7d5ccb4113e328851db595637))
+* **dependencies:** 更新依赖项以支持代理功能和类型定义 ([fa2ac48](https://github.com/raawaa/jav-scrapy/commit/fa2ac48f4f0522065ebe21fcfd4cf48a0405eb3c))
+* **parser:** 优化解析器功能并完善注释 ([0144b8b](https://github.com/raawaa/jav-scrapy/commit/0144b8bd22a857214792ac85637ca5a421ecb598))
+* **parser:** 添加提取防屏蔽地址的功能并更新JavScraper逻辑 ([ddb0fee](https://github.com/raawaa/jav-scrapy/commit/ddb0fee3fda29bad154590c1877b23feaa9ce90c))
+* **progress:** 添加进度条功能以提升用户体验 ([f0ca9b0](https://github.com/raawaa/jav-scrapy/commit/f0ca9b00ebbdf0d0c533ae8098ebe56956d6f9f3))
+* **requestHandler:** 添加图片下载功能并重构配置管理 ([9ac8c83](https://github.com/raawaa/jav-scrapy/commit/9ac8c83ed5c02b77c3c7acb5cc46241720a957ee))
+* 优化队列管理和错误处理逻辑 ([cb111ce](https://github.com/raawaa/jav-scrapy/commit/cb111ce4371dae253a148eac7334cfe004e748ad))
+* 增强爬虫功能并改进错误处理 ([0a696d7](https://github.com/raawaa/jav-scrapy/commit/0a696d70531e0de8383c855ab3b5f0289add8823))
+* 增强队列管理和监控功能 ([c65fd4a](https://github.com/raawaa/jav-scrapy/commit/c65fd4a675acd8a90433605103dd26d0bb9cc0a3))
+* **安装:** 添加Windows自动化安装脚本并更新README ([4225b5f](https://github.com/raawaa/jav-scrapy/commit/4225b5f2a7c800f555c3c498cd3623fc931fdfe3))
+* 实现Puppeteer池和资源监控系统 ([d55c1ce](https://github.com/raawaa/jav-scrapy/commit/d55c1ce02972c535a6be406c8272c6cc83980b95))
+* 将项目迁移至TypeScript并重构核心模块 ([93e592d](https://github.com/raawaa/jav-scrapy/commit/93e592d45ca5a817ca05970bd2b77f569e183945))
+* 添加抓取数量限制功能 ([4eddc46](https://github.com/raawaa/jav-scrapy/commit/4eddc46cc47d57a32fd9b2df69b321802fc927d1))
+
 ## 0.8.0 (2025-11-05)
 
 * fix: 修复 -N/--nopic 和 -a/--allmag 参数功能 ([484b28d](https://github.com/raawaa/jav-scrapy/commit/484b28d))
