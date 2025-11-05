@@ -1,3 +1,10 @@
+## [0.8.2](https://github.com/raawaa/jav-scrapy/compare/v0.8.1...v0.8.2) (2025-11-05)
+
+
+### Bug Fixes
+
+* Trigger GitHub Action with empty commit ([5e404bb](https://github.com/raawaa/jav-scrapy/commit/5e404bb3ee03e45cdbfd9719ac45af7c0d20efb2))
+
 ## [0.8.1](https://github.com/raawaa/jav-scrapy/compare/v0.8.0...v0.8.1) (2025-11-05)
 
 
