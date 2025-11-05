@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/raawaa/jav-scrapy/compare/v0.8.0...v0.8.1) (2025-11-05)
+
+
+### Bug Fixes
+
+* **puppeteer:** 优化打包环境下Puppeteer的配置处理 ([e630cde](https://github.com/raawaa/jav-scrapy/commit/e630cdec52d00d655a78c288255b217bb12894da))
+
 # [0.8.0](https://github.com/raawaa/jav-scrapy/compare/v0.7.0...v0.8.0) (2025-11-05)
 
 
