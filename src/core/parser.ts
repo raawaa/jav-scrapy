@@ -254,10 +254,9 @@ class Parser {
    * @description 将影片标题、分类、演员信息和磁力链接组合成一个完整的数据对象，
    * 便于后续处理和存储
    */
-  static parseFilmData(metadata: Metadata, magnet: string | null, link: string): FilmData {
+  static parseFilmData(metadata: Metadata, link: string): FilmData {
     const filmData: FilmData = {
       title: metadata.title,
-      magnet: magnet || '', // 如果为null则设置为空字符串
       category: metadata.category,
       actress: metadata.actress
     }

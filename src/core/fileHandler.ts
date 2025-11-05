@@ -118,10 +118,15 @@ class FileHandler {
       }
 
       // 3. 如果还找不到重复，检查磁力链接是否相同
-      if (duplicateIndex === -1 && data.magnet) {
-        duplicateIndex = existingData.findIndex(item =>
-          item.magnet && item.magnet === data.magnet
-        );
+      if (duplicateIndex === -1 && data.magnetLinks && data.magnetLinks.length > 0) {
+        const newMagnetLinks = data.magnetLinks.map(ml => ml.link).sort().join('|');
+        duplicateIndex = existingData.findIndex(item => {
+          if (item.magnetLinks && item.magnetLinks.length > 0) {
+            const existingMagnetLinks = item.magnetLinks.map(ml => ml.link).sort().join('|');
+            return existingMagnetLinks === newMagnetLinks;
+          }
+          return false;
+        });
         if (duplicateIndex !== -1) {
           duplicateReason = '磁力链接匹配';
         }
@@ -172,7 +177,10 @@ class FileHandler {
         fs.writeFileSync(filePath, jsonData);
         logger.info(`FileHandler: 影片数据成功写入文件: ${filePath}`);
         logger.info(`FileHandler: 影片标题: ${data.title}`);
-        logger.info(`FileHandler: 磁力链接: ${data.magnet ? data.magnet.substring(0, 100) + '...' : '无'}`);
+        const magnetPreview = data.magnetLinks && data.magnetLinks.length > 0
+          ? data.magnetLinks.map(ml => ml.link).slice(0, 2).join('\n').substring(0, 100) + '...'
+          : '无';
+        logger.info(`FileHandler: 磁力链接: ${magnetPreview}`);
       } else {
         // 如果是重复数据，智能检查是否需要更新
         const existingItem = existingData[duplicateIndex!];
@@ -180,7 +188,14 @@ class FileHandler {
         let updateReason = '';
 
         // 检查磁力链接质量（优先级最高）
-        if (data.magnet && (!existingItem.magnet || existingItem.magnet !== data.magnet)) {
+        const newMagnetLinks = data.magnetLinks && data.magnetLinks.length > 0
+          ? data.magnetLinks.map(ml => ml.link).sort().join('|')
+          : '';
+        const existingMagnetLinks = existingItem.magnetLinks && existingItem.magnetLinks.length > 0
+          ? existingItem.magnetLinks.map(ml => ml.link).sort().join('|')
+          : '';
+
+        if (newMagnetLinks && newMagnetLinks !== existingMagnetLinks) {
           shouldUpdate = true;
           updateReason = '磁力链接更新';
         }

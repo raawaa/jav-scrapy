@@ -199,12 +199,12 @@ jobs:
           ### 📦 下载说明
           
           **二进制文件下载：**
-          - Windows (x64): `jav-scrapy-windows-x64-${{ steps.version.outputs.VERSION }}.exe`
-          - Windows (ARM64): `jav-scrapy-windows-arm64-${{ steps.version.outputs.VERSION }}.exe`
-          - macOS (Intel): `jav-scrapy-macos-x64-${{ steps.version.outputs.VERSION }}`
-          - macOS (Apple Silicon): `jav-scrapy-macos-arm64-${{ steps.version.outputs.VERSION }}`
-          - Linux (x64): `jav-scrapy-linux-x64-${{ steps.version.outputs.VERSION }}`
-          - Linux (ARM64): `jav-scrapy-linux-arm64-${{ steps.version.outputs.VERSION }}`
+          - Windows (x64): `jav-scrapy-${{ steps.version.outputs.VERSION }}-windows-x64.exe`
+          - Windows (ARM64): `jav-scrapy-${{ steps.version.outputs.VERSION }}-windows-arm64.exe`
+          - macOS (Intel): `jav-scrapy-${{ steps.version.outputs.VERSION }}-macos-x64`
+          - macOS (Apple Silicon): `jav-scrapy-${{ steps.version.outputs.VERSION }}-macos-arm64`
+          - Linux (x64): `jav-scrapy-${{ steps.version.outputs.VERSION }}-linux-x64`
+          - Linux (ARM64): `jav-scrapy-${{ steps.version.outputs.VERSION }}-linux-arm64`
           
           **一键安装：**
           ```bash

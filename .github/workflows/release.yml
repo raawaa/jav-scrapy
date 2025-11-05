@@ -24,32 +24,32 @@ jobs:
             platform: linux
             arch: x64
             node_target: node18-linux-x64
-            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-linux-x64
+            binary_name: jav-scrapy-linux-x64
           - os: ubuntu-latest
             platform: linux
             arch: arm64
             node_target: node18-linux-arm64
-            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-linux-arm64
+            binary_name: jav-scrapy-linux-arm64
           - os: windows-latest
             platform: windows
             arch: x64
             node_target: node18-win-x64
-            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-windows-x64.exe
+            binary_name: jav-scrapy-windows-x64
           - os: windows-latest
             platform: windows
             arch: arm64
             node_target: node18-win-arm64
-            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-windows-arm64.exe
+            binary_name: jav-scrapy-windows-arm64
           - os: macos-latest
             platform: macos
             arch: x64
             node_target: node18-macos-x64
-            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-macos-x64
+            binary_name: jav-scrapy-macos-x64
           - os: macos-latest
             platform: macos
             arch: arm64
             node_target: node18-macos-arm64
-            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-macos-arm64
+            binary_name: jav-scrapy-macos-arm64
 
     steps:
     - name: Checkout code
@@ -73,30 +73,29 @@ jobs:
     - name: Build binary (Unix)
       if: matrix.platform != 'windows'
       run: |
-        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}
-        chmod +x ${{ matrix.binary_name }}
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}
+        chmod +x ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}
 
     - name: Build binary (Windows)
       if: matrix.platform == 'windows'
       run: |
-        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}.exe
 
     - name: Generate checksum
       run: |
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          sha256sum ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
+          sha256sum ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}.exe > ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}.exe.sha256
         else
-          sha256sum ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
+          sha256sum ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }} > ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}.sha256
         fi
       shell: bash
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.binary_name }}
+        name: ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}
         path: |
-          ${{ matrix.binary_name }}
-          ${{ matrix.binary_name }}.sha256
+          ${{ matrix.binary_name }}-${{ github.event.inputs.version || github.ref_name }}*
         retention-days: 30
 
   release:

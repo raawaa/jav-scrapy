@@ -80,7 +80,6 @@ interface MagnetResult {
 
 interface FilmData {
   title: string;
-  magnet: string;
   magnetLinks?: MagnetLink[];
   category: string[];
   actress: string[];

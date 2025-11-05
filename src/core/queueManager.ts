@@ -256,8 +256,8 @@ class QueueManager {
                         }
 
                         logger.debug(`QueueManager: [详情页] 开始解析影片数据: ${metadata.title}`);
-                        const filmData = Parser.parseFilmData(metadata, magnetResult?.magnet || null, task.link);
-                        // 如果有结构化的磁力链接数据，也添加到影片数据中
+                        const filmData = Parser.parseFilmData(metadata, task.link);
+                        // 添加结构化的磁力链接数据
                         if (magnetResult?.magnetLinks) {
                             filmData.magnetLinks = magnetResult.magnetLinks;
                         }
