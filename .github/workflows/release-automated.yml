@@ -127,13 +127,13 @@ jobs:
         export PKG_CACHE_PATH="C:/temp/pkg-cache"
         export PUPPETEER_SKIP_DOWNLOAD=true
         export PUPPETEER_EXECUTABLE_PATH=""
-        timeout 300 pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} || \
-        echo "Binary build timed out or failed, but continuing..."
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.exe || \
+        echo "Binary build failed, but continuing..."
 
     - name: Generate checksum
       run: |
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          sha256sum ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} > ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.sha256
+          sha256sum ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.exe > ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.exe.sha256
         else
           sha256sum ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} > ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.sha256
         fi
@@ -144,8 +144,7 @@ jobs:
       with:
         name: ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
         path: |
-          ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
-          ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.sha256
+          ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}*
         retention-days: 30
 
   attach-assets:
