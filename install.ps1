@@ -2,6 +2,7 @@
 # 支持 Windows PowerShell
 
 # 设置控制台编码为UTF-8
+chcp 65001 > $null
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -95,26 +96,48 @@ function Get-SystemArchitecture {
     return $arch
 }
 
-# 获取最新版本
-function Get-LatestVersion {
-    Write-Info "获取最新版本信息..."
-    
-    try {
-        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
-        $version = $response.tag_name
-        
-        if ([string]::IsNullOrEmpty($version)) {
-            Write-Error "无法获取最新版本信息"
-            Write-Info "请手动访问: https://github.com/$RepoOwner/$RepoName/releases"
-            exit 1
-        }
-        
-        Write-Success "最新版本: $version"
-        return $version
-    } catch {
-        Write-Error "获取版本信息失败: $($_.Exception.Message)"
-        exit 1
-    }
+# 获取最新版本
+function Get-LatestVersion {
+    Write-Info "获取最新版本信息..."
+    
+    try {
+        # 首先尝试获取最新的包含二进制文件的版本
+        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
+        
+        # 遍历版本，找到包含当前平台二进制文件的最新版本
+        foreach ($release in $response) {
+            $version = $release.tag_name
+            $hasAssets = $release.assets.Count -gt 0
+            
+            # 检查是否包含Windows二进制文件（对于Windows平台）
+            if ($hasAssets) {
+                $arch = Get-SystemArchitecture
+                $expectedFilename = "jav-scrapy-$version-windows-$arch.exe"
+                $foundAsset = $release.assets | Where-Object { $_.name -eq $expectedFilename }
+                
+                if ($foundAsset) {
+                    Write-Success "找到可用版本: $version"
+                    return $version
+                }
+            }
+        }
+        
+        # 如果没有找到包含二进制文件的版本，回退到最新的版本
+        $latestResponse = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
+        $version = $latestResponse.tag_name
+        
+        if ([string]::IsNullOrEmpty($version)) {
+            Write-Error "无法获取最新版本信息"
+            Write-Info "请手动访问: https://github.com/$RepoOwner/$RepoName/releases"
+            exit 1
+        }
+        
+        Write-Success "最新版本: $version"
+        return $version
+    } catch {
+        Write-Error "获取版本信息失败: $($_.Exception.Message)"
+        exit 1
+    }
 }
 
 # 下载二进制文件
