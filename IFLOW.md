@@ -37,7 +37,9 @@ src/
 │   ├── logger.ts           # 日志系统
 │   ├── parser.ts           # HTML 解析
 │   ├── queueManager.ts     # 队列管理
-│   └── requestHandler.ts   # HTTP 请求处理
+│   ├── requestHandler.ts   # HTTP 请求处理
+│   ├── puppeteerPool.ts    # Puppeteer 实例池
+│   └── resourceMonitor.ts  # 资源监控器
 ├── types/                  # 类型定义
 │   └── interfaces.ts       # 接口定义
 └── utils/                  # 工具函数
@@ -84,7 +86,7 @@ npm install -g . --force
 ```
 
 ### 项目配置
-- TypeScript 编译目标：ES2017
+- TypeScript 编译目标：ES2020
 - 输出目录：./dist
 - 源码目录：./src
 - 支持装饰器和实验性元数据
@@ -177,6 +179,7 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 集成 Puppeteer + Stealth 插件绕过 Cloudflare 防护
 - 自动处理反爬虫机制
 - 随机 User-Agent 和浏览器指纹（包括 Sec-CH-UA 头部）
+- 实现 Puppeteer 实例池和资源监控系统
 
 ### 高级请求头伪装
 - 模拟真实浏览器指纹（Sec-CH-UA 头部）
@@ -217,6 +220,12 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 支持优雅等待所有队列任务完成后再退出
 - 增强的队列管理功能，支持更好的任务调度和错误恢复
 
+### Puppeteer 实例池和资源监控
+- 实现 Puppeteer 实例池管理，优化资源使用
+- 支持动态调整池大小和健康检查
+- 集成资源监控系统，实时监控内存和 CPU 使用情况
+- 支持打包环境下的 Puppeteer 配置处理
+
 ## 测试和调试
 
 ### 运行测试
@@ -256,6 +265,14 @@ npm publish
 ### Windows 自动化安装
 提供 `install.bat` 和 `install.ps1` 脚本，支持 Windows 用户一键安装。
 
+### 二进制构建
+支持构建跨平台二进制文件：
+```bash
+npm run build-binary              # 构建当前平台二进制
+npm run build-binary:windows      # 构建 Windows 二进制
+npm run build-binary:all          # 构建所有平台二进制
+```
+
 ## 注意事项
 
 1. 程序会自动检测并使用系统代理设置
@@ -267,11 +284,12 @@ npm publish
 7. 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
 8. 项目版本为 0.8.0，使用 CommonJS 模块系统
 9. 默认重试次数为 3 次，使用指数退避策略
-10. TypeScript 编译目标为 ES2017，确保在较新 Node.js 环境中运行
+10. TypeScript 编译目标为 ES2020，确保在较新 Node.js 环境中运行
 11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
 12. 集中式延迟管理器支持更精细的请求间隔控制和优雅退出机制
 13. 项目已清理未使用的依赖项，优化了包大小和加载性能
 14. 虽然配置了测试框架，但当前无测试文件，需要时可以添加测试目录
+15. 支持二进制打包，可构建跨平台可执行文件
 
 ## 贡献者
 

@@ -188,10 +188,14 @@ jobs:
         if [ -f "CHANGELOG.md" ]; then
           # 从 CHANGELOG.md 中提取当前版本的内容
           awk "/## \\[${{ steps.version.outputs.VERSION }}\\]/,/^## / { if (!/^## / || /## \\[${{ steps.version.outputs.VERSION }}\\]/) print }" CHANGELOG.md > current_changelog.md
-          # 移除开头的版本标题行（因为会在 release 中重复）
-          sed -i '' '1d' current_changelog.md
-          # 移除空行和多余的格式
-          sed -i '' '/^$/d' current_changelog.md
+          # 移除开头的版本标题行（因为会在 release 中重复）- 兼容 Git Bash
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            sed -i '1d' current_changelog.md
+            sed -i '/^$/d' current_changelog.md
+          else
+            sed -i '' '1d' current_changelog.md
+            sed -i '' '/^$/d' current_changelog.md
+          fi
           # 读取内容并设置为输出
           CHANGELOG_CONTENT=$(cat current_changelog.md | tr '\n' '\\n')
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
