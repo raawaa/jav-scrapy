@@ -49,7 +49,15 @@ class ConfigManager {
             limit: 0,
             delay: 2, // 添加默认延迟参数
             proxy: undefined,
-            useCloudflareBypass: false // 默认不启用 Cloudflare 绕过
+            useCloudflareBypass: false, // 默认不启用 Cloudflare 绕过
+            // Puppeteer池配置
+            puppeteerPool: {
+                maxSize: Math.max(2, Math.floor(DEFAULT_CONFIG.parallel / 2)),
+                maxIdleTime: 5 * 60 * 1000, // 5分钟
+                healthCheckInterval: 30 * 1000, // 30秒
+                requestTimeout: 60000, // 1分钟
+                retryAttempts: 3
+            }
         };
         this.configPath = `${process.env.HOME}/.config.json`; // 配置文件路径
     }

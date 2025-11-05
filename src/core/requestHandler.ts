@@ -3,12 +3,14 @@ import axiosRetry from 'axios-retry';
 import tunnel from 'tunnel';
 import { Config } from '../types/interfaces';
 import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
+import { MagnetResult, MagnetLink } from '../types/interfaces'; // 导入磁力链接相关类型
 import path from 'path'; // 导入 path 模块，用于处理文件路径
 import fs from 'fs'; // 导入 fs 模块，用于文件操作
 import { USER_AGENTS } from './constants';
 import { ErrorHandler } from '../utils/errorHandler';
 import logger from './logger';
 import CloudflareBypass from '../utils/cloudflareBypass';
+import { PuppeteerPool, PuppeteerInstance } from './puppeteerPool';
 /**
  * 请求配置接口
  */
@@ -52,6 +54,7 @@ class RequestHandler {
     private cloudflareCookies: string | null = null;
     private lastCookieRefresh: number = 0;
     private cookieRefreshInterval: number = 30 * 60 * 1000; // 30分钟刷新一次cookies
+    private puppeteerPool: PuppeteerPool;
   /**
    * 构造函数
    * @param config 配置对象
@@ -108,6 +111,8 @@ class RequestHandler {
     };
     this.retries = 3; // 减少重试次数，避免过度请求
     this.retryDelay = Math.max(this.config.delay || 2000, 3000); // 增加基础延迟，至少3秒
+    // 获取共享的 PuppeteerPool 实例（不创建新实例，由 QueueManager 统一管理）
+    this.puppeteerPool = PuppeteerPool.getInstance();
     // Cloudflare 绕过器将在需要时异步初始化
     // 配置axios重试
     axiosRetry(axios, {
@@ -218,7 +223,34 @@ class RequestHandler {
           return { statusCode: 200, body: pageContent };
         } catch (error) {
           logger.error(`getPage: Cloudflare 绕过获取页面失败: ${url}, 错误: ${error instanceof Error ? error.message : String(error)}`);
-          throw error;
+
+          // 检查是否是网络错误，如果是则尝试常规HTTP请求作为fallback
+          const isNetworkError = error instanceof Error && (
+            error.message.includes('net::ERR_ABORTED') ||
+            error.message.includes('net::ERR_CONNECTION') ||
+            error.message.includes('timeout') ||
+            error.message.includes('Navigation timeout') ||
+            error.message.includes('获取 Puppeteer 实例失败') // 添加池相关错误
+          );
+
+          const isPuppeteerError = error instanceof Error && (
+            error.message.includes('Cannot read properties of null') ||
+            error.message.includes('page 为 null') ||
+            error.message.includes('从共享池获取的页面实例为 null')
+          );
+
+          if (isNetworkError || isPuppeteerError) {
+            logger.warn(`getPage: Cloudflare 绕过遇到${isNetworkError ? '网络' : 'Puppeteer'}错误，尝试常规HTTP请求作为fallback: ${url}`);
+            logger.debug(`fallback原因: ${error instanceof Error ? error.message : String(error)}`);
+
+            // 设置Cloudflare绕过器为null，强制使用常规请求
+            this.cloudflareBypass = null;
+            // 继续执行下面的常规HTTP请求逻辑
+          } else {
+            // 非网络错误，直接抛出
+            logger.error(`getPage: 非网络错误，直接抛出: ${error instanceof Error ? error.message : String(error)}`);
+            throw error;
+          }
         }
       } else {
         logger.error(`getPage: Cloudflare 绕过器初始化失败: ${url}`);
@@ -433,9 +465,9 @@ class RequestHandler {
   /**
    * 从指定页面提取磁力链接，并返回最大文件大小对应的磁力链接
    * @param metadata 元数据对象
-   * @returns 最大文件大小对应的磁力链接，如果没有找到则返回 null
+   * @returns 包含磁力链接信息的对象，如果没有找到则返回 null
    */
-  public async fetchMagnet(metadata: Metadata): Promise<string | null> {
+  public async fetchMagnet(metadata: Metadata): Promise<MagnetResult | null> {
     const fetchStartTime = Date.now();
     logger.debug(`fetchMagnet: 开始获取磁力链接，影片: ${metadata.title}`);
 
@@ -572,30 +604,60 @@ class RequestHandler {
 
     logger.debug(`fetchMagnet: 磁力链接处理完成: ${metadata.title} (耗时: ${Math.round(calculateTime/1000)}s)`);
 
-    let finalMagnetLink: string | null = null;
-    
+    let result: MagnetResult | null = null;
+
     if (this.config.allmag) {
-      // 返回所有磁力链接，用换行符分隔
-      finalMagnetLink = parsedPairs.map(pair => pair.magnetLink).join('\n');
+      // 返回所有磁力链接的结构化数据
+      const magnetLinks: MagnetLink[] = parsedPairs.map(pair => ({
+        link: pair.magnetLink,
+        size: this.formatFileSize(pair.size)
+      }));
+
+      result = {
+        magnet: parsedPairs.map(pair => pair.magnetLink).join('\n'), // 保持向后兼容
+        magnetLinks: magnetLinks
+      };
+
       logger.info(`fetchMagnet: 成功获取所有磁力链接: ${metadata.title} (共${parsedPairs.length}个) (总耗时: ${Math.round(totalTime/1000)}s)`);
-      logger.debug(`fetchMagnet: 返回所有磁力链接，预览: ${finalMagnetLink.substring(0, 200)}...`);
+      logger.debug(`fetchMagnet: 返回所有磁力链接，预览: ${result.magnet.substring(0, 200)}...`);
     } else {
       // 返回最大的磁力链接（默认行为）
       const maxSizePair = parsedPairs.reduce((prev, current) => {
         return (prev.size > current.size) ? prev : current;
       }, parsedPairs[0]);
-      
-      finalMagnetLink = maxSizePair ? maxSizePair.magnetLink : null;
-      if (finalMagnetLink) {
+
+      if (maxSizePair) {
+        result = {
+          magnet: maxSizePair.magnetLink,
+          magnetLinks: [{
+            link: maxSizePair.magnetLink,
+            size: this.formatFileSize(maxSizePair.size)
+          }]
+        };
+
         logger.info(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
-        logger.info(`fetchMagnet: 返回最大磁力链接: ${finalMagnetLink.substring(0, 100)}...`);
+        logger.info(`fetchMagnet: 返回最大磁力链接: ${result.magnet.substring(0, 100)}...`);
       } else {
         logger.error(`fetchMagnet: 未能确定最大磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
       }
     }
-    
-    return finalMagnetLink;
+
+    return result;
   }
+
+  /**
+   * 格式化文件大小显示
+   * @param sizeInMB 文件大小（MB为单位）
+   * @returns 格式化的文件大小字符串
+   */
+  private formatFileSize(sizeInMB: number): string {
+    if (sizeInMB >= 1024) {
+      return `${(sizeInMB / 1024).toFixed(2)}GB`;
+    } else {
+      return `${sizeInMB.toFixed(2)}MB`;
+    }
+  }
+
   /**
    * 下载图片到指定路径
    * @param url 图片 URL
@@ -749,15 +811,17 @@ class RequestHandler {
     private async initCloudflareBypass(): Promise<void> {
         try {
             logger.info('正在初始化Cloudflare绕过器...');
+            // 不再创建新的CloudflareBypass实例，而是使用共享池
             this.cloudflareBypass = new CloudflareBypass({
                 headless: true,
                 timeout: this.requestConfig.timeout,
-                proxy: this.requestConfig.proxy
+                proxy: this.requestConfig.proxy,
+                puppeteerPool: this.puppeteerPool  // 传入共享池
             });
-            
+
             await this.cloudflareBypass.init();
             logger.info('Cloudflare绕过器初始化成功');
-            
+
             // 设置年龄认证相关Cookie
             logger.info('正在设置年龄认证相关Cookie...');
             await this.cloudflareBypass.setAgeVerificationCookies();

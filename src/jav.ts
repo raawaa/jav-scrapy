@@ -267,11 +267,12 @@ class JavScraper {
         });
 
         queueManager.on(QueueEventType.DETAIL_PAGE_PROCESSED, (event) => {
-            // 只有在未达到限制数量时才更新计数和继续处理
-            if (this.config.limit <= 0 || this.filmCount < this.config.limit) {
-                this.filmCount++;
+            // 处理成功的影片数据（无论是否达到限制都要保存）
+            if (event.data && 'filmData' in event.data) {
+                // 只有在未达到限制数量时才更新计数
+                if (this.config.limit <= 0 || this.filmCount < this.config.limit) {
+                    this.filmCount++;
 
-                if (event.data && 'filmData' in event.data) {
                     if (this.progressBar) {
                         // 确保进度条不超过限制数量
                         const progressValue = Math.min(this.filmCount, this.config.limit);
@@ -281,15 +282,16 @@ class JavScraper {
                         logger.debug(`影片数据已处理: ${event.data.filmData.title}`);
                         this.logInfo(`已抓取 ${event.data.filmData.title}`);
                     }
+                }
 
-                    if (event.data && 'metadata' in event.data) {
-                        queueManager.getFileWriteQueue().push(event.data.filmData);
-                        // 只有在 nopic 为 false 时才下载图片
-                        if (!this.config.nopic) {
-                            queueManager.getImageDownloadQueue().push(event.data.metadata);
-                        } else {
-                            logger.debug(`跳过图片下载 (nopic=true): ${event.data.metadata.title}`);
-                        }
+                // 无论是否达到限制，都要保存成功处理的影片数据
+                if (event.data && 'metadata' in event.data) {
+                    queueManager.getFileWriteQueue().push(event.data.filmData);
+                    // 只有在 nopic 为 false 时才下载图片
+                    if (!this.config.nopic) {
+                        queueManager.getImageDownloadQueue().push(event.data.metadata);
+                    } else {
+                        logger.debug(`跳过图片下载 (nopic=true): ${event.data.metadata.title}`);
                     }
                 }
             }

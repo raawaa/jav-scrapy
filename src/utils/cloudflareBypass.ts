@@ -9,6 +9,7 @@ import puppeteerCore from 'puppeteer-extra';
 import logger from '../core/logger';
 import fs from 'fs';
 import path from 'path';
+import { PuppeteerPool, PuppeteerInstance } from '../core/puppeteerPool';
 
 // 使用 stealth 插件
 puppeteer.use(StealthPlugin());
@@ -19,12 +20,15 @@ interface CloudflareConfig {
   viewport?: { width: number; height: number };
   userAgent?: string;
   proxy?: string;
+  puppeteerPool?: PuppeteerPool;
 }
 
 class CloudflareBypass {
   private browser: any = null;
   private page: any = null;
   private config: CloudflareConfig;
+  private puppeteerPool: PuppeteerPool | null = null;
+  private currentInstance: PuppeteerInstance | null = null;
 
   constructor(config: CloudflareConfig = {}) {
     this.config = {
@@ -34,6 +38,7 @@ class CloudflareBypass {
       userAgent: config.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       proxy: config.proxy
     };
+    this.puppeteerPool = config.puppeteerPool || null;
   }
 
   /**
@@ -43,51 +48,37 @@ class CloudflareBypass {
    */
 
   public async init(): Promise<void> {
-
     try {
+      logger.info('正在初始化 Cloudflare 绕过器...');
 
-      logger.info('正在启动 Puppeteer 浏览器...');
+      // 如果有共享池，使用共享池
+      if (this.puppeteerPool) {
+        logger.info('使用共享 Puppeteer 池');
+        await this.puppeteerPool.initialize();
+        return;
+      }
 
-
-
+      // 否则创建独立实例（向后兼容）
+      logger.info('创建独立的 Puppeteer 实例');
       const launchOptions: any = {
-
         headless: this.config.headless,
-
         args: [
-
           '--no-sandbox',
-
           '--disable-setuid-sandbox',
-
           '--disable-dev-shm-usage',
-
           '--disable-web-security',
-
           '--disable-features=VizDisplayCompositor',
-
           '--disable-extensions',
-
           '--disable-plugins',
-
           '--disable-default-apps',
-
           '--disable-background-timer-throttling',
-
           '--disable-renderer-backgrounding',
-
           '--disable-backgrounding-occluded-windows',
-
           '--disable-webgl',
-
           '--disable-3d-apis',
-
           '--disable-accelerated-2d-canvas',
-
           '--disable-gpu'
-
         ]
-
       };
 
 
@@ -302,8 +293,27 @@ class CloudflareBypass {
    * 访问页面并绕过 Cloudflare
    */
   public async bypassCloudflare(url: string): Promise<string> {
-    if (!this.page) {
-      throw new Error('请先调用 init() 方法初始化浏览器');
+    try {
+      // 如果有共享池，从池中获取实例
+      if (this.puppeteerPool) {
+        logger.debug(`从共享池获取 Puppeteer 实例: ${url}`);
+        // 简化实例获取，只传递优先级
+        this.currentInstance = await this.puppeteerPool.getInstance(undefined, 1); // 高优先级
+        this.page = this.currentInstance.page;
+
+        // 验证页面是否正确获取
+        if (!this.page || !this.currentInstance) {
+          throw new Error('从共享池获取的页面实例为 null');
+        }
+
+        logger.debug(`成功获取 Puppeteer 实例: ${this.currentInstance.id}`);
+      } else if (!this.page) {
+        throw new Error('请先调用 init() 方法初始化浏览器');
+      }
+    } catch (error) {
+      logger.error('获取 Puppeteer 实例失败:', error);
+      logger.error(`错误详情: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
 
     try {
@@ -394,6 +404,14 @@ class CloudflareBypass {
       logger.info(`获取到 ${cookies.length} 个 Cookies`);
       logger.debug(`Cookies 详情: ${JSON.stringify(cookies, null, 2)}`);
 
+      // 如果使用共享池，释放实例回池
+      if (this.puppeteerPool && this.currentInstance) {
+        logger.debug(`释放 Puppeteer 实例回共享池: ${this.currentInstance.id}`);
+        this.puppeteerPool.releaseInstance(this.currentInstance);
+        this.currentInstance = null;
+        this.page = null;
+      }
+
       return content;
     } catch (error) {
       logger.error(`绕过 Cloudflare 失败: ${error instanceof Error ? error.message : String(error)}`);
@@ -439,7 +457,15 @@ class CloudflareBypass {
       } catch (pageInfoError) {
         logger.debug(`bypassCloudflare: 获取页面信息失败: ${pageInfoError instanceof Error ? pageInfoError.message : String(pageInfoError)}`);
       }
-      
+
+      // 确保在错误情况下也释放实例回池
+      if (this.puppeteerPool && this.currentInstance) {
+        logger.debug(`错误情况下释放 Puppeteer 实例回共享池: ${this.currentInstance.id}`);
+        this.puppeteerPool.releaseInstance(this.currentInstance);
+        this.currentInstance = null;
+        this.page = null;
+      }
+
       throw error;
     }
   }
@@ -503,18 +529,26 @@ class CloudflareBypass {
     const ajaxStartTime = Date.now();
     logger.debug(`executeAjax: 开始执行 AJAX 请求: ${url}`);
 
-    if (!this.page) {
-      logger.error('executeAjax: 页面未初始化');
-      throw new Error('请先调用 init() 方法初始化浏览器');
-    }
+    // 从 Puppeteer 池获取页面实例
+    let instance: PuppeteerInstance | null = null;
+    let page: any = null;
 
     try {
+      if (!this.puppeteerPool) {
+        throw new Error('executeAjax: Puppeteer 池未初始化');
+      }
+
+      logger.debug(`executeAjax: 从池中获取页面实例用于 AJAX 请求`);
+      instance = await this.puppeteerPool.getInstance();
+      page = instance.page;
+      logger.debug(`executeAjax: 成功获取页面实例 ${instance.id}`);
+
       logger.info(`executeAjax: 执行 AJAX 请求: ${url}`);
       logger.debug(`executeAjax: AJAX 请求详情: withCredentials=true`);
 
       // 确保在正确的页面上下文中执行AJAX请求
       // 首先检查当前页面的URL是否与AJAX请求的域名匹配
-      const currentUrl = this.page.url();
+      const currentUrl = page.url();
       const ajaxUrlObj = new URL(url);
       const currentUrlObj = new URL(currentUrl);
 
@@ -527,7 +561,7 @@ class CloudflareBypass {
         // 导航到正确的域名页面
         const navigationStart = Date.now();
         logger.debug(`executeAjax: 正在导航到: ${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`);
-        await this.page.goto(`${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`, {
+        await page.goto(`${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`, {
           waitUntil: 'networkidle2',
           timeout: this.config.timeout
         });
@@ -545,7 +579,7 @@ class CloudflareBypass {
       logger.debug(`executeAjax: 在页面上下文中执行AJAX请求`);
       const evaluateStart = Date.now();
 
-      const result = await this.page.evaluate((ajaxUrl: string) => {
+      const result = await page.evaluate((ajaxUrl: string) => {
         return new Promise(function(resolve: any, reject: any) {
           var xhr = new XMLHttpRequest();
           xhr.open('GET', ajaxUrl, true);
@@ -601,56 +635,69 @@ class CloudflareBypass {
       logger.error(`executeAjax: 错误详情: ${error instanceof Error ? error.message : String(error)}`);
       logger.error(`executeAjax: 错误类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}`);
       logger.error(`executeAjax: 错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
-      
+
       // 记录完整的错误信息
       logger.debug(`executeAjax: 完整错误对象: ${JSON.stringify(error, null, 2)}`);
 
       // 检查浏览器进程状态
       try {
-        if (this.browser && this.browser.process()) {
-          logger.debug(`executeAjax: 浏览器进程状态: PID=${this.browser.process().pid}, 是否连接=${this.browser.isConnected()}`);
+        if (page && instance) {
+          const browser = instance.browser;
+          if (browser && browser.process()) {
+            logger.debug(`executeAjax: 浏览器进程状态: PID=${browser.process().pid}, 是否连接=${browser.isConnected()}`);
+          } else {
+            logger.warn('executeAjax: 浏览器进程不可用');
+          }
         } else {
-          logger.warn('executeAjax: 浏览器进程不可用');
+          logger.warn('executeAjax: 页面实例不可用，无法检查浏览器进程状态');
         }
       } catch (processError) {
         logger.warn(`executeAjax: 检查浏览器进程失败: ${processError instanceof Error ? processError.message : String(processError)}`);
       }
 
       // 获取页面错误信息
-      try {
-        const pageErrors = await this.page.evaluate(() => {
-          // 尝试获取页面上的错误信息
-          const errorElements = Array.from(document.querySelectorAll('body *')).filter(el =>
-            el.textContent && (el.textContent.includes('error') || el.textContent.includes('Error') || el.textContent.includes('403') || el.textContent.includes('Forbidden'))
-          );
-          return errorElements.map(el => el.textContent).slice(0, 5); // 只返回前5个错误信息
-        });
-        if (pageErrors && pageErrors.length > 0) {
-          logger.debug(`executeAjax: 页面错误信息: ${JSON.stringify(pageErrors, null, 2)}`);
+      if (page) {
+        try {
+          const pageErrors = await page.evaluate(() => {
+            // 尝试获取页面上的错误信息
+            const errorElements = Array.from(document.querySelectorAll('body *')).filter(el =>
+              el.textContent && (el.textContent.includes('error') || el.textContent.includes('Error') || el.textContent.includes('403') || el.textContent.includes('Forbidden'))
+            );
+            return errorElements.map(el => el.textContent).slice(0, 5); // 只返回前5个错误信息
+          });
+          if (pageErrors && pageErrors.length > 0) {
+            logger.debug(`executeAjax: 页面错误信息: ${JSON.stringify(pageErrors, null, 2)}`);
+          }
+        } catch (pageError) {
+          logger.debug(`executeAjax: 获取页面错误信息失败: ${pageError instanceof Error ? pageError.message : String(pageError)}`);
         }
-      } catch (pageError) {
-        logger.debug(`executeAjax: 获取页面错误信息失败: ${pageError instanceof Error ? pageError.message : String(pageError)}`);
-      }
 
-      // 尝试获取页面内容和URL
-      try {
-        const pageUrl = this.page.url();
-        const pageTitle = await this.page.title();
-        const pageContent = await this.page.content();
-        
-        logger.debug(`executeAjax: 当前页面URL: ${pageUrl}`);
-        logger.debug(`executeAjax: 当前页面标题: ${pageTitle}`);
-        logger.debug(`executeAjax: 页面内容长度: ${pageContent.length}`);
-        
-        // 记录页面内容的前1000个字符
-        if (pageContent.length > 0) {
-          logger.debug(`executeAjax: 页面内容前1000字符: ${pageContent.substring(0, 1000)}`);
+        // 尝试获取页面内容和URL
+        try {
+          const pageUrl = page.url();
+          const pageTitle = await page.title();
+          const pageContent = await page.content();
+
+          logger.debug(`executeAjax: 当前页面URL: ${pageUrl}`);
+          logger.debug(`executeAjax: 当前页面标题: ${pageTitle}`);
+          logger.debug(`executeAjax: 页面内容长度: ${pageContent.length}`);
+
+          // 记录页面内容的前1000个字符
+          if (pageContent.length > 0) {
+            logger.debug(`executeAjax: 页面内容前1000字符: ${pageContent.substring(0, 1000)}`);
+          }
+        } catch (pageInfoError) {
+          logger.debug(`executeAjax: 获取页面信息失败: ${pageInfoError instanceof Error ? pageInfoError.message : String(pageInfoError)}`);
         }
-      } catch (pageInfoError) {
-        logger.debug(`executeAjax: 获取页面信息失败: ${pageInfoError instanceof Error ? pageInfoError.message : String(pageInfoError)}`);
       }
 
       throw error;
+    } finally {
+      // 确保页面实例被释放回池
+      if (instance && this.puppeteerPool) {
+        logger.debug(`executeAjax: 释放页面实例 ${instance.id} 回池`);
+        this.puppeteerPool.releaseInstance(instance);
+      }
     }
   }
 
@@ -1004,6 +1051,12 @@ class CloudflareBypass {
                     expires: (new Date().getTime() / 1000) + (365 * 24 * 60 * 60) // 1年过期
                 }
             ];
+
+            // 检查页面是否存在
+            if (!this.page) {
+                logger.warn('setAgeVerificationCookies: page 为 null，跳过 Cookie 设置');
+                return;
+            }
 
             // 设置Cookie
             for (const cookie of cookies) {

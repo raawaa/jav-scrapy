@@ -248,16 +248,16 @@ class Parser {
   /**
    * 将解析的元数据和磁力链接组合成影片数据对象
    * @param {Metadata} metadata - 包含影片元数据的对象
-   * @param {string} magnet - 影片的磁力链接
+   * @param {string} magnet - 影片的磁力链接，如果没有则为null
    * @param {string} link - 影片详情页链接
    * @returns {FilmData} 返回包含完整影片数据的对象
    * @description 将影片标题、分类、演员信息和磁力链接组合成一个完整的数据对象，
    * 便于后续处理和存储
    */
-  static parseFilmData(metadata: Metadata, magnet: string, link: string): FilmData {
+  static parseFilmData(metadata: Metadata, magnet: string | null, link: string): FilmData {
     const filmData: FilmData = {
       title: metadata.title,
-      magnet: magnet,
+      magnet: magnet || '', // 如果为null则设置为空字符串
       category: metadata.category,
       actress: metadata.actress
     }

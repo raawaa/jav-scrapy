@@ -32,6 +32,13 @@ interface Config {
   limit: number;
   delay: number; // 添加延迟参数
   useCloudflareBypass?: boolean; // 是否启用 Cloudflare 绕过
+  puppeteerPool?: {
+    maxSize: number;
+    maxIdleTime: number;
+    healthCheckInterval: number;
+    requestTimeout: number;
+    retryAttempts: number;
+  };
 }
 
 interface IndexPageTask {
@@ -61,11 +68,22 @@ interface Metadata {
   actress: string[];
 }
 
+interface MagnetLink {
+  link: string;
+  size: string;
+}
+
+interface MagnetResult {
+  magnet: string; // For backward compatibility
+  magnetLinks?: MagnetLink[]; // Structured data
+}
+
 interface FilmData {
   title: string;
   magnet: string;
+  magnetLinks?: MagnetLink[];
   category: string[];
   actress: string[];
 }
 
-export { Config, IndexPageTask, DetailPageTask, Metadata, FilmData };
+export { Config, IndexPageTask, DetailPageTask, Metadata, MagnetLink, MagnetResult, FilmData };

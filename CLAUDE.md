@@ -5,16 +5,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Building and Development
-- `npm run build` - Compile TypeScript to JavaScript
-- `npm run dev` - Run the TypeScript file directly with ts-node
+- `npm run build` - Compile TypeScript to JavaScript in `dist/` directory
+- `npm run dev` - Run the TypeScript file directly with ts-node (development)
 - `npm run dev:watch` - Run with nodemon for auto-restart during development
-- `npm test` - Run tests with mocha
+- `npm test` - Run tests with mocha from `test/` directory
 - `npm install -g . --force` - Install the package globally for CLI usage
+- `npm run build-binary` - Build standalone executables for multiple platforms using pkg
+
+### Testing and Quality
+- Tests are located in `test/` directory with `.test.js` extension
+- Uses Mocha framework with Chai assertions
+- Nock for HTTP mocking in tests
 
 ### Running the Application
-- `jav` - Run crawl command with default settings
-- `jav crawl` - Explicit crawl command
-- `jav update` - Update anti-blocking URLs
+- `jav` - Run crawl command with default settings (equivalent to `jav crawl`)
+- `jav crawl` - Explicit crawl command with options
+- `jav update` - Update anti-blocking URLs from remote sources
+- Use `--help` flag for comprehensive option listing
 
 ## Architecture Overview
 
@@ -71,8 +78,13 @@ This is a TypeScript-based web scraper for JAV content that uses a multi-queue a
 - `src/utils/cloudflareBypass.ts` - Puppeteer-based Cloudflare bypass with age verification
 - `src/utils/systemProxy.ts` - Cross-platform system proxy detection
 - `src/utils/errorHandler.ts` - Centralized error handling with categorization
+- `src/utils/delayManager.ts` - Centralized delay management with exponential backoff
 - `src/core/fileHandler.ts` - File operations with path sanitization
 - `src/core/logger.ts` - Winston-based logging with multiple levels
+- `src/core/constants.ts` - Application constants and default values
+
+### Type System
+- `src/types/interfaces.ts` - TypeScript interfaces for Config, Film data structures, and other core types
 
 ### Data Flow
 
@@ -101,6 +113,14 @@ All operations use configurable concurrency limits and exponential backoff delay
 - Base URLs are normalized to remove trailing slashes
 - Anti-block URLs are randomly selected from local cache
 - Referer headers are automatically generated from base URLs
+
+### Build System and Deployment
+
+- **TypeScript compilation**: Outputs to `dist/` directory with ES2017 target
+- **Package.json**: Main entry point set to `jav.js`, bin field points to `./dist/jav.js`
+- **Binary generation**: Uses pkg to create standalone executables for multiple platforms (Windows/macOS/Linux, x64/arm64)
+- **Version management**: Automated version scripts in `scripts/` directory
+- **Release automation**: Semantic-release with conventional commits
 
 ### Error Handling Strategy
 
