@@ -30,12 +30,12 @@
 
 **Linux/macOS：**
 ```bash
-curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/master/install.sh | bash
 ```
 
 **Windows PowerShell：**
 ```bash
-iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/master/install.ps1 | iex
 ```
 
 安装完成后，直接使用：
