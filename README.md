@@ -13,80 +13,40 @@
 
 ## ⚙️ 安装
 
-### 🚀 一键安装（推荐）
+### 🚀 一行命令安装
 
-无需克隆仓库，直接通过 npm 从 GitHub 安装：
+无需任何环境配置，一行命令完成下载、安装和配置：
 
+**Linux/macOS：**
 ```bash
-# 全局安装
-npm install -g https://github.com/raawaa/jav-scrapy.git
-
-# 或者使用 npx 临时使用
-npx github:raawaa/jav-scrapy
+curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.sh | bash
 ```
 
-### 🖥️ 自动安装脚本
-
-**Windows 用户：**
+**Windows PowerShell：**
 ```bash
-# PowerShell
-.\quick-install.ps1
-
-# 或者传统批处理
-.\install.bat
+iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.ps1 | iex
 ```
 
-**Linux/macOS 用户：**
+安装完成后，直接使用：
 ```bash
-chmod +x quick-install.sh
-./quick-install.sh
+jav --help
 ```
 
-### 📦 手动安装
+### 📋 卸载方法
 
-#### 🔧 必要环境
+安装完成后，会自动创建卸载脚本：
 
-- **Node.js 环境**：从 [Node.js 官方网站](https://nodejs.org/) 下载安装。安装完成后，通过以下命令验证：
-
+**Linux/macOS：**
 ```bash
-$ node --version
-$ npm --version
+/usr/local/bin/jav-scrapy-uninstall
+# 或
+~/.local/bin/jav-scrapy-uninstall
 ```
 
-- **TypeScript 环境**：通过 npm 全局安装 TypeScript 编译器：
-
-```bash
-$ npm install -g typescript
+**Windows：**
+```cmd
+%LOCALAPPDATA%\jav-scrapy\uninstall.bat
 ```
-
-安装完成后，通过以下命令验证：
-
-```bash
-$ tsc --version
-```
-
-#### 🛠️ 编译安装本程序
-
-```bash
-# 克隆仓库
-$ git clone https://github.com/raawaa/jav-scrapy.git
-
-# 进入项目目录
-$ cd jav-scrapy
-
-# 安装依赖
-$ npm install
-
-# 编译 TypeScript 代码
-$ npm run build
-
-# 安装全局命令
-$ npm install -g . --force
-```
-
-### 📋 更多安装选项
-
-查看 [INSTALL.md](./INSTALL.md) 了解更多安装方法和故障排除。
 
 ## 🚀 使用方法
 

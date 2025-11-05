@@ -31,9 +31,18 @@
     "mocha": "^11.7.4",
     "nock": "^14.0.10",
     "nodemon": "^3.1.10",
+    "pkg": "^5.8.1",
     "temp": "^0.9.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "conventional-changelog-cli": "^4.1.0",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "semantic-release": "^24.2.0",
+    "husky": "^9.1.7"
   },
   "bin": {
     "jav": "./dist/jav.js"
@@ -47,9 +56,37 @@
     "prepublish": "npm run build",
     "prepare": "npm run build",
     "build": "tsc",
+    "build-binary": "npm run build && pkg .",
     "dev": "ts-node src/jav.ts",
     "dev:watch": "nodemon --exec ts-node src/jav.ts",
-    "preinstall": "npm run build"
+    "preinstall": "npm run build",
+    "release": "semantic-release",
+    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
+    "changelog:first": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0",
+    "version": "node scripts/version.js",
+    "version:info": "node scripts/version.js info",
+    "version:update": "node scripts/version.js update",
+    "version:changelog": "node scripts/version.js changelog",
+    "version:tag": "node scripts/version.js tag",
+    "version:validate": "node scripts/version.js validate",
+    "version:prepare": "node scripts/version.js prepare-release"
+  },
+  "pkg": {
+    "scripts": [
+      "dist/jav.js"
+    ],
+    "assets": [
+      "dist/**/*"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-win-arm64",
+      "node18-macos-x64",
+      "node18-macos-arm64",
+      "node18-linux-x64",
+      "node18-linux-arm64"
+    ],
+    "outputPath": "binaries"
   },
   "repository": {
     "type": "git",

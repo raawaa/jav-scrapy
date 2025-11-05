@@ -1,0 +1,32 @@
+{
+  "types": [
+    {"type": "feat", "section": "Features", "hidden": false},
+    {"type": "fix", "section": "Bug Fixes", "hidden": false},
+    {"type": "chore", "section": "Chores", "hidden": false},
+    {"type": "docs", "section": "Documentation", "hidden": false},
+    {"type": "style", "section": "Styles", "hidden": false},
+    {"type": "refactor", "section": "Code Refactoring", "hidden": false},
+    {"type": "perf", "section": "Performance Improvements", "hidden": false},
+    {"type": "test", "section": "Tests", "hidden": false},
+    {"type": "build", "section": "Build System", "hidden": false},
+    {"type": "ci", "section": "Continuous Integration", "hidden": false}
+  ],
+  "typesOrder": ["feat", "fix", "perf", "refactor", "docs", "chore", "style", "test", "build", "ci"],
+  "scopeEnum": ["core", "utils", "parser", "handler", "config", "cli", "deps", "release"],
+  "allowCustomScopes": true,
+  "allowBreakingChanges": ["feat", "fix"],
+  "breakingPrefixes": ["BREAKING CHANGE"],
+  "subjectPattern": ".+",
+  "subjectPatternError": "Subject may not be empty.",
+  "bodyPattern": ".+",
+  "bodyPatternError": "Body may not be empty.",
+  "footerPattern": "^(?:BREAKING CHANGE|(?:refactor|feat|fix|docs|style|refactor|perf|test|build|ci|chore)(?:\\(.+\\))?!?): .+",
+  "footerPatternError": "Footer must be of format 'TYPE: DESCRIPTION'.",
+  "headerPattern": "^(\\w+)(?:\\(([\\w$.*\\-* ]*)\\))?!?: (.+)$",
+  "headerCorrespondence": ["type", "scope", "subject"],
+  "noteKeywords": ["BREAKING CHANGE", "BREAKING-CHANGE", "BREAKING"],
+  "issuePrefixes": ["#"],
+  "issueUrlFormats": ["https://github.com/raawaa/jav-scrapy/issues/{0}"],
+  "warnOnFail": false,
+  "commitConvention": "conventionalcommits"
+}

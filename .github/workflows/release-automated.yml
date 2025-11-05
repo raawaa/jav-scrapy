@@ -1,0 +1,233 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build TypeScript
+      run: npm run build
+
+    - name: Run Semantic Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npm run release
+
+  build-and-upload:
+    needs: release
+    runs-on: ${{ matrix.os }}
+    if: needs.release.result == 'success'
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            node_target: node18-linux-x64
+            binary_name: jav-scrapy-linux-x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            node_target: node18-linux-arm64
+            binary_name: jav-scrapy-linux-arm64
+          - os: windows-latest
+            platform: windows
+            arch: x64
+            node_target: node18-win-x64
+            binary_name: jav-scrapy-windows-x64.exe
+          - os: windows-latest
+            platform: windows
+            arch: arm64
+            node_target: node18-win-arm64
+            binary_name: jav-scrapy-windows-arm64.exe
+          - os: macos-latest
+            platform: macos
+            arch: x64
+            node_target: node18-macos-x64
+            binary_name: jav-scrapy-macos-x64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+            node_target: node18-macos-arm64
+            binary_name: jav-scrapy-macos-arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build TypeScript
+      run: npm run build
+
+    - name: Install pkg
+      run: npm install -g pkg
+
+    - name: Get version
+      id: version
+      run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+    - name: Build binary (Unix)
+      if: matrix.platform != 'windows'
+      run: |
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+        chmod +x ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+
+    - name: Build binary (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+
+    - name: Generate checksum
+      run: |
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          sha256sum ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} > ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.sha256
+        else
+          sha256sum ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} > ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.sha256
+        fi
+      shell: bash
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+        path: |
+          ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+          ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}.sha256
+        retention-days: 30
+
+  attach-assets:
+    needs: [release, build-and-upload]
+    runs-on: ubuntu-latest
+    if: needs.release.result == 'success' && needs.build-and-upload.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get version
+      id: version
+      run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -name "jav-scrapy-*" -type f -exec cp {} release-assets/ \;
+        find artifacts -name "*.sha256" -type f -exec cp {} release-assets/ \;
+        ls -la release-assets/
+
+    - name: Create checksums file
+      run: |
+        cd release-assets
+        sha256sum * > checksums.txt
+        cat checksums.txt
+
+    - name: Read changelog
+      id: changelog
+      run: |
+        # 提取当前版本的 changelog 内容
+        if [ -f "CHANGELOG.md" ]; then
+          # 从 CHANGELOG.md 中提取当前版本的内容
+          awk "/## \\[${{ steps.version.outputs.VERSION }}\\]/,/^## / { if (!/^## / || /## \\[${{ steps.version.outputs.VERSION }}\\]/) print }" CHANGELOG.md > current_changelog.md
+          # 移除开头的版本标题行（因为会在 release 中重复）
+          sed -i '' '1d' current_changelog.md
+          # 移除空行和多余的格式
+          sed -i '' '/^$/d' current_changelog.md
+          # 读取内容并设置为输出
+          CHANGELOG_CONTENT=$(cat current_changelog.md | tr '\n' '\\n')
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "changelog=请查看项目文档了解更新内容。" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Update Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        name: jav-scrapy ${{ steps.version.outputs.VERSION }}
+        files: |
+          release-assets/*
+        body: |
+          ## 🎬 jav-scrapy ${{ steps.version.outputs.VERSION }}
+          
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ### 📦 下载说明
+          
+          **二进制文件下载：**
+          - Windows (x64): `jav-scrapy-windows-x64-${{ steps.version.outputs.VERSION }}.exe`
+          - Windows (ARM64): `jav-scrapy-windows-arm64-${{ steps.version.outputs.VERSION }}.exe`
+          - macOS (Intel): `jav-scrapy-macos-x64-${{ steps.version.outputs.VERSION }}`
+          - macOS (Apple Silicon): `jav-scrapy-macos-arm64-${{ steps.version.outputs.VERSION }}`
+          - Linux (x64): `jav-scrapy-linux-x64-${{ steps.version.outputs.VERSION }}`
+          - Linux (ARM64): `jav-scrapy-linux-arm64-${{ steps.version.outputs.VERSION }}`
+          
+          **一键安装：**
+          ```bash
+          # Linux/macOS
+          curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.sh | bash
+          
+          # Windows PowerShell
+          iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.ps1 | iex
+          ```
+          
+          ### 🔐 文件校验
+          
+          所有文件都提供了SHA256校验和，请验证文件完整性：
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+          
+          ### ⚠️ 注意事项
+          
+          - 首次运行可能需要下载Chromium浏览器
+          - 请确保网络连接正常，或配置代理
+          - 更多使用说明请查看项目README
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

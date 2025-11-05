@@ -1,0 +1,220 @@
+name: Manual Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v0.8.0)'
+        required: true
+        default: 'v0.8.0'
+      create_tag:
+        description: 'Create git tag for this version'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            node_target: node18-linux-x64
+            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-linux-x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            node_target: node18-linux-arm64
+            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-linux-arm64
+          - os: windows-latest
+            platform: windows
+            arch: x64
+            node_target: node18-win-x64
+            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-windows-x64.exe
+          - os: windows-latest
+            platform: windows
+            arch: arm64
+            node_target: node18-win-arm64
+            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-windows-arm64.exe
+          - os: macos-latest
+            platform: macos
+            arch: x64
+            node_target: node18-macos-x64
+            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-macos-x64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+            node_target: node18-macos-arm64
+            binary_name: jav-scrapy-${{ github.event.inputs.version || github.ref_name }}-macos-arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build TypeScript
+      run: npm run build
+
+    - name: Install pkg
+      run: npm install -g pkg
+
+    - name: Build binary (Unix)
+      if: matrix.platform != 'windows'
+      run: |
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}
+        chmod +x ${{ matrix.binary_name }}
+
+    - name: Build binary (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}
+
+    - name: Generate checksum
+      run: |
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          sha256sum ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
+        else
+          sha256sum ${{ matrix.binary_name }} > ${{ matrix.binary_name }}.sha256
+        fi
+      shell: bash
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.binary_name }}
+        path: |
+          ${{ matrix.binary_name }}
+          ${{ matrix.binary_name }}.sha256
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -name "jav-scrapy-*" -type f -exec cp {} release-assets/ \;
+        find artifacts -name "*.sha256" -type f -exec cp {} release-assets/ \;
+        ls -la release-assets/
+
+    - name: Create checksums file
+      run: |
+        cd release-assets
+        sha256sum * > checksums.txt
+        cat checksums.txt
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          release-assets/*
+        body: |
+          ## 🎬 jav-scrapy ${{ github.ref_name }}
+          
+          ### 📦 下载说明
+          
+          **二进制文件下载：**
+          - Windows (x64): `jav-scrapy-${{ github.ref_name }}-windows-x64.exe`
+          - Windows (ARM64): `jav-scrapy-${{ github.ref_name }}-windows-arm64.exe`
+          - macOS (Intel): `jav-scrapy-${{ github.ref_name }}-macos-x64`
+          - macOS (Apple Silicon): `jav-scrapy-${{ github.ref_name }}-macos-arm64`
+          - Linux (x64): `jav-scrapy-${{ github.ref_name }}-linux-x64`
+          - Linux (ARM64): `jav-scrapy-${{ github.ref_name }}-linux-arm64`
+          
+          **一键安装：**
+          ```bash
+          # Linux/macOS
+          curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.sh | bash
+          
+          # Windows PowerShell
+          iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.ps1 | iex
+          ```
+          
+          ### 📋 更新内容
+          
+          请查看 [CHANGELOG.md](https://github.com/raawaa/jav-scrapy/blob/main/CHANGELOG.md) 了解详细更新内容。
+          
+          ### 🔐 文件校验
+          
+          所有文件都提供了SHA256校验和，请验证文件完整性：
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+          
+          ### ⚠️ 注意事项
+          
+          - 首次运行可能需要下载Chromium浏览器
+          - 请确保网络连接正常，或配置代理
+          - 更多使用说明请查看项目README
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release (Manual)
+      if: github.event_name == 'workflow_dispatch'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: jav-scrapy ${{ github.event.inputs.version }}
+        files: |
+          release-assets/*
+        body: |
+          ## 🎬 jav-scrapy ${{ github.event.inputs.version }}
+          
+          ### 📦 下载说明
+          
+          **二进制文件下载：**
+          - Windows (x64): `jav-scrapy-${{ github.event.inputs.version }}-windows-x64.exe`
+          - Windows (ARM64): `jav-scrapy-${{ github.event.inputs.version }}-windows-arm64.exe`
+          - macOS (Intel): `jav-scrapy-${{ github.event.inputs.version }}-macos-x64`
+          - macOS (Apple Silicon): `jav-scrapy-${{ github.event.inputs.version }}-macos-arm64`
+          - Linux (x64): `jav-scrapy-${{ github.event.inputs.version }}-linux-x64`
+          - Linux (ARM64): `jav-scrapy-${{ github.event.inputs.version }}-linux-arm64`
+          
+          **一键安装：**
+          ```bash
+          # Linux/macOS
+          curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.sh | bash
+          
+          # Windows PowerShell
+          iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/main/install.ps1 | iex
+          ```
+          
+          ### 🔐 文件校验
+          
+          所有文件都提供了SHA256校验和，请验证文件完整性。
+          
+          ### ⚠️ 注意事项
+          
+          - 首次运行可能需要下载Chromium浏览器
+          - 请确保网络连接正常，或配置代理
+          - 更多使用说明请查看项目README
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
