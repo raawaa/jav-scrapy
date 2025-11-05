@@ -72,8 +72,13 @@ jobs:
 
     - name: Clear pkg cache
       run: |
-        rm -rf ~/.pkg-cache || true
+        if [ "${{ runner.os }}" == "Windows" ]; then
+          rm -rf ~/.pkg-cache || true
+        else
+          rm -rf ~/.pkg-cache || true
+        fi
         npm cache clean --force || true
+      shell: bash
 
     - name: Build binary (Unix)
       if: matrix.platform != 'windows'
