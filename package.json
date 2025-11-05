@@ -78,7 +78,14 @@
       "dist/jav.js"
     ],
     "assets": [
-      "dist/**/*"
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "exclude": [
+      "node_modules/puppeteer/.local-chromium/**",
+      "node_modules/puppeteer/local-chromium/**",
+      "node_modules/@puppeteer/browsers/**/chrome/**",
+      "node_modules/@puppeteer/browsers/**/chromium/**"
     ],
     "targets": [
       "node18-win-x64",

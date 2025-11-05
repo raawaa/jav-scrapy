@@ -6,6 +6,45 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import puppeteerCore from 'puppeteer-extra';
+
+// Handle Puppeteer configuration for packaged environments
+const getPuppeteerExecutablePath = (): string | undefined => {
+  // Check if running in packaged environment
+  if ((process as any).pkg) {
+    // In packaged environment, try to find system Chrome/Chromium
+    const possiblePaths = [
+      // Windows
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Users\\%USERNAME%\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files\\Chromium\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe',
+      // macOS
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+      // Linux
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+      '/snap/bin/chromium',
+      '/usr/bin/google-chrome-stable',
+      '/usr/local/bin/chrome',
+      '/usr/local/bin/chromium'
+    ];
+
+    for (const path of possiblePaths) {
+      const expandedPath = path.replace('%USERNAME%', process.env.USERNAME || '');
+      if (require('fs').existsSync(expandedPath)) {
+        return expandedPath;
+      }
+    }
+
+    logger.warn('Running in packaged environment but no system Chrome/Chromium found. Puppeteer may fail to launch.');
+    return undefined;
+  }
+
+  return undefined;
+};
 import logger from '../core/logger';
 import fs from 'fs';
 import path from 'path';
@@ -80,6 +119,13 @@ class CloudflareBypass {
           '--disable-gpu'
         ]
       };
+
+      // 在打包环境中使用系统Chrome/Chromium
+      const systemChromePath = getPuppeteerExecutablePath();
+      if (systemChromePath) {
+        launchOptions.executablePath = systemChromePath;
+        logger.info(`使用系统Chrome/Chromium: ${systemChromePath}`);
+      }
 
 
 

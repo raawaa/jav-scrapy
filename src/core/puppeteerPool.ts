@@ -1,6 +1,46 @@
 import puppeteer from 'puppeteer';
 import logger from './logger';
 import { Config } from '../types/interfaces';
+import * as fs from 'fs';
+
+// Handle Puppeteer configuration for packaged environments
+const getPuppeteerExecutablePath = (): string | undefined => {
+  // Check if running in packaged environment
+  if ((process as any).pkg) {
+    // In packaged environment, try to find system Chrome/Chromium
+    const possiblePaths = [
+      // Windows
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Users\\%USERNAME%\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files\\Chromium\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe',
+      // macOS
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+      // Linux
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+      '/snap/bin/chromium',
+      '/usr/bin/google-chrome-stable',
+      '/usr/local/bin/chrome',
+      '/usr/local/bin/chromium'
+    ];
+
+    for (const path of possiblePaths) {
+      const expandedPath = path.replace('%USERNAME%', process.env.USERNAME || '');
+      if (fs.existsSync(expandedPath)) {
+        return expandedPath;
+      }
+    }
+
+    logger.warn('Running in packaged environment but no system Chrome/Chromium found. Puppeteer may fail to launch.');
+    return undefined;
+  }
+
+  return undefined;
+};
 
 export interface PuppeteerInstance {
   browser: any;
@@ -117,11 +157,21 @@ export class PuppeteerPool {
     logger.debug(`PuppeteerPool: 启动参数 ${puppeteerArgs.length} 个: ${puppeteerArgs.slice(0, 3).join(', ')}...`);
 
     logger.info(`PuppeteerPool: 正在启动浏览器 ${instanceId}`);
-    const browser = await puppeteer.launch({
+
+    // 在打包环境中使用系统Chrome/Chromium
+    const launchOptions: any = {
       headless: true,
       args: puppeteerArgs,
       defaultViewport: { width: 1920, height: 1080 }
-    });
+    };
+
+    const systemChromePath = getPuppeteerExecutablePath();
+    if (systemChromePath) {
+      launchOptions.executablePath = systemChromePath;
+      logger.info(`PuppeteerPool: 使用系统Chrome/Chromium: ${systemChromePath}`);
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
 
     logger.info(`PuppeteerPool: 浏览器启动成功 ${instanceId}`);
 

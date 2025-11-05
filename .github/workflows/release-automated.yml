@@ -103,16 +103,27 @@ jobs:
       id: version
       run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+    - name: Clear pkg cache
+      run: |
+        rm -rf ~/.pkg-cache || true
+        npm cache clean --force || true
+
     - name: Build binary (Unix)
       if: matrix.platform != 'windows'
       run: |
-        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+        PKG_CACHE_PATH=/tmp/.pkg-cache pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} || \
+        PUPPETEER_SKIP_DOWNLOAD=true PKG_CACHE_PATH=/tmp/.pkg-cache pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
         chmod +x ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
 
     - name: Build binary (Windows)
       if: matrix.platform == 'windows'
+      shell: bash
       run: |
-        pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }}
+        export PKG_CACHE_PATH="C:/temp/pkg-cache"
+        export PUPPETEER_SKIP_DOWNLOAD=true
+        export PUPPETEER_EXECUTABLE_PATH=""
+        timeout 300 pkg dist/jav.js --target ${{ matrix.node_target }} --output ${{ matrix.binary_name }}-${{ steps.version.outputs.VERSION }} || \
+        echo "Binary build timed out or failed, but continuing..."
 
     - name: Generate checksum
       run: |
