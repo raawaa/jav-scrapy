@@ -71,16 +71,16 @@ jobs:
         echo "$SEMANTIC_RELEASE_OUTPUT"
         echo "Extracted version: '$NEXT_VERSION'"
 
-        if [ -z "$NEXT_VERSION" ]; then
-          echo "should_release=false" >> $GITHUB_OUTPUT
-          echo "No release needed - no version detected"
-        else
-          echo "should_release=true" >> $GITHUB_OUTPUT
-          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          echo "Will release version: $NEXT_VERSION"
-          echo "Variables set successfully:"
-          echo "- should_release=true"
-          echo "- version=$NEXT_VERSION"
+        if [ -z "$NEXT_VERSION" ]; then
+          echo "should_release=false" >> "$GITHUB_OUTPUT"
+          echo "No release needed - no version detected"
+        else
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Will release version: $NEXT_VERSION"
+          echo "Variables set successfully:"
+          echo "- should_release=true"
+          echo "- version=$NEXT_VERSION"
         fi
 
   
