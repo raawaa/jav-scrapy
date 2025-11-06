@@ -69,7 +69,7 @@ jobs:
       run: npm run build
 
     - name: Install pkg
-      run: npm install -g pkg
+      run: npm install -g @yao-pkg/pkg
 
     - name: Clear pkg cache
       run: |

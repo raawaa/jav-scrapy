@@ -140,7 +140,7 @@ jobs:
       run: npm run build
 
     - name: Install pkg
-      run: npm install -g pkg
+      run: npm install -g @yao-pkg/pkg
 
     - name: Get version
       id: version
