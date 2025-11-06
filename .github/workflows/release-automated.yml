@@ -45,23 +45,7 @@ jobs:
         RUNNING_WORKFLOWS=$(gh run list --repo ${{ github.repository }} --status in_progress --workflow "release-automated.yml" --limit 1 2>/dev/null | wc -l || echo "0")
         if [ "$RUNNING_WORKFLOWS" -gt 1 ]; then
           echo "WARNING: Another release workflow is already running"
-          echo "Waiting for other workflows to complete..."
-
-          # Wait up to 10 minutes for other workflows to complete
-          for i in {1..20}; do
-            CURRENT_RUN=$(gh run list --repo ${{ github.repository }} --status in_progress --workflow "release-automated.yml" --limit 1 2>/dev/null | wc -l || echo "0")
-            if [ "$CURRENT_RUN" -le 1 ]; then
-              echo "Other workflows completed, proceeding with release"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "ERROR: Waited too long for other workflows to complete"
-              echo "should_release=false" >> $GITHUB_OUTPUT
-              exit 1
-            fi
-            echo "Waiting 30 seconds... (attempt $i/20)"
-            sleep 30
-          done
+          echo "Proceeding with caution - potential conflict detected"
         else
           echo "No concurrent workflows detected, proceeding with release"
         fi
@@ -77,30 +61,15 @@ jobs:
         echo "Extracted version: '$NEXT_VERSION'"
 
         if [ -z "$NEXT_VERSION" ]; then
-          echo "should_release=false" >> $GITHUB_OUTPUT
+          echo "should_release=false" >> "$GITHUB_OUTPUT"
           echo "No release needed"
-          echo "Full semantic-release output:"
-          echo "$SEMANTIC_RELEASE_OUTPUT"
         else
-          echo "should_release=true" >> $GITHUB_OUTPUT
-          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "Will release version: $NEXT_VERSION"
-          echo "Set should_release=true in GITHUB_OUTPUT"
         fi
 
-  # Debug step to check outputs
-  debug-outputs:
-    needs: analyze-release
-    runs-on: ubuntu-latest
-    if: always()  # Always run this step
-    steps:
-    - name: Debug outputs
-      run: |
-        echo "should_release output: '${{ needs.analyze-release.outputs.should_release }}'"
-        echo "version output: '${{ needs.analyze-release.outputs.version }}'"
-        echo "All outputs from analyze-release:"
-        echo '${{ toJSON(needs.analyze-release.outputs) }}'
-
+  
   build-and-upload:
     needs: analyze-release
     runs-on: ${{ matrix.os }}
