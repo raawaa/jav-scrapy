@@ -42,14 +42,14 @@ jobs:
         echo "Checking for concurrent releases..."
 
         # Check if there are any running workflows
-        RUNNING_WORKFLOWS=$(gh run list --repo ${{ github.repository }} --status running --workflow "release-automated.yml" --limit 1 | wc -l || echo "0")
+        RUNNING_WORKFLOWS=$(gh run list --repo ${{ github.repository }} --status in_progress --workflow "release-automated.yml" --limit 1 2>/dev/null | wc -l || echo "0")
         if [ "$RUNNING_WORKFLOWS" -gt 1 ]; then
           echo "WARNING: Another release workflow is already running"
           echo "Waiting for other workflows to complete..."
 
           # Wait up to 10 minutes for other workflows to complete
           for i in {1..20}; do
-            CURRENT_RUN=$(gh run list --repo ${{ github.repository }} --status running --workflow "release-automated.yml" --limit 1 | wc -l || echo "0")
+            CURRENT_RUN=$(gh run list --repo ${{ github.repository }} --status in_progress --workflow "release-automated.yml" --limit 1 2>/dev/null | wc -l || echo "0")
             if [ "$CURRENT_RUN" -le 1 ]; then
               echo "Other workflows completed, proceeding with release"
               break
@@ -62,6 +62,8 @@ jobs:
             echo "Waiting 30 seconds... (attempt $i/20)"
             sleep 30
           done
+        else
+          echo "No concurrent workflows detected, proceeding with release"
         fi
 
         # Use semantic-release to analyze but not publish
