@@ -2,29 +2,31 @@
 
 ## 项目概述
 
-jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。项目版本为 0.8.0，使用 CommonJS 模块系统。
+jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。项目版本为 0.8.4，使用 CommonJS 模块系统。
 
 ### 主要技术栈
 - **语言**: TypeScript
 - **运行环境**: Node.js
 - **模块系统**: CommonJS
 - **核心依赖**: 
-  - axios (HTTP 请求)
-  - axios-retry (请求重试)
-  - commander (命令行解析)
-  - cli-progress (进度条显示)
-  - winston (日志记录)
-  - chalk (控制台美化)
-  - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制)
-  - tunnel (代理支持)
-  - winreg (Windows 注册表操作)
+  - axios (HTTP 请求) - 1.9.0
+  - axios-retry (请求重试) - ^4.5.0
+  - commander (命令行解析) - 12.1.0
+  - cli-progress (进度条显示) - ^3.12.0
+  - winston (日志记录) - ^3.17.0
+  - chalk (控制台美化) - ^5.4.1
+  - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制) - ^24.28.0/^3.3.6/^2.11.2
+  - tunnel (代理支持) - ^0.0.6
+  - winreg (Windows 注册表操作) - ^1.2.5
 
 ### 开发依赖
 - **开发工具**: nodemon, ts-node
 - **类型定义**: @types/* 包提供完整的 TypeScript 支持
-- **HTML解析**: cheerio
-- **异步流程控制**: async
-- **测试工具**: mocha + chai + nock (测试框架，但当前无测试目录)
+- **HTML解析**: cheerio - ^1.1.2
+- **异步流程控制**: async - ^3.2.6
+- **测试工具**: mocha + chai + nock (测试框架)
+- **打包工具**: pkg - ^5.8.1
+- **版本管理**: semantic-release, @commitlint/cli, husky 等
 
 ### 项目架构
 ```
@@ -52,8 +54,8 @@ src/
 ## 构建和运行
 
 ### 环境要求
-- Node.js (建议最新 LTS 版本)
-- TypeScript (全局安装)
+- Node.js (版本 18 或更高，推荐使用最新的LTS版本进行开发)
+- Git
 
 ### 安装依赖
 ```bash
@@ -180,6 +182,8 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 自动处理反爬虫机制
 - 随机 User-Agent 和浏览器指纹（包括 Sec-CH-UA 头部）
 - 实现 Puppeteer 实例池和资源监控系统
+- 支持年龄验证页面自动处理
+- 支持 AJAX 请求执行以获取动态内容
 
 ### 高级请求头伪装
 - 模拟真实浏览器指纹（Sec-CH-UA 头部）
@@ -225,13 +229,19 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 支持动态调整池大小和健康检查
 - 集成资源监控系统，实时监控内存和 CPU 使用情况
 - 支持打包环境下的 Puppeteer 配置处理
+- 支持共享池实例以提高资源利用率
 
 ## 测试和调试
 
 ### 运行测试
 ```bash
-npm test              # 使用 mocha 运行测试 (注意：当前项目中无测试目录)
+npm test              # 使用 mocha 运行测试
 ```
+
+项目包含以下测试文件：
+- `fileHandler.test.js`: 文件处理模块测试
+- `parser.test.js`: HTML 解析模块测试
+- `requestHandler.test.js`: HTTP 请求处理模块测试
 
 ### 开发模式
 ```bash
@@ -249,7 +259,6 @@ npm run dev:watch     # 使用 nodemon 监听文件变化并自动重启
 - **Mocha**: 测试运行器
 - **Chai**: 断言库
 - **Nock**: HTTP 模拟和测试
-- 注意：虽然 package.json 中配置了测试脚本和依赖，但当前项目代码中没有 test/ 目录和测试文件
 
 ## 部署说明
 
@@ -273,6 +282,11 @@ npm run build-binary:windows      # 构建 Windows 二进制
 npm run build-binary:all          # 构建所有平台二进制
 ```
 
+在打包环境中，Puppeteer 会尝试使用系统已安装的 Chrome/Chromium 浏览器，支持以下路径：
+- Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe` 等
+- macOS: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` 等
+- Linux: `/usr/bin/google-chrome` 等
+
 ## 注意事项
 
 1. 程序会自动检测并使用系统代理设置
@@ -282,14 +296,14 @@ npm run build-binary:all          # 构建所有平台二进制
 5. 项目仅用于学习和研究目的，请遵守相关法律法规
 6. 添加了请求延迟参数（-d/--delay）以避免请求过于频繁被封禁
 7. 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
-8. 项目版本为 0.8.0，使用 CommonJS 模块系统
+8. 项目版本为 0.8.4，使用 CommonJS 模块系统
 9. 默认重试次数为 3 次，使用指数退避策略
 10. TypeScript 编译目标为 ES2020，确保在较新 Node.js 环境中运行
 11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
 12. 集中式延迟管理器支持更精细的请求间隔控制和优雅退出机制
 13. 项目已清理未使用的依赖项，优化了包大小和加载性能
-14. 虽然配置了测试框架，但当前无测试文件，需要时可以添加测试目录
-15. 支持二进制打包，可构建跨平台可执行文件
+14. 支持二进制打包，可构建跨平台可执行文件
+15. 在打包环境中会自动检测系统 Chrome/Chromium 浏览器
 
 ## 贡献者
 

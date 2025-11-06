@@ -1,4 +1,16 @@
-name: Release
+name: Automated Release
+
+# Automated release workflow triggered by:
+# - Push to main/master branch
+# - Manual workflow dispatch
+#
+# This workflow:
+# - Analyzes commits to determine version bump
+# - Builds binaries for all platforms
+# - Creates GitHub release with proper versioning
+# - Updates changelog and package.json
+#
+# NOTE: For manual testing, use release.yml
 
 on:
   push:
@@ -82,27 +94,27 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            node_target: node18-linux-x64
+            node_target: node20-linux-x64
           - os: ubuntu-latest
             platform: linux
             arch: arm64
-            node_target: node18-linux-arm64
+            node_target: node20-linux-arm64
           - os: windows-latest
             platform: windows
             arch: x64
-            node_target: node18-win-x64
+            node_target: node20-win-x64
           - os: windows-latest
             platform: windows
             arch: arm64
-            node_target: node18-win-arm64
+            node_target: node20-win-arm64
           - os: macos-latest
             platform: macos
             arch: x64
-            node_target: node18-macos-x64
+            node_target: node20-macos-x64
           - os: macos-latest
             platform: macos
             arch: arm64
-            node_target: node18-macos-arm64
+            node_target: node20-macos-arm64
 
     steps:
     - name: Checkout code
@@ -292,7 +304,7 @@ jobs:
         npx semantic-release --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator,@semantic-release/changelog,@semantic-release/git
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ steps.version.outputs.VERSION }}
         name: jav-scrapy ${{ steps.version.outputs.VERSION }}
