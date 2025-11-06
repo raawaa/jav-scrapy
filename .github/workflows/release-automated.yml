@@ -67,17 +67,39 @@ jobs:
         fi
 
         # Use semantic-release to analyze but not publish
-        npx semantic-release --dry-run --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator
+        echo "Running semantic-release analysis..."
+        SEMANTIC_RELEASE_OUTPUT=$(npx semantic-release --dry-run --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator 2>&1)
+
         # Get the next version
-        NEXT_VERSION=$(npx semantic-release --dry-run --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator | grep "The next release version is" | sed 's/.* is //' || echo "")
+        NEXT_VERSION=$(echo "$SEMANTIC_RELEASE_OUTPUT" | grep "The next release version is" | sed 's/.* is //' || echo "")
+
+        echo "Semantic-release analysis complete"
+        echo "Extracted version: '$NEXT_VERSION'"
+
         if [ -z "$NEXT_VERSION" ]; then
           echo "should_release=false" >> $GITHUB_OUTPUT
           echo "No release needed"
+          echo "Full semantic-release output:"
+          echo "$SEMANTIC_RELEASE_OUTPUT"
         else
           echo "should_release=true" >> $GITHUB_OUTPUT
           echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "Will release version: $NEXT_VERSION"
+          echo "Set should_release=true in GITHUB_OUTPUT"
         fi
+
+  # Debug step to check outputs
+  debug-outputs:
+    needs: analyze-release
+    runs-on: ubuntu-latest
+    if: always()  # Always run this step
+    steps:
+    - name: Debug outputs
+      run: |
+        echo "should_release output: '${{ needs.analyze-release.outputs.should_release }}'"
+        echo "version output: '${{ needs.analyze-release.outputs.version }}'"
+        echo "All outputs from analyze-release:"
+        echo '${{ toJSON(needs.analyze-release.outputs) }}'
 
   build-and-upload:
     needs: analyze-release
