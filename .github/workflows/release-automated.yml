@@ -50,35 +50,37 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
-        # Check for concurrent releases
+        # Check for concurrent releases (simplified)
         echo "Checking for concurrent releases..."
-
-        # Check if there are any running workflows
-        RUNNING_WORKFLOWS=$(gh run list --repo ${{ github.repository }} --status in_progress --workflow "release-automated.yml" --limit 1 2>/dev/null | wc -l || echo "0")
+        RUNNING_WORKFLOWS=$(gh run list --repo ${{ github.repository }} --status in_progress --workflow "release-automated.yml" --limit 1 2>/dev/null | wc -l || echo "1")
         if [ "$RUNNING_WORKFLOWS" -gt 1 ]; then
-          echo "WARNING: Another release workflow is already running"
-          echo "Proceeding with caution - potential conflict detected"
+          echo "INFO: Multiple release workflows detected, continuing..."
         else
-          echo "No concurrent workflows detected, proceeding with release"
+          echo "INFO: Single workflow detected, proceeding..."
         fi
 
         # Use semantic-release to analyze but not publish
         echo "Running semantic-release analysis..."
         SEMANTIC_RELEASE_OUTPUT=$(npx semantic-release --dry-run --plugins @semantic-release/commit-analyzer,@semantic-release/release-notes-generator 2>&1)
 
-        # Get the next version
-        NEXT_VERSION=$(echo "$SEMANTIC_RELEASE_OUTPUT" | grep "The next release version is" | sed 's/.* is //' || echo "")
+        # Get the next version - use more reliable method
+        NEXT_VERSION=$(echo "$SEMANTIC_RELEASE_OUTPUT" | awk '/The next release version is/ {print $NF}' || echo "")
 
         echo "Semantic-release analysis complete"
+        echo "Raw semantic-release output:"
+        echo "$SEMANTIC_RELEASE_OUTPUT"
         echo "Extracted version: '$NEXT_VERSION'"
 
         if [ -z "$NEXT_VERSION" ]; then
-          echo "should_release=false" >> "$GITHUB_OUTPUT"
-          echo "No release needed"
+          echo "should_release=false" >> $GITHUB_OUTPUT
+          echo "No release needed - no version detected"
         else
-          echo "should_release=true" >> "$GITHUB_OUTPUT"
-          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "should_release=true" >> $GITHUB_OUTPUT
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "Will release version: $NEXT_VERSION"
+          echo "Variables set successfully:"
+          echo "- should_release=true"
+          echo "- version=$NEXT_VERSION"
         fi
 
   
