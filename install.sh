@@ -81,17 +81,78 @@ check_network() {
 # 获取最新版本
 get_latest_version() {
     print_info "获取最新版本信息..."
-    
-    local api_url="$API_BASE/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
-    VERSION=$(curl -s "$api_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    
+
+    # 首先尝试获取最新release
+    local latest_url="$API_BASE/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
+    local response=$(curl -s "$latest_url")
+    VERSION=$(echo "$response" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+    if [ -n "$VERSION" ]; then
+        # 检查最新版本是否有二进制文件
+        local assets_count=$(echo "$response" | grep -c '"name":' || echo "0")
+        local expected_pattern="jav-scrapy-${VERSION}-${OS}-${ARCH}"
+        local found_binary=$(echo "$response" | grep "\"name\":[[:space:]]*\"$expected_pattern\"" || echo "")
+
+        if [ "$assets_count" -gt 0 ] && [ -n "$found_binary" ]; then
+            print_success "找到包含$OS $ARCH二进制文件的版本: $VERSION"
+            return 0
+        elif [ "$assets_count" -gt 0 ]; then
+            # 检查是否有该平台的任何二进制文件
+            local any_platform_binary=$(echo "$response" | grep "\"name\":[[:space:]]*\"jav-scrapy-${VERSION}-${OS}-" || echo "")
+            if [ -n "$any_platform_binary" ]; then
+                print_warning "找到$OS平台的二进制文件但架构不匹配: $VERSION"
+                local available_binaries=$(echo "$response" | grep "\"name\":[[:space:]]*\"jav-scrapy-${VERSION}-${OS}-" | sed -E 's/.*"([^"]+)".*/\1/' | tr '\n' ', ')
+                print_info "可用的$OS二进制文件: $available_binaries"
+                print_warning "下载可能失败，可能需要手动下载"
+                return 0
+            else
+                print_warning "最新版本 $VERSION 没有此平台的二进制文件"
+            fi
+        else
+            print_warning "最新版本 $VERSION 没有二进制文件 (可能是semantic-release版本)"
+        fi
+    fi
+
+    # 如果最新版本不合适，获取所有releases并查找
+    print_info "查找其他有二进制文件的版本..."
+    local api_url="$API_BASE/repos/$REPO_OWNER/$REPO_NAME/releases"
+
+    # 使用简单的方法处理JSON响应
+    local releases_response=$(curl -s "$api_url")
+
+    # 提取所有版本信息并检查（使用文件临时存储来避免子shell问题）
+    local temp_file="/tmp/jav-scrapy-versions.txt"
+    echo "$releases_response" | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' > "$temp_file"
+
+    while IFS= read -r version; do
+        if [ -n "$version" ]; then
+            print_info "检查版本: $version"
+
+            # 获取该版本的详细信息
+            local version_url="$API_BASE/repos/$REPO_OWNER/$REPO_NAME/releases/tags/$version"
+            local version_response=$(curl -s "$version_url")
+
+            # 检查是否有对应平台的二进制文件
+            local expected_pattern="jav-scrapy-${version}-${OS}-${ARCH}"
+            local found_binary=$(echo "$version_response" | grep "\"name\":[[:space:]]*\"$expected_pattern\"" || echo "")
+
+            if [ -n "$found_binary" ]; then
+                print_success "找到包含$OS $ARCH二进制文件的版本: $version"
+                VERSION="$version"
+                rm -f "$temp_file"
+                return 0
+            fi
+        fi
+    done < "$temp_file"
+
+    rm -f "$temp_file"
+
+    # 如果没有找到合适的版本，使用最新版本但给出警告
     if [ -z "$VERSION" ]; then
-        print_error "无法获取最新版本信息"
+        print_error "没有找到包含$OS $ARCH二进制文件的版本"
         print_info "请手动访问: https://github.com/$REPO_OWNER/$REPO_NAME/releases"
         exit 1
     fi
-    
-    print_success "最新版本: $VERSION"
 }
 
 # 下载二进制文件

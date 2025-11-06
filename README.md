@@ -33,15 +33,30 @@
 curl -sSL https://raw.githubusercontent.com/raawaa/jav-scrapy/master/install.sh | bash
 ```
 
-**Windows PowerShell：**
-```bash
+**Windows PowerShell (管理员权限运行)：**
+```powershell
 iwr -useb https://raw.githubusercontent.com/raawaa/jav-scrapy/master/install.ps1 | iex
 ```
+
+> **系统要求**：Windows PowerShell 5.0+，支持 x64 和 ARM64 架构
 
 安装完成后，直接使用：
 ```bash
 jav --help
 ```
+
+### 🔧 安装过程说明
+
+安装脚本会自动执行以下操作：
+
+- ✅ **系统检测**：自动检测 PowerShell 版本和系统架构 (x64/ARM64)
+- ✅ **版本选择**：从 GitHub 获取最新的包含二进制文件的版本
+- ✅ **下载安装**：下载对应架构的程序并安装到 `%LOCALAPPDATA%\jav-scrapy\`
+- ✅ **环境配置**：自动添加到用户 PATH 环境变量
+- ✅ **创建快捷方式**：在桌面创建快捷方式 (可选)
+- ✅ **安装验证**：验证安装成功并显示版本信息
+
+> **注意**：PATH 环境变量更新后，需要重新启动 PowerShell 才能生效。如果遇到中文显示问题，这是正常的，安装脚本使用英文输出确保兼容性。
 
 ### 📋 卸载方法
 

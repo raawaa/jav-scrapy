@@ -1,18 +1,25 @@
-# jav-scrapy Windows 一键安装脚本
-# 支持 Windows PowerShell
+# jav-scrapy Windows One-Click Installation Script
+# For Windows PowerShell
+#
+# This script automatically downloads and installs the latest version of jav-scrapy
+# It detects system architecture, downloads the appropriate binary, and configures PATH
+# 用途：Windows下一键安装jav-scrapy爬虫工具
 
-# 设置控制台编码为UTF-8
-chcp 65001 > $null
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+# Set console encoding to UTF-8 (设置控制台编码为UTF-8)
+try {
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    chcp 65001 > $null 2>&1
+} catch {
+    Write-Warning "Cannot set UTF-8 encoding, Chinese may not display properly"
+}
 
-# 配置
-$RepoOwner = "raawaa"
-$RepoName = "jav-scrapy"
-$BinName = "jav"
-$InstallDir = "$env:LOCALAPPDATA\jav-scrapy"
+# Configuration (配置信息)
+$RepoOwner = "raawaa"              # GitHub repository owner
+$RepoName = "jav-scrapy"           # GitHub repository name
+$InstallDir = "$env:LOCALAPPDATA\jav-scrapy"  # Installation directory (安装目录)
 
-# 颜色定义
+# Color definitions
 $Colors = @{
     Red = "Red"
     Green = "Green"
@@ -21,7 +28,7 @@ $Colors = @{
     White = "White"
 }
 
-# 打印带颜色的消息
+# Print colored messages
 function Write-ColorMessage {
     param(
         [string]$Message,
@@ -50,248 +57,283 @@ function Write-Error {
     Write-ColorMessage "[ERROR] $Message" "Red"
 }
 
-# 检查PowerShell版本
+# Check PowerShell version
 function Test-PowerShellVersion {
-    Write-Info "检查PowerShell版本..."
-    
+    Write-Info "Checking PowerShell version..."
+
     if ($PSVersionTable.PSVersion.Major -lt 5) {
-        Write-Error "需要PowerShell 5.0或更高版本，当前版本: $($PSVersionTable.PSVersion)"
-        Write-Info "请升级PowerShell或使用Windows PowerShell"
+        Write-Error "PowerShell 5.0 or higher required, current: $($PSVersionTable.PSVersion)"
         exit 1
     }
-    
-    Write-Success "PowerShell版本检查通过: $($PSVersionTable.PSVersion)"
+
+    Write-Success "PowerShell version OK: $($PSVersionTable.PSVersion)"
 }
 
-# 检查网络连接
+# Check network connection
 function Test-NetworkConnection {
-    Write-Info "检查网络连接..."
-    
+    Write-Info "Checking network connection..."
+
     try {
         $response = Invoke-RestMethod -Uri "https://api.github.com/rate_limit" -TimeoutSec 10
-        Write-Success "网络连接正常"
+        Write-Success "Network connection OK"
         return $true
     } catch {
-        Write-Error "无法连接到GitHub，请检查网络连接"
-        Write-Info "如果在中国大陆，可能需要配置代理"
+        Write-Error "Cannot connect to GitHub"
+        Write-Info "If in China, you may need proxy or VPN"
         exit 1
     }
 }
 
-# 检测系统架构
+# Detect system architecture
 function Get-SystemArchitecture {
-    Write-Info "检测系统架构..."
-    
-    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "AMD64") { 
-        "x64" 
-    } elseif ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { 
-        "arm64" 
+    Write-Info "Detecting system architecture..."
+
+    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "AMD64") {
+        "x64"
+    } elseif ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
+        "arm64"
     } else {
-        Write-Error "不支持的系统架构: $($env:PROCESSOR_ARCHITECTURE)"
-        Write-Info "支持的架构: x64, arm64"
+        Write-Error "Unsupported architecture: $($env:PROCESSOR_ARCHITECTURE)"
         exit 1
     }
-    
-    Write-Success "检测到架构: $arch"
+
+    Write-Success "Architecture: $arch"
     return $arch
 }
 
-# 获取最新版本
-function Get-LatestVersion {
-    Write-Info "获取最新版本信息..."
-    
-    try {
-        # 首先尝试获取最新的包含二进制文件的版本
-        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
-        
-        # 遍历版本，找到包含当前平台二进制文件的最新版本
-        foreach ($release in $response) {
-            $version = $release.tag_name
-            $hasAssets = $release.assets.Count -gt 0
-            
-            # 检查是否包含Windows二进制文件（对于Windows平台）
-            if ($hasAssets) {
-                $arch = Get-SystemArchitecture
-                $expectedFilename = "jav-scrapy-$version-windows-$arch.exe"
-                $foundAsset = $release.assets | Where-Object { $_.name -eq $expectedFilename }
-                
-                if ($foundAsset) {
-                    Write-Success "找到可用版本: $version"
-                    return $version
-                }
-            }
-        }
-        
-        # 如果没有找到包含二进制文件的版本，回退到最新的版本
-        $latestResponse = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
-        $version = $latestResponse.tag_name
-        
-        if ([string]::IsNullOrEmpty($version)) {
-            Write-Error "无法获取最新版本信息"
-            Write-Info "请手动访问: https://github.com/$RepoOwner/$RepoName/releases"
-            exit 1
-        }
-        
-        Write-Success "最新版本: $version"
-        return $version
-    } catch {
-        Write-Error "获取版本信息失败: $($_.Exception.Message)"
-        exit 1
-    }
+# Get latest version
+function Get-LatestVersion {
+    Write-Info "Getting latest version..."
+
+    try {
+        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
+        $arch = Get-SystemArchitecture
+        $checkedVersions = 0
+
+        foreach ($release in $response) {
+            $version = $release.tag_name
+            $hasAssets = $release.assets.Count -gt 0
+            $checkedVersions++
+
+            Write-Info "Checking version: $version (assets: $($release.assets.Count))"
+
+            if ($hasAssets) {
+                # Look for Windows exe files, try architecture-specific first, then any Windows exe
+                $foundWindowsExe = $release.assets | Where-Object {
+                    $_.name -like "*.exe" -and
+                    $_.name -like "*windows*" -and
+                    $_.name -like "*$arch*"
+                } | Select-Object -First 1
+
+                if (-not $foundWindowsExe) {
+                    # If no architecture-specific binary found, look for any Windows exe
+                    $foundWindowsExe = $release.assets | Where-Object {
+                        $_.name -like "*.exe" -and
+                        $_.name -like "*windows*"
+                    } | Select-Object -First 1
+
+                    if ($foundWindowsExe) {
+                        Write-Warning "Found Windows binary but not for $arch architecture: $($foundWindowsExe.name)"
+                        Write-Warning "This may not work on your system"
+                    }
+                }
+
+                if ($foundWindowsExe) {
+                    Write-Success "Found version with Windows binary: $version"
+                    Write-Info "Binary file: $($foundWindowsExe.name)"
+                    Write-Warning "Note: This binary may not match your $arch architecture"
+                    return $version
+                } else {
+                    Write-Warning "Version $version has assets but no Windows binary"
+                }
+            } else {
+                Write-Warning "Version $version has no assets (likely semantic-release without binaries)"
+            }
+
+            # Limit checks to avoid API limits
+            if ($checkedVersions -ge 10) {
+                Write-Warning "Checked 10 most recent versions, stopping to avoid API limits"
+                break
+            }
+        }
+
+        Write-Error "No version with Windows $arch binaries found"
+        Write-Info "Please visit: https://github.com/$RepoOwner/$RepoName/releases"
+        Write-Info "You may need to download the binary manually"
+        exit 1
+    } catch {
+        Write-Error "Version check failed: $($_.Exception.Message)"
+        exit 1
+    }
 }
 
-# 下载二进制文件
+# Download binary
 function Download-Binary {
     param(
         [string]$Version,
         [string]$Architecture
     )
-    
-    $filename = "jav-scrapy-$Version-windows-$Architecture.exe"
-    $downloadUrl = "https://github.com/$RepoOwner/$RepoName/releases/download/$Version/$filename"
+
     $tempPath = "$env:TEMP\jav-scrapy-install"
-    
-    Write-Info "下载二进制文件: $filename"
-    
-    # 创建临时目录
+
+    Write-Info "Looking for binaries in version: $Version"
+
     if (Test-Path $tempPath) {
         Remove-Item -Path $tempPath -Recurse -Force
     }
     New-Item -ItemType Directory -Path $tempPath -Force | Out-Null
-    
-    $tempFile = "$tempPath\$filename"
-    
+
     try {
-        # 下载文件
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $tempFile -TimeoutSec 300
-        
-        # 验证文件
-        if (-not (Test-Path $tempFile) -or (Get-Item $tempFile).Length -eq 0) {
-            Write-Error "下载的文件无效"
+        # Get release info to find the correct binary file
+        $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases/tags/$Version"
+
+        # Find Windows exe for this architecture first, then any Windows exe
+        $binaryAsset = $releaseInfo.assets | Where-Object {
+            $_.name -like "*.exe" -and
+            $_.name -like "*windows*" -and
+            $_.name -like "*$Architecture*"
+        } | Select-Object -First 1
+
+        if (-not $binaryAsset) {
+            # If no architecture-specific binary found, look for any Windows exe
+            $binaryAsset = $releaseInfo.assets | Where-Object {
+                $_.name -like "*.exe" -and
+                $_.name -like "*windows*"
+            } | Select-Object -First 1
+
+            if ($binaryAsset) {
+                Write-Warning "Found Windows binary but not for $Architecture architecture: $($binaryAsset.name)"
+                Write-Warning "This may not work optimally on your system"
+            }
+        }
+
+        if (-not $binaryAsset) {
+            Write-Error "No Windows binary found in version $Version"
+            Write-Info "Available files:"
+            $releaseInfo.assets | ForEach-Object { Write-Info "  - $($_.name)" }
             exit 1
         }
-        
-        Write-Success "下载完成"
+
+        $downloadUrl = $binaryAsset.browser_download_url
+        $filename = $binaryAsset.name
+        $tempFile = "$tempPath\$filename"
+
+        Write-Info "Downloading: $filename"
+        Write-Info "From: $downloadUrl"
+
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $tempFile -TimeoutSec 300
+
+        if (-not (Test-Path $tempFile) -or (Get-Item $tempFile).Length -eq 0) {
+            Write-Error "Downloaded file is invalid"
+            exit 1
+        }
+
+        Write-Success "Download completed: $filename"
         return $tempFile
     } catch {
-        Write-Error "下载失败: $($_.Exception.Message)"
-        Write-Info "下载地址: $downloadUrl"
-        Write-Info "请检查网络连接或手动下载"
+        Write-Error "Download failed: $($_.Exception.Message)"
         exit 1
     }
 }
 
-# 安装二进制文件
+# Install binary
 function Install-Binary {
     param(
         [string]$TempFile
     )
-    
-    Write-Info "安装到: $InstallDir"
-    
-    # 创建安装目录
+
+    Write-Info "Installing to: $InstallDir"
+
     if (Test-Path $InstallDir) {
-        Write-Info "安装目录已存在，正在清理..."
+        Write-Info "Cleaning existing installation..."
         Remove-Item -Path "$InstallDir\*" -Force -Recurse
     } else {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     }
-    
-    # 复制文件
+
     $targetFile = "$InstallDir\jav.exe"
     Copy-Item -Path $TempFile -Destination $targetFile -Force
-    
-    # 添加到PATH环境变量
+
     $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
     if ($currentPath -notlike "*$InstallDir*") {
-        Write-Info "添加到用户PATH环境变量..."
+        Write-Info "Adding to PATH..."
         [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$InstallDir", "User")
-        Write-Warning "PATH环境变量已更新，重启PowerShell后生效"
+        Write-Warning "Restart PowerShell to use PATH"
     } else {
-        Write-Success "PATH环境变量已配置"
+        Write-Success "PATH already configured"
     }
-    
-    Write-Success "安装完成: $targetFile"
+
+    Write-Success "Installed: $targetFile"
 }
 
-# 创建卸载脚本
+# Create uninstall script
 function Create-UninstallScript {
     $uninstallScript = "$InstallDir\uninstall.bat"
-    
-    $scriptContent = @"
-@echo off
-chcp 65001 >nul
-echo 🗑️  卸载 jav-scrapy...
+
+    $scriptContent = '@echo off
+echo Uninstalling jav-scrapy...
 echo.
 
-REM 删除二进制文件
-if exist "$InstallDir\jav.exe" (
-    del "$InstallDir\jav.exe"
-    echo ✅ 已删除: $InstallDir\jav.exe
+if exist "' + $InstallDir + '\jav.exe" (
+    del "' + $InstallDir + '\jav.exe"
+    echo Deleted: jav.exe
 )
 
-REM 删除安装目录
-if exist "$InstallDir" (
-    rd "$InstallDir" 2>nul
+if exist "' + $InstallDir + '" (
+    rd "' + $InstallDir + '" 2>nul
 )
 
-REM 删除卸载脚本自身
 del "%~f0"
 
 echo.
-echo 🎉 卸载完成！
+echo Uninstallation completed!
+echo Please manually remove from PATH: ' + $InstallDir + '
 echo.
-echo 📋 后续清理步骤：
-echo 1. 手动从系统环境变量中移除: $InstallDir
-echo 2. 删除配置文件: %USERPROFILE%\.jav-scrapy-antiblock-urls.json
-echo.
-echo 感谢使用 jav-scrapy！
-pause
-"@
-    
+pause'
+
     $scriptContent | Out-File -FilePath $uninstallScript -Encoding ASCII -Force
-    Write-Success "创建卸载脚本: $uninstallScript"
+    Write-Success "Created uninstall script"
 }
 
-# 创建快捷方式
+# Create desktop shortcut
 function Create-Shortcut {
     $desktopPath = [Environment]::GetFolderPath("Desktop")
     $shortcutPath = "$desktopPath\jav-scrapy.lnk"
-    
+
     try {
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = "$InstallDir\jav.exe"
         $shortcut.WorkingDirectory = $InstallDir
-        $shortcut.Description = "jav-scrapy - AV影片磁力链接爬虫工具"
+        $shortcut.Description = "jav-scrapy - AV film magnet link crawler"
         $shortcut.Save()
-        
-        Write-Success "创建桌面快捷方式: $shortcutPath"
+
+        Write-Success "Created desktop shortcut"
     } catch {
-        Write-Warning "创建桌面快捷方式失败: $($_.Exception.Message)"
+        Write-Warning "Could not create shortcut: $($_.Exception.Message)"
     }
 }
 
-# 验证安装
+# Verify installation
 function Test-Installation {
     $targetFile = "$InstallDir\jav.exe"
-    
+
     if (Test-Path $targetFile) {
-        Write-Success "安装验证成功"
-        
+        Write-Success "Installation verified"
+
         try {
-            Write-Info "版本信息:"
+            Write-Info "Version info:"
             & $targetFile --version
         } catch {
-            Write-Warning "无法获取版本信息，但文件安装成功"
+            Write-Warning "Cannot get version info"
         }
     } else {
-        Write-Error "安装验证失败"
+        Write-Error "Installation verification failed"
         exit 1
     }
 }
 
-# 清理临时文件
+# Clean temp files
 function Clear-TempFiles {
     $tempPath = "$env:TEMP\jav-scrapy-install"
     if (Test-Path $tempPath) {
@@ -299,15 +341,13 @@ function Clear-TempFiles {
     }
 }
 
-# 主函数
+# Main function
 function Main {
-    Write-ColorMessage "🎬 jav-scrapy Windows 一键安装程序" "Blue"
-    Write-Host "=================================="
+    Write-ColorMessage "jav-scrapy Windows One-Click Installer" "Blue"
+    Write-Host "=========================================="
     Write-Host ""
-    
-    # 设置错误处理
+
     try {
-        # 执行安装步骤
         Test-PowerShellVersion
         Test-NetworkConnection
         $architecture = Get-SystemArchitecture
@@ -317,36 +357,35 @@ function Main {
         Create-UninstallScript
         Create-Shortcut
         Test-Installation
-        
+
         Write-Host ""
-        Write-ColorMessage "🎉 安装完成！" "Green"
+        Write-ColorMessage "Installation completed!" "Green"
         Write-Host ""
-        Write-ColorMessage "📖 使用方法：" "Blue"
-        Write-Host "  jav --help                    # 查看帮助"
-        Write-Host "  jav                           # 开始抓取"
-        Write-Host "  jav -s '关键词' -l 10        # 搜索并下载10个"
-        Write-Host "  jav update                    # 更新防屏蔽地址"
+        Write-ColorMessage "Usage:" "Blue"
+        Write-Host "  jav --help                    # Show help"
+        Write-Host "  jav                           # Start crawling"
+        Write-Host "  jav -s keyword -l 10          # Search and download 10 items"
+        Write-Host "  jav update                    # Update anti-blocking URLs"
         Write-Host ""
-        Write-ColorMessage "🗑️  卸载方法：" "Blue"
-        Write-Host "  $InstallDir\uninstall.bat"
+        Write-ColorMessage "Uninstall:" "Blue"
+        Write-Host "  Run: $InstallDir\uninstall.bat"
         Write-Host ""
-        Write-ColorMessage "💡 提示：" "Yellow"
-        Write-Host "  - 首次运行可能需要下载Chromium浏览器"
-        Write-Host "  - 如遇网络问题，请配置代理或使用VPN"
-        Write-Host "  - 重启PowerShell以使用PATH环境变量"
-        Write-Host "  - 更多信息请访问: https://github.com/$RepoOwner/$RepoName"
+        Write-ColorMessage "Tips:" "Yellow"
+        Write-Host "  - First run may download Chromium browser"
+        Write-Host "  - Restart PowerShell to use PATH environment variable"
+        Write-Host "  - More info: https://github.com/$RepoOwner/$RepoName"
         Write-Host ""
-        
+
     } catch {
-        Write-Error "安装过程中发生错误: $($_.Exception.Message)"
+        Write-Error "Installation failed: $($_.Exception.Message)"
         exit 1
     } finally {
         Clear-TempFiles
     }
-    
-    Write-Host "按任意键退出..." -ForegroundColor Gray
+
+    Write-Host "Press any key to exit..." -ForegroundColor Gray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
-# 运行主函数
+# Run main function
 Main
