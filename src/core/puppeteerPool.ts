@@ -1,42 +1,62 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import logger from './logger';
 import { Config } from '../types/interfaces';
 import * as fs from 'fs';
 
 // Handle Puppeteer configuration for packaged environments
 const getPuppeteerExecutablePath = (): string | undefined => {
-  // Check if running in packaged environment
-  if ((process as any).pkg) {
-    // In packaged environment, try to find system Chrome/Chromium
-    const possiblePaths = [
-      // Windows
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Users\\%USERNAME%\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files\\Chromium\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe',
-      // macOS
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      '/Applications/Chromium.app/Contents/MacOS/Chromium',
-      // Linux
-      '/usr/bin/google-chrome',
-      '/usr/bin/chromium-browser',
-      '/usr/bin/chromium',
-      '/snap/bin/chromium',
-      '/usr/bin/google-chrome-stable',
-      '/usr/local/bin/chrome',
-      '/usr/local/bin/chromium'
-    ];
+  // Try to find system Chrome/Chromium (both packaged and development environments)
+  const possiblePaths = [
+    // Windows
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Users\\%USERNAME%\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Chromium\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe',
+    // macOS
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    // macOS development paths
+    '/usr/local/Caskroom/google-chrome/latest/Google Chrome.app/Contents/MacOS/Google Chrome',
+    // Linux
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/snap/bin/chromium',
+    '/usr/bin/google-chrome-stable',
+    '/usr/local/bin/chrome',
+    '/usr/local/bin/chromium',
+    // Common development paths
+    '/usr/bin/chromium'
+  ];
 
-    for (const path of possiblePaths) {
-      const expandedPath = path.replace('%USERNAME%', process.env.USERNAME || '');
-      if (fs.existsSync(expandedPath)) {
-        return expandedPath;
-      }
+  for (const browserPath of possiblePaths) {
+    const expandedPath = browserPath.replace('%USERNAME%', process.env.USERNAME || '');
+    if (fs.existsSync(expandedPath)) {
+      logger.info(`Found Chrome/Chromium at: ${expandedPath}`);
+      return expandedPath;
     }
+  }
 
-    logger.warn('Running in packaged environment but no system Chrome/Chromium found. Puppeteer may fail to launch.');
-    return undefined;
+  // If no system Chrome found, try to use puppeteer's bundled Chrome
+  try {
+    // Import puppeteer to get the bundled browser path
+    const puppeteer = require('puppeteer');
+    const browserPath = puppeteer.executablePath();
+    if (browserPath && fs.existsSync(browserPath)) {
+      logger.info(`Using bundled Chrome: ${browserPath}`);
+      return browserPath;
+    }
+  } catch (error) {
+    logger.debug('Bundled Chrome not found:', error instanceof Error ? error.message : String(error));
+  }
+
+  // If still not found, log detailed information
+  logger.error('No Chrome/Chromium found. Please install Google Chrome or Chromium.');
+  logger.error('Tried the following paths:');
+  for (const browserPath of possiblePaths) {
+    const expandedPath = browserPath.replace('%USERNAME%', process.env.USERNAME || '');
+    logger.error(`  ${expandedPath} - ${fs.existsSync(expandedPath) ? 'EXISTS' : 'NOT FOUND'}`);
   }
 
   return undefined;
@@ -84,11 +104,11 @@ export class PuppeteerPool {
   public static getInstance(config?: PoolConfig): PuppeteerPool {
     if (!PuppeteerPool.instance) {
       const defaultConfig: PoolConfig = {
-        maxSize: 3,
-        maxIdleTime: 5 * 60 * 1000,
-        healthCheckInterval: 30 * 1000,
-        requestTimeout: 60000,
-        retryAttempts: 3
+        maxSize: 5, // 增加池大小，减少创建销毁频率
+        maxIdleTime: 2 * 60 * 1000, // 减少空闲时间到2分钟
+        healthCheckInterval: 20 * 1000, // 更频繁的健康检查
+        requestTimeout: 30000, // 减少请求超时
+        retryAttempts: 2 // 减少重试次数
       };
       PuppeteerPool.instance = new PuppeteerPool(config || defaultConfig);
     }
@@ -320,8 +340,8 @@ export class PuppeteerPool {
       const instance = this.pool[i];
 
       // Check if instance is too old
-      if (now.getTime() - instance.createdAt.getTime() > 30 * 60 * 1000) { // 30 minutes max lifetime
-        logger.info(`PuppeteerPool: 实例 ${instance.id} 已达到最大生命周期，准备销毁`);
+      if (now.getTime() - instance.createdAt.getTime() > 10 * 60 * 1000) { // 10 minutes max lifetime (减少内存泄漏)
+        logger.info(`PuppeteerPool: 实例 ${instance.id} 已达到最大生命周期(10分钟)，准备销毁`);
         await this.destroyInstance(i);
         continue;
       }
@@ -372,18 +392,36 @@ export class PuppeteerPool {
 
   private async destroyInstance(index: number): Promise<void> {
     const instance = this.pool[index];
+    const beforeMemory = process.memoryUsage().heapUsed / 1024 / 1024;
 
     try {
+      // 关闭页面
+      if (instance.page && !instance.page.isClosed()) {
+        await instance.page.close();
+        logger.debug(`PuppeteerPool: 页面 ${instance.id} 已关闭`);
+      }
+
+      // 关闭浏览器
       if (instance.browser && !instance.browser.process().killed) {
         await instance.browser.close();
+        logger.debug(`PuppeteerPool: 浏览器 ${instance.id} 已关闭`);
       }
-      logger.debug(`PuppeteerPool: 销毁实例 ${instance.id}`);
+
+      // 强制垃圾回收提示（如果可用）
+      if (global.gc) {
+        global.gc();
+      }
+
+      logger.debug(`PuppeteerPool: 销毁实例 ${instance.id} 完成，内存释放: ${beforeMemory.toFixed(1)}MB`);
     } catch (error) {
       logger.error(`PuppeteerPool: 销毁实例 ${instance.id} 失败:`, error);
       logger.error(`销毁错误详情: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     this.pool.splice(index, 1);
+
+    const afterMemory = process.memoryUsage().heapUsed / 1024 / 1024;
+    logger.debug(`PuppeteerPool: 销毁后内存使用: ${afterMemory.toFixed(1)}MB`);
   }
 
   private startHealthCheck(): void {

@@ -1,11 +1,13 @@
 /**
  * Cloudflare Bypass Handler
- * 使用 Puppeteer + Stealth 插件绕过 Cloudflare 保护
+ * 使用 Puppeteer 绕过 Cloudflare 保护
  */
 
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import puppeteerCore from 'puppeteer-extra';
+import puppeteer from 'puppeteer-core';
+import logger from '../core/logger';
+import fs from 'fs';
+import path from 'path';
+import { PuppeteerPool, PuppeteerInstance } from '../core/puppeteerPool';
 
 // Handle Puppeteer configuration for packaged environments
 const getPuppeteerExecutablePath = (): string | undefined => {
@@ -32,9 +34,9 @@ const getPuppeteerExecutablePath = (): string | undefined => {
       '/usr/local/bin/chromium'
     ];
 
-    for (const path of possiblePaths) {
-      const expandedPath = path.replace('%USERNAME%', process.env.USERNAME || '');
-      if (require('fs').existsSync(expandedPath)) {
+    for (const browserPath of possiblePaths) {
+      const expandedPath = browserPath.replace('%USERNAME%', process.env.USERNAME || '');
+      if (fs.existsSync(expandedPath)) {
         return expandedPath;
       }
     }
@@ -45,13 +47,8 @@ const getPuppeteerExecutablePath = (): string | undefined => {
 
   return undefined;
 };
-import logger from '../core/logger';
-import fs from 'fs';
-import path from 'path';
-import { PuppeteerPool, PuppeteerInstance } from '../core/puppeteerPool';
 
-// 使用 stealth 插件
-puppeteer.use(StealthPlugin());
+// 移除 stealth 插件使用，统一使用 puppeteer-core
 
 interface CloudflareConfig {
   headless?: boolean;
@@ -72,7 +69,7 @@ class CloudflareBypass {
   constructor(config: CloudflareConfig = {}) {
     this.config = {
       headless: config.headless !== false, // 默认无头模式
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 45000, // 增加到45秒，给Cloudflare挑战更多时间
       viewport: config.viewport || { width: 1920, height: 1080 },
       userAgent: config.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       proxy: config.proxy
@@ -364,16 +361,27 @@ class CloudflareBypass {
 
     try {
       logger.info(`正在访问页面: ${url}`);
-      logger.debug(`页面访问参数: waitUntil=networkidle2, timeout=${this.config.timeout}`);
+      logger.debug(`页面访问参数: waitUntil=domcontentloaded, timeout=${this.config.timeout}`);
 
-      // 访问页面
-      const response = await this.page.goto(url, {
-        waitUntil: 'networkidle2',
-        timeout: this.config.timeout
-      });
-
-      if (!response) {
-        throw new Error('页面响应为空');
+      // 访问页面 - 先尝试 domcontentloaded，失败时回退到 load
+      let response: any;
+      try {
+        response = await this.page.goto(url, {
+          waitUntil: 'domcontentloaded',
+          timeout: this.config.timeout
+        });
+        if (!response) {
+          throw new Error('页面响应为空');
+        }
+      } catch (domError) {
+        logger.warn(`domcontentloaded 失败，尝试 load: ${domError instanceof Error ? domError.message : String(domError)}`);
+        response = await this.page.goto(url, {
+          waitUntil: 'load',
+          timeout: this.config.timeout
+        });
+        if (!response) {
+          throw new Error('页面响应为空');
+        }
       }
 
       const status = response.status();
@@ -604,13 +612,22 @@ class CloudflareBypass {
 
       if (ajaxUrlObj.hostname !== currentUrlObj.hostname) {
         logger.warn(`executeAjax: AJAX域名不匹配，当前页面: ${currentUrlObj.hostname}, AJAX请求: ${ajaxUrlObj.hostname}`);
-        // 导航到正确的域名页面
+        // 导航到正确的域名页面 - 使用更短的超时和 domcontentloaded
         const navigationStart = Date.now();
         logger.debug(`executeAjax: 正在导航到: ${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`);
-        await page.goto(`${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`, {
-          waitUntil: 'networkidle2',
-          timeout: this.config.timeout
-        });
+        const ajaxTimeout = this.config.timeout || 45000;
+        try {
+          await page.goto(`${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`, {
+            waitUntil: 'domcontentloaded',
+            timeout: Math.max(ajaxTimeout, 15000) // AJAX导航使用15秒超时
+          });
+        } catch (navError) {
+          logger.warn(`executeAjax: domcontentloaded 失败，尝试 load: ${navError instanceof Error ? navError.message : String(navError)}`);
+          await page.goto(`${ajaxUrlObj.protocol}//${ajaxUrlObj.hostname}/`, {
+            waitUntil: 'load',
+            timeout: Math.max(ajaxTimeout, 15000)
+          });
+        }
         const navigationTime = Date.now() - navigationStart;
         logger.debug(`executeAjax: 页面导航完成 (耗时: ${Math.round(navigationTime/1000)}s)`);
 
@@ -915,7 +932,7 @@ class CloudflareBypass {
 
         if (stillOnAgeVerification) {
           logger.warn('点击按钮后仍在年龄认证页面，尝试其他方法');
-          
+
           // 尝试设置年龄认证Cookie
           await this.page.evaluate(() => {
             // 尝试设置常见的年龄认证Cookie
@@ -925,14 +942,26 @@ class CloudflareBypass {
             document.cookie = 'is_adult=true; path=/; max-age=31536000';
             document.cookie = 'javbus_age=1; path=/; max-age=31536000';
           });
-          
-          // 刷新页面
-          await this.page.reload({ waitUntil: 'networkidle2' });
+
+          // 刷新页面 - 使用 load 标准和更短的超时
+          const ageVerifyTimeout = this.config.timeout || 45000;
+          try {
+            await this.page.reload({
+              waitUntil: 'load',
+              timeout: Math.max(ageVerifyTimeout, 20000) // 20秒超时
+            });
+          } catch (reloadError) {
+            logger.warn(`年龄认证页面 reload 失败，尝试 domcontentloaded: ${reloadError instanceof Error ? reloadError.message : String(reloadError)}`);
+            await this.page.reload({
+              waitUntil: 'domcontentloaded',
+              timeout: Math.max(ageVerifyTimeout, 20000)
+            });
+          }
           logger.info('已设置年龄认证Cookie并刷新页面');
         }
       } else {
         logger.warn('未找到年龄认证按钮，尝试设置Cookie');
-        
+
         // 尝试设置年龄认证Cookie
         await this.page.evaluate(() => {
           document.cookie = 'age_verified=true; path=/; max-age=31536000';
@@ -941,9 +970,21 @@ class CloudflareBypass {
           document.cookie = 'is_adult=true; path=/; max-age=31536000';
           document.cookie = 'javbus_age=1; path=/; max-age=31536000';
         });
-        
-        // 刷新页面
-        await this.page.reload({ waitUntil: 'networkidle2' });
+
+        // 刷新页面 - 使用 load 标准和更短的超时
+        const ageVerifyTimeout2 = this.config.timeout || 45000;
+        try {
+          await this.page.reload({
+            waitUntil: 'load',
+            timeout: Math.max(ageVerifyTimeout2, 20000) // 20秒超时
+          });
+        } catch (reloadError) {
+          logger.warn(`年龄认证页面 reload 失败，尝试 domcontentloaded: ${reloadError instanceof Error ? reloadError.message : String(reloadError)}`);
+          await this.page.reload({
+            waitUntil: 'domcontentloaded',
+            timeout: Math.max(ageVerifyTimeout2, 20000)
+          });
+        }
         logger.info('已设置年龄认证Cookie并刷新页面');
       }
 
