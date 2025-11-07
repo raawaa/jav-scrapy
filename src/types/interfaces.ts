@@ -31,6 +31,7 @@ interface Config {
   searchUrl: string;
   limit: number;
   delay: number; // 添加延迟参数
+  strictSSL?: boolean; // 是否严格验证SSL证书
   useCloudflareBypass?: boolean; // 是否启用 Cloudflare 绕过
   puppeteerPool?: {
     maxSize: number;

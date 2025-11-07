@@ -48,12 +48,13 @@ class ConfigManager {
             nopic: false,
             limit: 0,
             delay: 2, // 添加默认延迟参数
+            strictSSL: DEFAULT_CONFIG.strictSSL, // 是否严格验证SSL证书
             proxy: undefined,
             useCloudflareBypass: false, // 默认不启用 Cloudflare 绕过
-            // Puppeteer池配置
+            // Puppeteer池配置 - 优化内存使用
             puppeteerPool: {
-                maxSize: Math.max(2, Math.floor(DEFAULT_CONFIG.parallel / 2)),
-                maxIdleTime: 5 * 60 * 1000, // 5分钟
+                maxSize: Math.max(1, Math.min(2, Math.floor(DEFAULT_CONFIG.parallel / 2))), // 限制最大实例数，减少内存占用
+                maxIdleTime: 3 * 60 * 1000, // 3分钟（从5分钟降低）
                 healthCheckInterval: 30 * 1000, // 30秒
                 requestTimeout: 60000, // 1分钟
                 retryAttempts: 3
@@ -153,6 +154,19 @@ class ConfigManager {
         if (program.opts().cloudflare) {
             this.config.useCloudflareBypass = true;
             logger.info('已启用 Cloudflare 绕过功能');
+        }
+
+        // 处理SSL验证选项（--no-strict-ssl）
+        // 注意：--no-xxx选项在Commander中会设置为undefined，我们需要特殊处理
+        const hasStrictSSLFlag = Object.prototype.hasOwnProperty.call(program.opts(), 'strictSSL');
+        logger.debug(`strictSSL option exists: ${hasStrictSSLFlag}, value: ${program.opts().strictSSL}`);
+
+        if (hasStrictSSLFlag) {
+            // 如果选项存在，则使用其值（false表示--no-strict-ssl，true表示--strict-ssl）
+            this.config.strictSSL = program.opts().strictSSL !== false;
+            if (!this.config.strictSSL) {
+                logger.warn('已禁用SSL证书严格验证，可能存在安全风险');
+            }
         }
     }
 

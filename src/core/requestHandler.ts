@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
 import tunnel from 'tunnel';
+import https from 'https';
 import { Config } from '../types/interfaces';
 import { Metadata } from '../types/interfaces'; // 导入 Metadata 类型
 import { MagnetResult, MagnetLink } from '../types/interfaces'; // 导入磁力链接相关类型
@@ -133,17 +134,35 @@ class RequestHandler {
         // 3. 429 Too Many Requests
         // 4. 403 Forbidden (Cloudflare拦截)
         // 5. 超时错误
+        // 6. SSL证书错误（首次重试时自动跳过验证）
+        const currentRetry = (error.config && error.config['axios-retry'] && error.config['axios-retry'].retryCount) || 0;
+        const isSSLError = error.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY' ||
+                          error.code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+                          error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE';
+
+        // 首次SSL错误：自动降级并跳过SSL验证
+        if (isSSLError && currentRetry === 0 && this.config.strictSSL !== false) {
+          logger.warn(`检测到SSL证书错误: ${error.code}，将自动跳过验证进行重试`);
+          this.config.strictSSL = false; // 临时禁用SSL验证
+          return true; // 允许重试
+        }
+
         const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) ||
                          (error.response?.status && [500, 502, 503, 504, 429, 403].includes(error.response.status)) ||
-                         (error.code && ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(error.code));
+                         (error.code && ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'SELF_SIGNED_CERT_IN_CHAIN', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'].includes(error.code));
+
         if (shouldRetry) {
-          const currentRetry = (error.config && error.config['axios-retry'] && error.config['axios-retry'].retryCount) || 0;
           // 计算延迟时间
           const baseDelay = Math.max(this.retryDelay, 3000);
           const exponentialDelay = Math.min(baseDelay * Math.pow(1.5, currentRetry), 30000);
           const randomDelay = Math.floor(Math.random() * 2000);
           const totalDelay = exponentialDelay + randomDelay;
-          logger.warn(`请求失败，正在重试 (${currentRetry + 1}/5)，${Math.round(totalDelay / 1000)}秒后重试: ${error.config?.url || '未知URL'} - 错误: ${error.code || error.message}`);
+
+          if (isSSLError) {
+            logger.warn(`SSL证书错误，正在重试 (${currentRetry + 1}/5)，${Math.round(totalDelay / 1000)}秒后重试: ${error.config?.url || '未知URL'} - 错误: ${error.code} (已自动跳过验证)`);
+          } else {
+            logger.warn(`请求失败，正在重试 (${currentRetry + 1}/5)，${Math.round(totalDelay / 1000)}秒后重试: ${error.config?.url || '未知URL'} - 错误: ${error.code || error.message}`);
+          }
         }
         return shouldRetry;
       },
@@ -219,10 +238,19 @@ class RequestHandler {
       if (this.cloudflareBypass) {
         try {
           logger.debug(`getPage: 开始使用 Puppeteer 获取页面: ${url}`);
+          const pageAccessStartTime = Date.now();
           const pageContent = await this.cloudflareBypass.bypassCloudflare(url);
+          const pageAccessTime = Date.now() - pageAccessStartTime;
+          logger.debug(`getPage: Puppeteer 获取页面成功 (耗时: ${pageAccessTime}ms), 内容长度: ${pageContent.length}`);
           return { statusCode: 200, body: pageContent };
         } catch (error) {
+          const pageAccessTime = Date.now() - (this as any)._pageAccessStartTime || 0;
           logger.error(`getPage: Cloudflare 绕过获取页面失败: ${url}, 错误: ${error instanceof Error ? error.message : String(error)}`);
+          logger.error(`getPage: 错误类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}`);
+          logger.error(`getPage: 错误耗时: ${pageAccessTime}ms`);
+
+          // 详细记录错误信息
+          logger.debug(`getPage: 完整错误对象: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`);
 
           // 检查是否是网络错误，如果是则尝试常规HTTP请求作为fallback
           const isNetworkError = error instanceof Error && (
@@ -242,6 +270,10 @@ class RequestHandler {
           if (isNetworkError || isPuppeteerError) {
             logger.warn(`getPage: Cloudflare 绕过遇到${isNetworkError ? '网络' : 'Puppeteer'}错误，尝试常规HTTP请求作为fallback: ${url}`);
             logger.debug(`fallback原因: ${error instanceof Error ? error.message : String(error)}`);
+            logger.debug(`fallback错误类型: ${isNetworkError ? '网络错误' : 'Puppeteer错误'}`);
+
+            // 记录当前配置信息
+            logger.debug(`getPage: 当前配置 - timeout: ${this.config.timeout}, proxy: ${this.config.proxy || '无'}, cloudflare: ${this.config.useCloudflareBypass}`);
 
             // 设置Cloudflare绕过器为null，强制使用常规请求
             this.cloudflareBypass = null;
@@ -249,6 +281,13 @@ class RequestHandler {
           } else {
             // 非网络错误，直接抛出
             logger.error(`getPage: 非网络错误，直接抛出: ${error instanceof Error ? error.message : String(error)}`);
+            logger.error(`getPage: 错误详情 - 类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}, 消息: ${error instanceof Error ? error.message : String(error)}`);
+
+            // 尝试记录错误时的堆栈信息
+            if (error instanceof Error && error.stack) {
+              logger.debug(`getPage: 错误堆栈前20行:\n${error.stack.split('\n').slice(0, 20).join('\n')}`);
+            }
+
             throw error;
           }
         }
@@ -716,10 +755,14 @@ class RequestHandler {
         }
       }
 
+      // 创建 HTTPS Agent 用于图片下载（支持 SSL 配置）
+      const httpsAgent = this.createHttpsAgent();
+
       const response = await axios.get(url, {
         responseType: 'arraybuffer',
         timeout: this.requestConfig.timeout,
-        headers
+        headers,
+        httpsAgent
       });
       fs.writeFileSync(originalFilePath, Buffer.from(response.data, 'binary'));
       return true;
@@ -765,10 +808,14 @@ class RequestHandler {
               }
             }
 
+            // 创建 HTTPS Agent 用于简化文件名图片下载
+            const httpsAgent = this.createHttpsAgent();
+
             const response = await axios.get(url, {
               responseType: 'arraybuffer',
               timeout: this.requestConfig.timeout,
-              headers: simplifiedHeaders
+              headers: simplifiedHeaders,
+              httpsAgent
             });
             await fs.promises.writeFile(simplifiedFilePath, Buffer.from(response.data, 'binary'));
             logger.info(`图片已使用简化文件名保存: ${simplifiedFilename}`);
@@ -1050,6 +1097,40 @@ class RequestHandler {
     }
     return true;
   }
+  /**
+   * 创建 HTTPS Agent，支持代理和 SSL 配置
+   * @returns HTTPS Agent 实例
+   */
+  private createHttpsAgent(): https.Agent {
+    // 默认严格验证 SSL 证书
+    const strictSSL = this.config.strictSSL !== false; // 默认为 true
+
+    // 代理配置
+    const proxyOptions: any = {};
+    if (this.config.proxy) {
+      try {
+        const proxyUrl = new URL(this.config.proxy);
+        proxyOptions.proxy = {
+          host: proxyUrl.hostname,
+          port: parseInt(proxyUrl.port) || (proxyUrl.protocol === 'https:' ? 443 : 80)
+        };
+        // 如果代理需要认证
+        if (proxyUrl.username && proxyUrl.password) {
+          proxyOptions.proxy.headers = {
+            'Proxy-Authorization': `Basic ${Buffer.from(`${proxyUrl.username}:${proxyUrl.password}`).toString('base64')}`
+          };
+        }
+      } catch (error) {
+        logger.warn(`代理URL解析失败: ${this.config.proxy}，将使用默认代理设置`);
+      }
+    }
+
+    return new https.Agent({
+      rejectUnauthorized: strictSSL,
+      ...proxyOptions
+    });
+  }
+
   /**
    * 关闭 Cloudflare 绕过器
    */

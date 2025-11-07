@@ -4,6 +4,13 @@
 
 jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。项目版本为 0.8.4，使用 CommonJS 模块系统。
 
+### 自动化发布流程
+
+项目实现了完整的自动化发布流程，包括：
+- **Conventional Commits 规范**: 使用 commitlint 确保提交信息符合规范
+- **语义化版本控制**: 基于 semantic-release 自动版本管理
+- **GitHub Actions**: 自动化构建、测试和发布流程
+
 ### 主要技术栈
 - **语言**: TypeScript
 - **运行环境**: Node.js
@@ -20,42 +27,66 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - winreg (Windows 注册表操作) - ^1.2.5
 
 ### 开发依赖
-- **开发工具**: nodemon, ts-node
+- **开发工具**: nodemon ^3.1.10, ts-node ^10.9.2
 - **类型定义**: @types/* 包提供完整的 TypeScript 支持
+  - @types/node ^24.10.0
+  - @types/cli-progress ^3.11.6
+  - @types/tunnel ^0.0.7
+  - @types/async ^3.2.25
+  - @types/cheerio ^0.22.35
+  - @types/winreg ^1.2.36
 - **HTML解析**: cheerio - ^1.1.2
 - **异步流程控制**: async - ^3.2.6
-- **测试工具**: mocha + chai + nock (测试框架)
-- **打包工具**: pkg - ^5.8.1
-- **版本管理**: semantic-release, @commitlint/cli, husky 等
+- **测试工具**:
+  - mocha ^11.7.4 (测试运行器)
+  - chai ^6.2.0 (断言库)
+  - nock ^14.0.10 (HTTP 模拟)
+- **版本管理**:
+  - semantic-release ^24.2.0
+  - @commitlint/cli ^19.6.1
+  - @commitlint/config-conventional ^19.6.0
+  - conventional-changelog-cli ^4.1.0
+  - conventional-changelog-conventionalcommits ^8.0.0
+  - husky ^9.1.7 (Git hooks)
+- **其他工具**: temp ^0.9.4, typescript ^5.9.3
 
 ### 项目架构
 ```
-src/
-├── jav.ts                  # 主入口文件，包含命令行接口和主要逻辑
-├── core/                   # 核心模块
-│   ├── config.ts           # 配置管理
-│   ├── constants.ts        # 常量定义
-│   ├── fileHandler.ts      # 文件处理
-│   ├── logger.ts           # 日志系统
-│   ├── parser.ts           # HTML 解析
-│   ├── queueManager.ts     # 队列管理
-│   ├── requestHandler.ts   # HTTP 请求处理
-│   ├── puppeteerPool.ts    # Puppeteer 实例池
-│   └── resourceMonitor.ts  # 资源监控器
-├── types/                  # 类型定义
-│   └── interfaces.ts       # 接口定义
-└── utils/                  # 工具函数
-    ├── cloudflareBypass.ts # Cloudflare 绕过处理
-    ├── delayManager.ts     # 延迟管理器
-    ├── errorHandler.ts     # 错误处理
-    └── systemProxy.ts      # 系统代理检测
+项目根目录/
+├── src/                    # 源代码目录
+│   ├── jav.ts              # 主入口文件，包含命令行接口和主要逻辑
+│   ├── core/               # 核心模块
+│   │   ├── config.ts       # 配置管理
+│   │   ├── constants.ts    # 常量定义
+│   │   ├── fileHandler.ts  # 文件处理
+│   │   ├── logger.ts       # 日志系统
+│   │   ├── parser.ts       # HTML 解析
+│   │   ├── queueManager.ts # 队列管理
+│   │   ├── requestHandler.ts # HTTP 请求处理
+│   │   ├── puppeteerPool.ts # Puppeteer 实例池
+│   │   └── resourceMonitor.ts # 资源监控器
+│   ├── types/              # 类型定义
+│   │   └── interfaces.ts   # 接口定义
+│   └── utils/              # 工具函数
+│       ├── cloudflareBypass.ts # Cloudflare 绕过处理
+│       ├── delayManager.ts # 延迟管理器
+│       ├── errorHandler.ts # 错误处理
+│       └── systemProxy.ts  # 系统代理检测
+├── .iflow/                 # iFlow 配置和代理
+│   └── agents/             # iFlow 专用代理配置
+├── dist/                   # TypeScript 编译输出目录
+└── test/                   # 测试文件目录
+    ├── fileHandler.test.js
+    ├── parser.test.js
+    └── requestHandler.test.js
 ```
 
 ## 构建和运行
 
 ### 环境要求
-- Node.js (版本 18 或更高，推荐使用最新的LTS版本进行开发)
+- Node.js (版本 20 或更高，推荐使用最新的 LTS 版本进行开发)
 - Git
+- npm 或 yarn 包管理器
 
 ### 安装依赖
 ```bash
@@ -79,12 +110,24 @@ npm run dev:watch
 
 ### 运行测试
 ```bash
-npm test
+npm test              # 使用 mocha 运行测试
 ```
 
 ### 全局安装
 ```bash
 npm install -g . --force
+```
+
+### 版本管理命令
+```bash
+npm run version:info          # 显示当前版本信息
+npm run version:update        # 更新版本号
+npm run version:changelog     # 生成 changelog
+npm run version:tag           # 创建版本标签
+npm run version:validate      # 验证版本配置
+npm run version:prepare       # 准备发布
+npm run changelog              # 生成或更新 changelog
+npm run release               # 执行 semantic-release 发布
 ```
 
 ### 项目配置
@@ -133,6 +176,52 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 遵循语义化版本控制
 - 使用 ESLint 和 Prettier 保持代码风格一致
 
+### Conventional Commits 规范
+
+项目遵循 Conventional Commits 规范，确保提交信息的一致性和可读性：
+
+#### 提交类型 (type)
+- `feat`: 新功能
+- `fix`: 修复 bug
+- `docs`: 文档更新
+- `style`: 代码格式调整（不影响功能）
+- `refactor`: 代码重构
+- `perf`: 性能优化
+- `test`: 测试相关
+- `build`: 构建系统或依赖更新
+- `ci`: CI/CD 相关
+- `chore`: 其他不涉及代码变动的更改
+
+#### 作用域 (scope)
+- `core`: 核心功能
+- `utils`: 工具函数
+- `parser`: 解析器
+- `handler`: 处理器
+- `config`: 配置
+- `cli`: 命令行
+- `deps`: 依赖
+- `release`: 发布
+
+#### 提交格式
+```
+type(scope): subject
+
+body
+
+footer
+```
+
+**示例**:
+```
+feat(core): 添加资源监控功能
+
+- 实现内存和 CPU 使用情况监控
+- 添加资源使用阈值警告
+- 支持监控数据导出
+
+Closes #123
+```
+
 ### 错误处理
 - 使用 try-catch 包装可能出错的代码块
 - 实现重试机制（默认重试3次，可配置，使用指数退避策略）
@@ -153,6 +242,12 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 实现事件驱动的任务处理机制
 - 支持并发控制和优雅停止
 - 使用 async 库管理异步任务队列
+
+### Git Hooks
+
+项目使用 Husky 管理 Git hooks，确保代码质量：
+- **commit-msg**: 使用 commitlint 验证提交信息格式
+- **pre-commit**: 可配置代码格式检查和测试运行
 
 ## 特色功能
 
@@ -271,21 +366,83 @@ npm publish
 ### 全局安装
 项目支持全局安装，安装后可在任何位置使用 `jav` 命令。
 
-### Windows 自动化安装
-提供 `install.bat` 和 `install.ps1` 脚本，支持 Windows 用户一键安装。
+### 自动化发布流程
 
-### 二进制构建
-支持构建跨平台二进制文件：
-```bash
-npm run build-binary              # 构建当前平台二进制
-npm run build-binary:windows      # 构建 Windows 二进制
-npm run build-binary:all          # 构建所有平台二进制
-```
+项目实现了完整的自动化发布流程：
 
-在打包环境中，Puppeteer 会尝试使用系统已安装的 Chrome/Chromium 浏览器，支持以下路径：
-- Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe` 等
-- macOS: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` 等
-- Linux: `/usr/bin/google-chrome` 等
+#### 版本管理
+- 使用 semantic-release 进行语义化版本控制
+- 基于 Conventional Commits 自动确定版本类型（major/minor/patch）
+- 自动更新 package.json 和 CHANGELOG.md
+- 支持 main 和 master 分支
+
+## 版本管理系统
+
+### semantic-release 配置
+
+项目使用 semantic-release 实现自动化版本管理：
+
+#### 支持的分支
+- `main`: 主要开发分支
+- `master`: 传统主分支（向后兼容）
+
+#### 版本确定规则
+- `feat`: 提交触发 minor 版本更新
+- `fix`: 提交触发 patch 版本更新
+- `feat` + `BREAKING CHANGE`: 触发 major 版本更新
+- `fix` + `BREAKING CHANGE`: 触发 major 版本更新
+
+#### 版本脚本功能
+
+`scripts/version.js` 提供以下功能：
+- `info`: 显示当前版本信息
+- `update`: 更新版本号
+- `changelog`: 生成 changelog
+- `tag`: 创建 Git 标签
+- `validate`: 验证版本配置
+- `prepare-release`: 准备发布流程
+
+### Changelog 管理
+
+- 自动生成基于提交历史的 changelog
+- 使用 conventional-changelog 工具
+- 支持首次生成和增量更新
+- 格式符合 Angular 规范
+
+## iFlow 集成
+
+### iFlow 配置
+
+项目集成了 iFlow CLI 工具，提供增强的开发体验：
+
+#### 配置文件
+- `.iflow/`: iFlow 配置目录
+- `.iflow/agents/`: 专用代理配置
+- `IFLOW.md`: 项目上下文文档（本文件）
+
+#### iFlow 代理类型
+项目包含多个专用代理，针对不同的开发任务：
+- `general-purpose`: 通用任务代理
+- `code-quality-reviewer`: 代码质量审查
+- `code-reviewer`: TypeScript 代码审查
+- `github-workflow-manager`: GitHub 工作流管理
+- `project-architect`: 项目架构设计
+- `web-scraper-designer`: 爬虫架构设计
+
+### iFlow 记忆功能
+
+iFlow 会记住以下用户偏好和项目信息：
+- 提交信息规范要求（Conventional Commits）
+- Word 文档处理方式（使用 MCP 工具）
+- 项目特定的开发约定和偏好
+
+### 使用 iFlow
+
+iFlow CLI 可以通过以下方式使用：
+- 直接在终端中执行命令
+- 自动识别项目上下文
+- 提供智能代码补全和建议
+- 集成项目的开发工作流
 
 ## 注意事项
 
@@ -302,8 +459,10 @@ npm run build-binary:all          # 构建所有平台二进制
 11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
 12. 集中式延迟管理器支持更精细的请求间隔控制和优雅退出机制
 13. 项目已清理未使用的依赖项，优化了包大小和加载性能
-14. 支持二进制打包，可构建跨平台可执行文件
-15. 在打包环境中会自动检测系统 Chrome/Chromium 浏览器
+14. **新增**: 提交信息必须符合 Conventional Commits 规范，否则会被 commitlint 拒绝
+15. **新增**: 使用 Node.js 20 作为开发和构建目标，确保最佳性能和兼容性
+16. **新增**: 自动化发布流程会在推送到 main/master 分支时自动触发
+17. **新增**: 项目集成了 iFlow CLI，提供增强的开发体验和专用代理支持
 
 ## 贡献者
 

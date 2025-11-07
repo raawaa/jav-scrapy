@@ -40,6 +40,7 @@ program
     .option('-N, --nopic', '不抓取图片')
     .option('-c, --cookies <string>', '手动设置Cookies，格式: "key1=value1; key2=value2"')
     .option('--cloudflare', '启用 Cloudflare 绕过功能')
+    .option('--no-strict-ssl', '禁用SSL证书严格验证（用于代理SSL证书问题）')
     .action(async (options, program) => {
         const configManager = new ConfigManager();
         await configManager.updateFromProgram(program);

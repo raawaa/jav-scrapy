@@ -12,6 +12,8 @@ import { PuppeteerPool, PuppeteerInstance } from '../core/puppeteerPool';
 // Handle Puppeteer configuration for packaged environments
 const getPuppeteerExecutablePath = (): string | undefined => {
   // Check if running in packaged environment
+  // NOTE: Binary packaging support removed - keeping for reference
+  /*
   if ((process as any).pkg) {
     // In packaged environment, try to find system Chrome/Chromium
     const possiblePaths = [
@@ -44,6 +46,7 @@ const getPuppeteerExecutablePath = (): string | undefined => {
     logger.warn('Running in packaged environment but no system Chrome/Chromium found. Puppeteer may fail to launch.');
     return undefined;
   }
+  */
 
   return undefined;
 };
@@ -363,30 +366,25 @@ class CloudflareBypass {
       logger.info(`正在访问页面: ${url}`);
       logger.debug(`页面访问参数: waitUntil=domcontentloaded, timeout=${this.config.timeout}`);
 
-      // 访问页面 - 先尝试 domcontentloaded，失败时回退到 load
-      let response: any;
-      try {
-        response = await this.page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: this.config.timeout
-        });
-        if (!response) {
-          throw new Error('页面响应为空');
-        }
-      } catch (domError) {
-        logger.warn(`domcontentloaded 失败，尝试 load: ${domError instanceof Error ? domError.message : String(domError)}`);
-        response = await this.page.goto(url, {
-          waitUntil: 'load',
-          timeout: this.config.timeout
-        });
-        if (!response) {
-          throw new Error('页面响应为空');
-        }
+      // 记录开始时间，用于计算实际耗时
+      const pageAccessStartTime = Date.now();
+
+      // 访问页面 - 使用 load 等待策略确保 DOM 完全加载
+      logger.debug(`[TIMING] 开始导航到页面: ${new Date().toISOString()}`);
+      const response = await this.page.goto(url, {
+        waitUntil: 'load',
+        timeout: this.config.timeout
+      });
+      const loadTime = Date.now() - pageAccessStartTime;
+      logger.debug(`[TIMING] load 完成，耗时: ${loadTime}ms`);
+      if (!response) {
+        throw new Error('页面响应为空');
       }
 
       const status = response.status();
       const headers = response.headers();
-      logger.info(`页面状态码: ${status}`);
+      const totalAccessTime = Date.now() - pageAccessStartTime;
+      logger.info(`页面状态码: ${status} (总耗时: ${totalAccessTime}ms)`);
       logger.debug(`页面响应头: ${JSON.stringify(headers, null, 2)}`);
 
       // 检查是否有 Cloudflare 挑战页面
@@ -470,42 +468,74 @@ class CloudflareBypass {
     } catch (error) {
       logger.error(`绕过 Cloudflare 失败: ${error instanceof Error ? error.message : String(error)}`);
       logger.error(`错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
-      
+
       // 记录完整的错误信息
       logger.debug(`bypassCloudflare: 完整错误对象: ${JSON.stringify(error, null, 2)}`);
-      
+
       // 尝试获取当前页面信息
       try {
         if (this.page) {
           const pageUrl = this.page.url();
           const pageTitle = await this.page.title();
           const pageContent = await this.page.content();
-          
+
           logger.debug(`bypassCloudflare: 当前页面URL: ${pageUrl}`);
           logger.debug(`bypassCloudflare: 当前页面标题: ${pageTitle}`);
           logger.debug(`bypassCloudflare: 页面内容长度: ${pageContent.length}`);
-          
-          // 记录页面内容的前1000个字符
+
+          // 记录页面内容的前2000个字符（增加内容长度）
           if (pageContent.length > 0) {
-            logger.debug(`bypassCloudflare: 页面内容前1000字符: ${pageContent.substring(0, 1000)}`);
+            logger.debug(`bypassCloudflare: 页面内容前2000字符:\n${pageContent.substring(0, 2000)}`);
           }
-          
+
+          // 如果内容较短，记录更多内容
+          if (pageContent.length < 5000 && pageContent.length > 0) {
+            logger.debug(`bypassCloudflare: 完整页面内容:\n${pageContent}`);
+          }
+
           // 检查是否有特定的错误页面
-          const hasCloudflareError = pageContent.includes('cf-error-details') || 
+          const hasCloudflareError = pageContent.includes('cf-error-details') ||
                                      pageContent.includes('Cloudflare Ray ID') ||
                                      pageContent.includes('error code:');
-          
+
           if (hasCloudflareError) {
             logger.debug(`bypassCloudflare: 检测到Cloudflare错误页面`);
           }
-          
+
           // 检查是否有年龄认证页面
           const hasAgeVerification = pageContent.includes('Age Verification') ||
                                      pageContent.includes('年龄认证') ||
                                      pageContent.includes('age verification');
-          
+
           if (hasAgeVerification) {
             logger.debug(`bypassCloudflare: 检测到年龄认证页面`);
+          }
+
+          // 额外检查：是否有特定的 Cloudflare 提示
+          const hasJustAMoment = pageContent.includes('Just a moment') ||
+                                 pageContent.includes('Please enable cookies') ||
+                                 pageContent.includes('Checking your browser');
+          if (hasJustAMoment) {
+            logger.debug(`bypassCloudflare: 检测到Cloudflare检查提示页面`);
+          }
+
+          // 记录页面关键元素
+          try {
+            const pageInfo = await this.page.evaluate(() => {
+              return {
+                title: document.title,
+                url: window.location.href,
+                readyState: document.readyState,
+                bodyLength: document.body ? document.body.innerHTML.length : 0,
+                hasJQuery: typeof (window as any).jQuery !== 'undefined',
+                scriptsCount: document.scripts.length,
+                imagesCount: document.images.length,
+                linksCount: document.links.length
+              };
+            });
+            logger.debug(`bypassCloudflare: 页面详细状态: ${JSON.stringify(pageInfo, null, 2)}`);
+          } catch (evalError) {
+            logger.debug(`bypassCloudflare: 获取页面详细状态失败: ${evalError instanceof Error ? evalError.message : String(evalError)}`);
           }
         }
       } catch (pageInfoError) {
@@ -526,44 +556,65 @@ class CloudflareBypass {
 
   /**
    * 获取当前页面的 Cookies
+   * 如果 page 为空，会自动重新获取页面实例
    */
   public async getCookies(): Promise<string> {
     if (!this.page) {
-      throw new Error('请先调用 init() 方法初始化浏览器');
+      logger.warn('getCookies: page 为空，可能需要重新获取页面实例');
+
+      // 如果有共享池，尝试重新获取一个实例
+      if (this.puppeteerPool) {
+        try {
+          logger.debug('getCookies: 正在从共享池重新获取页面实例...');
+          this.currentInstance = await this.puppeteerPool.getInstance(undefined, 1); // 高优先级
+          this.page = this.currentInstance.page;
+
+          if (!this.page || !this.currentInstance) {
+            throw new Error('从共享池重新获取页面实例失败');
+          }
+
+          logger.debug(`getCookies: 成功重新获取页面实例: ${this.currentInstance.id}`);
+        } catch (poolError) {
+          logger.error(`getCookies: 从共享池重新获取页面实例失败: ${poolError instanceof Error ? poolError.message : String(poolError)}`);
+          throw new Error('无法获取页面实例来获取 Cookies，请确保 Puppeteer 池可用');
+        }
+      } else {
+        throw new Error('请先调用 bypassCloudflare() 方法获取页面实例');
+      }
     }
 
     try {
       const cookies = await this.page.cookies();
-      
+
       // 记录所有获取到的cookies，用于调试
       logger.debug(`getCookies: 获取到的所有cookies:`);
       cookies.forEach((cookie: any) => {
         logger.debug(`  ${cookie.name}=${cookie.value} (domain: ${cookie.domain}, path: ${cookie.path})`);
       });
-      
+
       // 确保包含年龄验证相关的cookies
       const ageVerificationCookies = ['age_verified', 'adult_verified', 'age_verification_passed', 'is_adult', 'verified_adult'];
-      const hasAgeVerificationCookies = ageVerificationCookies.some(name => 
+      const hasAgeVerificationCookies = ageVerificationCookies.some(name =>
         cookies.some((cookie: any) => cookie.name === name)
       );
-      
+
       if (!hasAgeVerificationCookies) {
         logger.warn('getCookies: 未找到年龄验证相关的cookies，可能影响图片下载');
         // 尝试重新设置年龄验证cookies
         await this.setAgeVerificationCookies();
-        
+
         // 重新获取cookies
         const updatedCookies = await this.page.cookies();
         logger.debug(`getCookies: 重新设置后获取到的cookies数量: ${updatedCookies.length}`);
-        
+
         const cookieString = updatedCookies
           .map((cookie: any) => `${cookie.name}=${cookie.value}`)
           .join('; ');
-        
+
         logger.info(`获取到 ${updatedCookies.length} 个 Cookies (包含年龄验证)`);
         return cookieString;
       }
-      
+
       const cookieString = cookies
         .map((cookie: any) => `${cookie.name}=${cookie.value}`)
         .join('; ');
@@ -770,70 +821,114 @@ class CloudflareBypass {
   private async waitForCloudflareChallenge(): Promise<void> {
     if (!this.page) return;
 
+    const challengeStartTime = Date.now();
+    logger.debug(`[CHALLENGE] 开始等待Cloudflare挑战完成...`);
+
     try {
       // 等待挑战页面消失
-      await this.page.waitForFunction(
+      logger.debug(`[CHALLENGE] 等待挑战页面消失 (最长60秒)...`);
+      const challengeResult = await this.page.waitForFunction(
         () => {
-          return !document.body.innerHTML.includes('cf-browser-verification') &&
-                 !document.body.innerHTML.includes('cf-im-under-attack') &&
-                 !document.title.includes('Just a moment') &&
-                 !document.title.includes('DDoS protection');
+          const hasBrowserVerification = document.body.innerHTML.includes('cf-browser-verification');
+          const hasUnderAttack = document.body.innerHTML.includes('cf-im-under-attack');
+          const hasJustAMoment = document.title.includes('Just a moment');
+          const hasDdosProtection = document.title.includes('DDoS protection');
+
+          return !hasBrowserVerification && !hasUnderAttack && !hasJustAMoment && !hasDdosProtection;
         },
         { timeout: 60000 }
       );
 
+      const challengeTime = Date.now() - challengeStartTime;
+      logger.debug(`[CHALLENGE] 挑战完成，耗时: ${challengeTime}ms`);
+
       // 额外等待一段时间确保页面完全加载
+      logger.debug(`[CHALLENGE] 等待3秒确保页面完全加载...`);
       await new Promise(resolve => setTimeout(resolve, 3000));
+      logger.debug(`[CHALLENGE] 等待完成`);
     } catch (error) {
-      logger.warn(`等待 Cloudflare 挑战超时: ${error instanceof Error ? error.message : String(error)}`);
-      
+      const challengeTime = Date.now() - challengeStartTime;
+      logger.warn(`[CHALLENGE] 等待 Cloudflare 挑战超时 (耗时: ${challengeTime}ms): ${error instanceof Error ? error.message : String(error)}`);
+
       // 记录完整的错误信息
       logger.debug(`waitForCloudflareChallenge: 完整错误对象: ${JSON.stringify(error, null, 2)}`);
       logger.debug(`waitForCloudflareChallenge: 错误类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}`);
       logger.debug(`waitForCloudflareChallenge: 错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
-      
+
       // 尝试获取当前页面信息
       try {
         if (this.page) {
           const pageUrl = this.page.url();
           const pageTitle = await this.page.title();
           const pageContent = await this.page.content();
-          
-          logger.debug(`waitForCloudflareChallenge: 当前页面URL: ${pageUrl}`);
-          logger.debug(`waitForCloudflareChallenge: 当前页面标题: ${pageTitle}`);
-          logger.debug(`waitForCloudflareChallenge: 页面内容长度: ${pageContent.length}`);
-          
-          // 记录页面内容的前1000个字符
+
+          logger.debug(`[CHALLENGE-TIMEOUT] 当前页面URL: ${pageUrl}`);
+          logger.debug(`[CHALLENGE-TIMEOUT] 当前页面标题: ${pageTitle}`);
+          logger.debug(`[CHALLENGE-TIMEOUT] 页面内容长度: ${pageContent.length}`);
+
+          // 记录页面内容的前1500个字符
           if (pageContent.length > 0) {
-            logger.debug(`waitForCloudflareChallenge: 页面内容前1000字符: ${pageContent.substring(0, 1000)}`);
+            logger.debug(`[CHALLENGE-TIMEOUT] 页面内容前1500字符:\n${pageContent.substring(0, 1500)}`);
           }
-          
+
           // 检查是否有特定的Cloudflare挑战页面
           const hasChallenge = pageContent.includes('cf-browser-verification') ||
                                pageContent.includes('cf-im-under-attack') ||
                                pageContent.includes('Just a moment') ||
                                pageContent.includes('DDoS protection');
-          
+
           if (hasChallenge) {
-            logger.debug(`waitForCloudflareChallenge: 仍在Cloudflare挑战页面`);
+            logger.debug(`[CHALLENGE-TIMEOUT] 仍在Cloudflare挑战页面`);
+            // 记录具体的挑战标识
+            if (pageContent.includes('cf-browser-verification')) {
+              logger.debug(`[CHALLENGE-TIMEOUT] 检测到: cf-browser-verification`);
+            }
+            if (pageContent.includes('cf-im-under-attack')) {
+              logger.debug(`[CHALLENGE-TIMEOUT] 检测到: cf-im-under-attack`);
+            }
+            if (pageTitle.includes('Just a moment')) {
+              logger.debug(`[CHALLENGE-TIMEOUT] 检测到: Just a moment (title)`);
+            }
+            if (pageTitle.includes('DDoS protection')) {
+              logger.debug(`[CHALLENGE-TIMEOUT] 检测到: DDoS protection (title)`);
+            }
           }
-          
+
           // 检查是否有年龄认证页面
           const hasAgeVerification = pageContent.includes('Age Verification') ||
                                      pageContent.includes('年龄认证') ||
                                      pageContent.includes('age verification');
-          
+
           if (hasAgeVerification) {
-            logger.debug(`waitForCloudflareChallenge: 检测到年龄认证页面`);
+            logger.debug(`[CHALLENGE-TIMEOUT] 检测到年龄认证页面`);
           }
-          
+
           // 检查是否有错误页面
           const hasError = pageContent.includes('cf-error-details') ||
                            pageContent.includes('Cloudflare Ray ID') ||
                            pageContent.includes('error code:');
-          
+
           if (hasError) {
-            logger.debug(`waitForCloudflareChallenge: 检测到Cloudflare错误页面`);
+            logger.debug(`[CHALLENGE-TIMEOUT] 检测到Cloudflare错误页面`);
+          }
+
+          // 记录页面状态信息
+          try {
+            const pageState = await this.page.evaluate(() => {
+              return {
+                readyState: document.readyState,
+                title: document.title,
+                url: window.location.href,
+                bodyLength: document.body ? document.body.innerHTML.length : 0,
+                hasJQuery: typeof (window as any).jQuery !== 'undefined',
+                scriptsCount: document.scripts.length,
+                imagesCount: document.images.length,
+                linksCount: document.links.length
+              };
+            });
+            logger.debug(`[CHALLENGE-TIMEOUT] 页面状态: ${JSON.stringify(pageState, null, 2)}`);
+          } catch (stateError) {
+            logger.debug(`[CHALLENGE-TIMEOUT] 获取页面状态失败: ${stateError instanceof Error ? stateError.message : String(stateError)}`);
           }
         }
       } catch (pageInfoError) {

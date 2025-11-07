@@ -25,7 +25,8 @@ export const DEFAULT_CONFIG = {
   timeout: 30000,
   searchUrl: '/search',
   minDelay: 5, // 最小延迟秒数
-  maxDelay: 15 // 最大延迟秒数
+  maxDelay: 15, // 最大延迟秒数
+  strictSSL: true // 默认严格验证SSL证书
 };
 
 // 常见浏览器User-Agent列表（定期更新）
