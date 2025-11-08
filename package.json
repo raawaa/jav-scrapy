@@ -13,6 +13,7 @@
     "chalk": "^5.4.1",
     "cli-progress": "^3.12.0",
     "commander": "12.1.0",
+    
     "puppeteer-core": "^24.28.0",
     "tunnel": "^0.0.6",
     "winreg": "^1.2.5",

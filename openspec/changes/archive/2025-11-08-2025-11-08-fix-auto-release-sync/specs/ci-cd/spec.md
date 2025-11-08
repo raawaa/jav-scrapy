@@ -67,7 +67,7 @@ The GitHub Actions workflow successfully creates releases but fails to synchroni
 ### Primary Success Metrics (Solution A)
 - [ ] ✅ **SELECTED**: Version synchronization across all files (package.json, source code)
 - [ ] ✅ **SELECTED**: GitHub Actions can push updated files to repository
-- [ ] ✅ **SELECTED**: `npm install -g raawaa/jav-scrapy` works without version conflicts
+- [ ] ✅ **SELECTED**: `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main` works without version conflicts
 - [ ] ✅ **SELECTED**: No manual version number updates required
 - [ ] ✅ **SELECTED**: Automated releases include proper package publishing
 - [ ] ✅ **SELECTED**: Solution A successfully resolves permission issues

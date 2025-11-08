@@ -10,7 +10,7 @@ The automated release process is currently failing to synchronize updated files 
 - `package.json`: stuck at 0.8.4 (should be 1.0.0)
 - `src/jav.ts`: hardcoded 0.8.0 (should be 1.0.0)
 
-This results in `npm install -g raawaa/jav-scrapy` failures due to version mismatches, forcing users to manually update version numbers - contradicting the purpose of automation.
+This results in `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main` failures due to version mismatches, forcing users to manually update version numbers - contradicting the purpose of automation.
 
 ## What Changes
 
@@ -95,7 +95,7 @@ const version = packageJson.version;
 **BREAKING**: No - this is a workflow improvement that doesn't affect user-facing functionality
 
 ## Testing & Validation
-- **SMOKE TEST**: Verify `npm install -g raawaa/jav-scrapy` works after fix
+- **SMOKE TEST**: Verify `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main` works after fix
 - **CI TEST**: Confirm GitHub Actions can push updated files
 - **SYNC TEST**: Ensure package.json and source code version consistency
 - **ROLLBACK TEST**: Ability to revert if issues arise
@@ -112,7 +112,7 @@ const version = packageJson.version;
 ## Success Criteria
 1. ✅ **PRIMARY**: GitHub Actions successfully pushes updated files to repository
 2. ✅ **PRIMARY**: Version numbers synchronized across all project files
-3. ✅ **PRIMARY**: `npm install -g raawaa/jav-scrapy` works without version conflicts
+3. ✅ **PRIMARY**: `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main` works without version conflicts
 4. ✅ **PRIMARY**: No manual version number intervention required
 5. ✅ **SECONDARY**: Automated releases include proper package publishing
 6. ✅ **VERIFICATION**: Solution A validation completed successfully

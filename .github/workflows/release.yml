@@ -27,11 +27,24 @@ jobs:
 
       - run: npm run build
 
+      - name: Verify dist directory exists
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory was not created during build"
+            exit 1
+          fi
+          echo "Dist directory contents:"
+          ls -la dist/
+
       - name: Auto-commit dist files
         run: |
           git add dist/
-          git commit -m "chore: auto-update dist files [skip ci]" || exit 0
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit for dist files"
+          else
+            git commit -m "chore(release): auto-update dist files [skip ci]"
+            git push
+          fi
 
       - name: Configure Git
         run: |

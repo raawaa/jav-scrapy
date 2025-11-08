@@ -1,7 +1,7 @@
 /node_modules
 .tern-project
 .eslintrc.json
-/dist
+
 /test
 /.vscode
 /.trae

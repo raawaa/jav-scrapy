@@ -2,9 +2,6 @@
 
 一个基于 TypeScript 的高性能 JAV 内容爬虫，采用多队列架构，具有防屏蔽功能和并发处理能力。
 
-[![npm version](https://img.shields.io/badge/npm-v0.8.4-blue.svg)](https://www.npmjs.com/package/jav-scrapy)
-[![Node.js Version](https://img.shields.io/badge/Node.js-16%2B-green.svg)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 
 ## ✨ 特性
 
@@ -95,26 +92,43 @@ Windows 10+ 无需额外依赖。
 
 ## ⚙️ 安装
 
+### 🎉 新特性：预编译版本
+
+从 v1.0.0 开始，项目提供**预编译版本**，用户可以直接从 GitHub 安装，无需本地 TypeScript 环境或构建过程！
+
 ### 直接安装 (推荐)
 
-直接从 GitHub 安装，无需克隆和构建：
+直接从 GitHub 安装预编译版本：
 
 ```bash
-# 直接从 GitHub 安装
+# 直接从 GitHub 安装（包含预编译的 JavaScript 文件）
 npm install -g raawaa/jav-scrapy
 
 # 现在可以从任何地方使用 'jav' 命令
 jav --help
 ```
 
+> **注意**: 从 v1.0.0 开始，dist 目录会被包含在发布包中，确保用户可以直接使用预编译版本。
+
+**优势**：
+- ✅ 无需 TypeScript 环境
+- ✅ 无需本地编译
+- ✅ 安装速度更快
+- ✅ 即装即用
+
 ### 使用 npx 本地使用
 
-无需全局安装，直接从 GitHub 运行：
+无需全局安装，直接从 GitHub 运行预编译版本：
 
 ```bash
-# 使用 npx 运行 (无需安装)
+# 使用 npx 运行 (无需安装，包含预编译文件)
 npx raawaa/jav-scrapy --help
 ```
+
+**优势**：
+- 🚀 零配置，即用即走
+- 🔧 无需安装开发依赖
+- 📦 自动下载预编译版本
 
 ### 开发模式
 
@@ -414,11 +428,11 @@ git commit -m "feat(core): add proxy authentication support"
 #### "Cannot find module" 或安装问题
 ```bash
 # 如果直接安装失败，请确保使用最新版本
-npm install -g raawaa/jav-scrapy
+npm install -g https://github.com/raawaa/jav-scrapy/tarball/main
 
 # 如果仍有问题，清除 npm 缓存后重试
 npm cache clean --force
-npm install -g raawaa/jav-scrapy
+npm install -g https://github.com/raawaa/jav-scrapy/tarball/main
 ```
 
 #### Puppeteer 下载失败
