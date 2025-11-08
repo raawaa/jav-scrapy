@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/raawaa/jav-scrapy/compare/v1.0.0...v1.0.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* **ci-cd:** 修复自动发布流程中的文件同步问题 ([15070f7](https://github.com/raawaa/jav-scrapy/commit/15070f77d12e012ca998b78d4fef0f12085089fd))
+
 # [1.0.0](https://github.com/raawaa/jav-scrapy/compare/v0.8.5...v1.0.0) (2025-11-08)
 
 
