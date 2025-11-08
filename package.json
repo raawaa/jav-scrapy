@@ -50,7 +50,6 @@
   ],
   "scripts": {
     "test": "mocha test/*.test.js",
-    "prepare": "npm run build",
     "build": "npx tsc",
     "dev": "ts-node src/jav.ts",
     "dev:watch": "nodemon --exec ts-node src/jav.ts",
