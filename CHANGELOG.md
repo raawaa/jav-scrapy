@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/raawaa/jav-scrapy/compare/v1.0.1...v1.1.0) (2025-11-08)
+
+
+### Features
+
+* 添加预编译版本支持并优化构建流程 ([acc6078](https://github.com/raawaa/jav-scrapy/commit/acc6078f867bef372fd4019b80d4f5c09d7fd203))
+
 ## [1.0.1](https://github.com/raawaa/jav-scrapy/compare/v1.0.0...v1.0.1) (2025-11-08)
 
 
