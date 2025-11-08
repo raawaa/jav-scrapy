@@ -182,3 +182,69 @@ $ jav -l 5 -p 3 -d 2 -o /path/to/output -s "关键词" --cloudflare
 - [@qiusli](https://github.com/qiusli)
 - [@Eddie104](https://github.com/Eddie104)
 - [@leongfeng](https://github.com/leongfeng)
+
+## 🏗️ 开发者指南 (Development)
+
+### 🔄 自动发布流程 (Automated Release)
+
+本项目使用 **semantic-release** 和 **GitHub Actions** 实现全自动发布流程：
+
+- **自动版本管理**: 根据 commit 消息自动决定版本号（major/minor/patch）
+- **自动生成 CHANGELOG**: 基于 commit 消息自动更新 CHANGELOG.md
+- **自动创建 Release**: 在 GitHub 上自动创建带说明的 Release
+- **自动提交更改**: 自动提交版本号和 CHANGELOG 更新
+
+#### 📝 提交消息规范 (Commit Message Convention)
+
+项目使用 **Conventional Commits** 规范：
+
+```bash
+# 新功能 - 触发 minor 版本升级 (0.8.4 → 0.9.0)
+git commit -m "feat: 添加新功能"
+
+# 错误修复 - 触发 patch 版本升级 (0.8.4 → 0.8.5)
+git commit -m "fix: 修复了某个问题"
+
+# 重大变更 - 触发 major 版本升级 (0.8.4 → 1.0.0)
+git commit -m "feat: 重构API\n\nBREAKING CHANGE: 旧API已弃用"
+
+# 文档更新
+git commit -m "docs: 更新README"
+
+# 构建相关
+git commit -m "build: 更新构建配置"
+
+# 测试相关
+git commit -m "test: 添加单元测试"
+```
+
+#### 🚀 发布触发条件
+
+当代码推送到 `master` 分支时，GitHub Actions 会自动：
+1. 分析 commit 消息
+2. 确定版本号
+3. 更新 CHANGELOG.md
+4. 创建 Git tag (如 v0.9.0)
+5. 在 GitHub Releases 页面创建发布说明
+
+#### 🛠️ 开发环境设置
+
+```bash
+# 克隆仓库
+git clone https://github.com/raawaa/jav-scrapy.git
+cd jav-scrapy
+
+# 安装依赖
+npm install
+
+# 开发模式运行
+npm run dev
+
+# 构建项目
+npm run build
+
+# 测试
+npm test
+```
+
+> **注意**: 所有开发工具都作为本地依赖管理，无需安装全局包。
