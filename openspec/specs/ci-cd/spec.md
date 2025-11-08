@@ -1,5 +1,26 @@
 # CI/CD
 
+## Purpose
+Defines the automated CI/CD pipeline requirements for the jav-scrapy project, including GitHub Actions workflow, semantic-release configuration, and automated versioning processes.
+
+## Delta
+
+### ADDED
+- Enhanced GitHub Actions workflow with proper token configuration
+- Dynamic version reading from package.json in source code
+- Dual token support (GH_TOKEN + GITHUB_TOKEN) for CI authentication
+- Git user configuration for CI commits
+- Added src/jav.ts to semantic-release assets configuration
+
+### MODIFIED
+- .github/workflows/release.yml: Added proper permissions and token configuration
+- .releaserc.json: Enhanced to include src/jav.ts in semantic-release assets
+- src/jav.ts: Replaced hardcoded version with dynamic package.json reading
+- Package.json: Updated version to 1.0.0 for consistency
+
+### REMOVED
+- Hardcoded version number in src/jav.ts source code
+
 ## Requirements
 
 ### Requirement: Automatic GitHub Release Creation

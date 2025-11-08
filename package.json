@@ -1,6 +1,6 @@
 {
   "name": "jav-scrapy",
-  "version": "0.8.4",
+  "version": "1.0.0",
   "type": "commonjs",
   "description": "",
   "main": "dist/jav.js",
@@ -50,7 +50,7 @@
   "scripts": {
     "test": "mocha test/*.test.js",
     "prepare": "npm run build",
-    "build": "tsc",
+    "build": "npx tsc",
     "dev": "ts-node src/jav.ts",
     "dev:watch": "nodemon --exec ts-node src/jav.ts",
     "release": "semantic-release",

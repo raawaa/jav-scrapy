@@ -21,7 +21,14 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ## 项目概述
 
-jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。项目版本为 0.8.4，使用 CommonJS 模块系统。
+jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，专门用于抓取 AV 影片的磁力链接、影片信息和封面图片。该项目采用模块化架构，具有良好的并发控制、错误处理机制、防屏蔽功能以及高级反爬虫绕过能力。项目版本为 **1.0.0**，使用 CommonJS 模块系统。
+
+### 重要里程碑
+
+项目已成功完成从 0.8.4 到 1.0.0 的重大升级，标志着项目的成熟化和稳定化：
+- **v1.0.0**: 集成 Speckit 功能规格管理系统，优化发布流程
+- **v0.8.0**: 项目架构重构，迁移到 TypeScript
+- **v0.7.0**: 基础功能完善
 
 ### 自动化发布流程
 
@@ -29,19 +36,20 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
 - **Conventional Commits 规范**: 使用 commitlint 确保提交信息符合规范
 - **语义化版本控制**: 基于 semantic-release 自动版本管理
 - **GitHub Actions**: 自动化构建、测试和发布流程
+- **Speckit (OpenSpec) 集成**: 规范化的功能规格管理系统
 
 ### 主要技术栈
-- **语言**: TypeScript
-- **运行环境**: Node.js
+- **语言**: TypeScript (ES2020)
+- **运行环境**: Node.js 20+
 - **模块系统**: CommonJS
 - **核心依赖**: 
-  - axios (HTTP 请求) - 1.9.0
+  - axios (HTTP 请求) - 1.13.2
   - axios-retry (请求重试) - ^4.5.0
   - commander (命令行解析) - 12.1.0
   - cli-progress (进度条显示) - ^3.12.0
   - winston (日志记录) - ^3.17.0
   - chalk (控制台美化) - ^5.4.1
-  - puppeteer/puppeteer-extra/puppeteer-extra-plugin-stealth (浏览器自动化和绕过反爬机制) - ^24.28.0/^3.3.6/^2.11.2
+  - puppeteer-core (浏览器自动化) - ^24.28.0
   - tunnel (代理支持) - ^0.0.6
   - winreg (Windows 注册表操作) - ^1.2.5
 
@@ -52,14 +60,11 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
   - @types/cli-progress ^3.11.6
   - @types/tunnel ^0.0.7
   - @types/async ^3.2.25
-  - @types/cheerio ^0.22.35
   - @types/winreg ^1.2.36
 - **HTML解析**: cheerio - ^1.1.2
 - **异步流程控制**: async - ^3.2.6
 - **测试工具**:
   - mocha ^11.7.4 (测试运行器)
-  - chai ^6.2.0 (断言库)
-  - nock ^14.0.10 (HTTP 模拟)
 - **版本管理**:
   - semantic-release ^24.2.0
   - @commitlint/cli ^19.6.1
@@ -91,6 +96,15 @@ jav-scrapy 是一个基于 Node.js 和 TypeScript 开发的网络爬虫工具，
 │       ├── delayManager.ts # 延迟管理器
 │       ├── errorHandler.ts # 错误处理
 │       └── systemProxy.ts  # 系统代理检测
+├── .specify/               # Speckit 规范系统
+│   ├── memory/             # 记忆和约定配置
+│   ├── scripts/            # 自动化脚本
+│   └── templates/          # 规范模板
+├── openspec/               # OpenSpec 功能规格管理
+│   ├── AGENTS.md           # AI 助手指导文档
+│   ├── project.md          # 项目规范
+│   ├── specs/              # 现有功能规格
+│   └── changes/            # 变更提案
 ├── .iflow/                 # iFlow 配置和代理
 │   └── agents/             # iFlow 专用代理配置
 ├── dist/                   # TypeScript 编译输出目录
@@ -137,16 +151,10 @@ npm test              # 使用 mocha 运行测试
 npm install -g . --force
 ```
 
-### 版本管理命令
+### 版本发布
 ```bash
-npm run version:info          # 显示当前版本信息
-npm run version:update        # 更新版本号
-npm run version:changelog     # 生成 changelog
-npm run version:tag           # 创建版本标签
-npm run version:validate      # 验证版本配置
-npm run version:prepare       # 准备发布
-npm run changelog              # 生成或更新 changelog
 npm run release               # 执行 semantic-release 发布
+npm run changelog              # 生成 changelog
 ```
 
 ### 项目配置
@@ -156,6 +164,7 @@ npm run release               # 执行 semantic-release 发布
 - 支持装饰器和实验性元数据
 - 模块解析：node
 - 启用 ES 模块互操作和一致性检查
+- 支持严格类型检查
 
 ## 使用方法
 
@@ -193,7 +202,7 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - 采用模块化设计，每个功能模块独立
 - 使用 async/await 处理异步操作
 - 遵循语义化版本控制
-- 使用 ESLint 和 Prettier 保持代码风格一致
+- 支持严格的类型检查和代码质量保证
 
 ### Conventional Commits 规范
 
@@ -220,6 +229,8 @@ jav -l 10 -o ~/downloads -p 5 -s "关键词"
 - `cli`: 命令行
 - `deps`: 依赖
 - `release`: 发布
+- `specs`: 规范系统
+- `ci-cd`: 持续集成/持续部署
 
 #### 提交格式
 ```
@@ -239,6 +250,42 @@ feat(core): 添加资源监控功能
 - 支持监控数据导出
 
 Closes #123
+```
+
+### Speckit (OpenSpec) 规范系统
+
+项目集成了 Speckit (OpenSpec) 功能规格管理系统，提供规范化的功能开发流程：
+
+#### Speckit 流程
+1. **变更提案阶段**: 创建功能提案和任务清单
+2. **实现阶段**: 按规范实现功能并验证
+3. **归档阶段**: 完成部署后归档变更记录
+
+#### 主要命令
+```bash
+openspec list                  # 列出活跃变更
+openspec show [item]           # 显示变更或规范详情
+openspec validate [item]       # 验证变更或规范
+openspec archive <change-id>   # 归档完成后的变更
+```
+
+#### 规范文件结构
+```
+openspec/
+├── project.md              # 项目约定
+├── specs/                  # 现有功能规范
+│   └── [capability]/
+│       ├── spec.md         # 需求和场景
+│       └── design.md       # 技术设计
+├── changes/                # 变更提案
+│   ├── [change-name]/
+│   │   ├── proposal.md     # 变更原因和内容
+│   │   ├── tasks.md        # 实现清单
+│   │   ├── design.md       # 技术决策
+│   │   └── specs/          # 规范变更
+│   │       └── [capability]/
+│   │           └── spec.md # ADDED/MODIFIED/REMOVED
+│   └── archive/            # 已完成变更
 ```
 
 ### 错误处理
@@ -292,7 +339,7 @@ Closes #123
 - 支持手动指定代理服务器
 
 ### Cloudflare 防护绕过
-- 集成 Puppeteer + Stealth 插件绕过 Cloudflare 防护
+- 集成 Puppeteer-core 绕过 Cloudflare 防护
 - 自动处理反爬虫机制
 - 随机 User-Agent 和浏览器指纹（包括 Sec-CH-UA 头部）
 - 实现 Puppeteer 实例池和资源监控系统
@@ -344,6 +391,7 @@ Closes #123
 - 集成资源监控系统，实时监控内存和 CPU 使用情况
 - 支持打包环境下的 Puppeteer 配置处理
 - 支持共享池实例以提高资源利用率
+- 智能浏览器路径检测，支持系统 Chrome 和捆绑 Chrome
 
 ## 测试和调试
 
@@ -371,8 +419,7 @@ npm run dev:watch     # 使用 nodemon 监听文件变化并自动重启
 
 ### 测试工具
 - **Mocha**: 测试运行器
-- **Chai**: 断言库
-- **Nock**: HTTP 模拟和测试
+- **TypeScript**: 静态类型检查和编译
 
 ## 部署说明
 
@@ -395,6 +442,12 @@ npm publish
 - 自动更新 package.json 和 CHANGELOG.md
 - 支持 main 和 master 分支
 
+#### GitHub Actions 集成
+- 自动化构建和测试
+- 自动创建 GitHub Release
+- 支持多平台二进制文件构建
+- 集成 Speckit 规范系统验证
+
 ## 版本管理系统
 
 ### semantic-release 配置
@@ -411,30 +464,45 @@ npm publish
 - `feat` + `BREAKING CHANGE`: 触发 major 版本更新
 - `fix` + `BREAKING CHANGE`: 触发 major 版本更新
 
-#### 版本脚本功能
-
-`scripts/version.js` 提供以下功能：
-- `info`: 显示当前版本信息
-- `update`: 更新版本号
-- `changelog`: 生成 changelog
-- `tag`: 创建 Git 标签
-- `validate`: 验证版本配置
-- `prepare-release`: 准备发布流程
-
 ### Changelog 管理
 
 - 自动生成基于提交历史的 changelog
 - 使用 conventional-changelog 工具
 - 支持首次生成和增量更新
 - 格式符合 Angular 规范
+- 与 GitHub Release 集成
 
-## iFlow 集成
+## Speckit (OpenSpec) 集成
 
-### iFlow 配置
+### Speckit 系统概述
+
+项目集成了 Speckit (OpenSpec) 功能规格管理系统，提供规范化的功能开发流程：
+
+#### 三阶段工作流
+1. **变更提案阶段**: 创建功能提案和任务清单
+2. **实现阶段**: 按规范实现功能并验证
+3. **归档阶段**: 完成部署后归档变更记录
+
+#### 主要功能
+- 规范化的功能开发流程
+- 自动化的规范验证
+- 变更历史追踪和归档
+- 与 CI/CD 流程集成
+
+#### 模板系统
+项目提供规范化的模板：
+- `proposal.md`: 变更提案模板
+- `tasks.md`: 实现任务模板
+- `spec.md`: 功能规格模板
+- `checklist.md`: 验收清单模板
+
+### iFlow 集成
+
+#### iFlow 配置
 
 项目集成了 iFlow CLI 工具，提供增强的开发体验：
 
-#### 配置文件
+##### 配置文件
 - `.iflow/`: iFlow 配置目录
 - `.iflow/agents/`: 专用代理配置
 - `IFLOW.md`: 项目上下文文档（本文件）
@@ -448,43 +516,54 @@ npm publish
 - `project-architect`: 项目架构设计
 - `web-scraper-designer`: 爬虫架构设计
 
-### iFlow 记忆功能
+#### iFlow 记忆功能
 
 iFlow 会记住以下用户偏好和项目信息：
 - 提交信息规范要求（Conventional Commits）
 - Word 文档处理方式（使用 MCP 工具）
 - 项目特定的开发约定和偏好
+- Speckit 规范系统使用方式
 
-### 使用 iFlow
+#### 使用 iFlow
 
 iFlow CLI 可以通过以下方式使用：
 - 直接在终端中执行命令
 - 自动识别项目上下文
 - 提供智能代码补全和建议
 - 集成项目的开发工作流
+- 支持 Speckit 规范系统的开发流程
 
 ## 注意事项
 
-1. 程序会自动检测并使用系统代理设置
-2. 抓取图片时会自动简化文件名以避免保存失败
-3. 建议定期运行 `jav update` 更新防屏蔽地址
-4. 使用 Ctrl+C 可以安全中断程序执行
-5. 项目仅用于学习和研究目的，请遵守相关法律法规
-6. 添加了请求延迟参数（-d/--delay）以避免请求过于频繁被封禁
-7. 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
-8. 项目版本为 0.8.4，使用 CommonJS 模块系统
-9. 默认重试次数为 3 次，使用指数退避策略
-10. TypeScript 编译目标为 ES2020，确保在较新 Node.js 环境中运行
-11. 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
-12. 集中式延迟管理器支持更精细的请求间隔控制和优雅退出机制
-13. 项目已清理未使用的依赖项，优化了包大小和加载性能
-14. **新增**: 提交信息必须符合 Conventional Commits 规范，否则会被 commitlint 拒绝
-15. **新增**: 使用 Node.js 20 作为开发和构建目标，确保最佳性能和兼容性
-16. **新增**: 自动化发布流程会在推送到 main/master 分支时自动触发
-17. **新增**: 项目集成了 iFlow CLI，提供增强的开发体验和专用代理支持
+1. **浏览器依赖**: 项目使用 `puppeteer-core` 替代 `puppeteer`，需要系统安装 Chrome/Chromium 浏览器
+2. **代理设置**: 程序会自动检测并使用系统代理设置
+3. **文件处理**: 抓取图片时会自动简化文件名以避免保存失败
+4. **防屏蔽地址**: 建议定期运行 `jav update` 更新防屏蔽地址
+5. **优雅退出**: 使用 Ctrl+C 可以安全中断程序执行
+6. **法律合规**: 项目仅用于学习和研究目的，请遵守相关法律法规
+7. **请求频率**: 添加了请求延迟参数（-d/--delay）以避免请求过于频繁被封禁
+8. **资源消耗**: 启用 Cloudflare 绕过功能会启动浏览器实例，需要额外的系统资源
+9. **版本信息**: 项目版本为 1.0.0，使用 CommonJS 模块系统
+10. **重试机制**: 默认重试次数为 3 次，使用指数退避策略
+11. **TypeScript**: 编译目标为 ES2020，确保在较新 Node.js 环境中运行
+12. **防屏蔽策略**: 使用本地防屏蔽地址时会随机选择一个作为基础URL，提高访问成功率
+13. **延迟管理**: 集中式延迟管理器支持更精细的请求间隔控制和优雅退出机制
+14. **依赖优化**: 项目已清理未使用的依赖项，优化了包大小和加载性能
+15. **规范要求**: 提交信息必须符合 Conventional Commits 规范，否则会被 commitlint 拒绝
+16. **环境要求**: 使用 Node.js 20 作为开发和构建目标，确保最佳性能和兼容性
+17. **发布自动化**: 自动化发布流程会在推送到 main/master 分支时自动触发
+18. **功能规格**: 集成了 Speckit (OpenSpec) 功能规格管理系统，提供规范化的开发流程
+19. **iFlow 集成**: 项目集成了 iFlow CLI，提供增强的开发体验和专用代理支持
+20. **浏览器检测**: PuppeteerPool 实现了智能浏览器路径检测，支持多种操作系统
 
 ## 贡献者
 
 - [@qiusli](https://github.com/qiusli)
-- [@Eddie104](https://github.com/Eddie104)
+- [@Eddie104](https://github.com/Eddie104)  
 - [@leongfeng](https://github.com/leongfeng)
+
+---
+
+**项目状态**: 活跃开发中 v1.0.0  
+**最后更新**: 2025年11月8日  
+**维护者**: jav-scrapy 团队
