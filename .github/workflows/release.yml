@@ -27,6 +27,12 @@ jobs:
 
       - run: npm run build
 
+      - name: Auto-commit dist files
+        run: |
+          git add dist/
+          git commit -m "chore: auto-update dist files [skip ci]" || exit 0
+          git push
+
       - name: Configure Git
         run: |
           git config --global user.email "raawaa@users.noreply.github.com"
