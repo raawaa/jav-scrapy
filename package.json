@@ -22,9 +22,6 @@
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.0",
     "@types/async": "^3.2.25",
     "@types/cheerio": "^0.22.35",
     "@types/node": "^24.10.0",
@@ -37,7 +34,6 @@
     "husky": "^9.1.7",
     "mocha": "^11.7.4",
     "nodemon": "^3.1.10",
-    "semantic-release": "^24.2.0",
     "temp": "^0.9.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -53,9 +49,14 @@
     "build": "npx tsc",
     "dev": "ts-node src/jav.ts",
     "dev:watch": "nodemon --exec ts-node src/jav.ts",
-    "release": "semantic-release",
+    "release": "npm run build && npm version",
+    "release:major": "npm run build && npm version major -m \"chore(release): %s\"",
+    "release:minor": "npm run build && npm version minor -m \"chore(release): %s\"",
+    "release:patch": "npm run build && npm version patch -m \"chore(release): %s\"",
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
-    "changelog:first": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0"
+    "changelog:first": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0",
+    "preversion": "npm test",
+    "version": "npm run changelog && git add CHANGELOG.md"
   },
   "repository": {
     "type": "git",

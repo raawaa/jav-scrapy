@@ -532,18 +532,18 @@ jav crawl --debug --limit 10
 - [@Eddie104](https://github.com/Eddie104)
 - [@leongfeng](https://github.com/leongfeng)
 
-## 🔄 自动发布流程 (Automated Release)
+## 🔄 手动发布流程 (Manual Release)
 
-本项目使用 **semantic-release** 和 **GitHub Actions** 实现全自动发布流程：
+项目现在使用手动发布流程，开发者在本地运行 `npm version` 命令来生成版本和标签，然后 GitHub Actions 会在检测到新标签时自动发布到 npm 和 GitHub Releases：
 
-- **自动版本管理**: 根据 commit 消息自动决定版本号（major/minor/patch）
-- **自动生成 CHANGELOG**: 基于 commit 消息自动更新 CHANGELOG.md
-- **自动创建 Release**: 在 GitHub 上自动创建带说明的 Release
-- **自动提交更改**: 自动提交版本号和 CHANGELOG 更新
+- **手动版本管理**: 通过 `npm version` 命令手动更新版本号（major/minor/patch）
+- **自动生成 CHANGELOG**: 在版本更新时自动生成 CHANGELOG.md
+- **自动发布到 GitHub**: 推送标签后自动创建 GitHub Release
+- **自动发布到 npm**: 推送标签后自动发布到 npm registry
 
-#### 📝 提交消息规范 (Commit Message Convention)
+#### 📝 版本发布命令 (Release Commands)
 
-项目使用 **Conventional Commits** 规范：
+以下是发布不同版本类型的命令：
 
 ```bash
 # 新功能 - 触发 minor 版本升级 (0.8.4 → 0.9.0)
@@ -565,14 +565,21 @@ git commit -m "build: 更新构建配置"
 git commit -m "test: 添加单元测试"
 ```
 
-#### 🚀 发布触发条件
+#### 🚀 发布流程
 
-当代码推送到 `master` 分支时，GitHub Actions 会自动：
-1. 分析 commit 消息
-2. 确定版本号
-3. 更新 CHANGELOG.md
-4. 创建 Git tag (如 v0.9.0)
-5. 在 GitHub Releases 页面创建发布说明
+1. 确保所有测试通过
+   ```bash
+   npm test
+   ```
+2. 运行版本发布命令（选择适当的版本类型）
+   ```bash
+   npm run release:patch  # 或 minor/major
+   ```
+3. 推送标签和代码到远程仓库
+   ```bash
+   git push --follow-tags
+   ```
+4. GitHub Actions 会自动检测到新标签并执行发布流程
 
 > **注意**: 所有开发工具都作为本地依赖管理，无需安装全局包。
 

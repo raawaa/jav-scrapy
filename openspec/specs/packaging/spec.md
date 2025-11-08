@@ -15,7 +15,7 @@ Defines the npm package distribution requirements for jav-scrapy, ensuring optim
 The package MUST be optimized for global installation to reduce size and improve installation performance.
 
 #### Scenario: Global installation from GitHub
-- **WHEN** user runs `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main`
+- **WHEN** user runs `npm install -g raawaa/jav-scrapy`
 - **THEN** only runtime-necessary files are downloaded and installed
 - **AND** package size is reduced by at least 60% compared to previous versions
 - **AND** "jav" command is available globally after installation

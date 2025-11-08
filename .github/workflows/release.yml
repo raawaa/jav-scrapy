@@ -2,7 +2,8 @@ name: Release
 
 on:
   push:
-    branches: [master, main]
+    tags:
+      - 'v*'
 
 jobs:
   release:
@@ -22,6 +23,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get tag version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - run: npm ci
 
@@ -36,22 +42,21 @@ jobs:
           echo "Dist directory contents:"
           ls -la dist/
 
-      - name: Auto-commit dist files
-        run: |
-          git add dist/
-          if git diff --staged --quiet; then
-            echo "No changes to commit for dist files"
-          else
-            git commit -m "chore(release): auto-update dist files [skip ci]"
-            git push
-          fi
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "raawaa@users.noreply.github.com"
-          git config --global user.name "raawaa"
-
-      - run: npx semantic-release
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## [${{ env.VERSION }}] - $(date +'%Y-%m-%d')
+            
+            Please see [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
+          draft: false
+          prerelease: false
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
