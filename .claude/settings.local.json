@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(npm run dev:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(openspec list)",
+      "Bash(openspec list --specs)",
+      "Bash(openspec validate update-readme-installation --strict)",
+      "Bash(openspec archive update-readme-installation --yes)"
     ],
     "deny": [],
     "ask": []
