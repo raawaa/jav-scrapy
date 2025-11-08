@@ -3,7 +3,7 @@
   "version": "0.8.4",
   "type": "commonjs",
   "description": "",
-  "main": "jav.js",
+  "main": "dist/jav.js",
   "preferGlobal": true,
   "dependencies": {
     "@types/cli-progress": "^3.11.6",
@@ -26,6 +26,7 @@
     "@types/async": "^3.2.25",
     "@types/cheerio": "^0.22.35",
     "@types/node": "^24.10.0",
+    "@types/puppeteer-core": "^5.4.0",
     "@types/winreg": "^1.2.36",
     "async": "^3.2.6",
     "cheerio": "^1.1.2",
@@ -43,8 +44,7 @@
     "jav": "./dist/jav.js"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "test": "mocha test/*.test.js",

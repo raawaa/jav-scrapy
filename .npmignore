@@ -1,0 +1,94 @@
+# Development directories
+src/
+test/
+.husky/
+.vscode/
+.claude/
+.iflow/
+.specify/
+
+# Development configuration files
+*.config.js
+.eslintrc.json
+.releaserc.json
+.versionrc.json
+.commitlintrc.js
+tsconfig.json
+.eslintcache
+.tern-project
+
+# OpenSpec change management
+openspec/
+
+# Git and CI/CD
+.git/
+.github/
+.travis.yml
+.gitlab-ci.yml
+
+# Build and compile output (already controlled by files array, but being explicit)
+node_modules/
+dist/*.map
+
+# Log files
+*.log
+error.log
+combined.log
+debug.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Build artifacts
+dist/tsconfig.tsbuildinfo
+
+# Temporary folders
+tmp/
+temp/
+
+# Test artifacts
+test-results/
