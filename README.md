@@ -95,23 +95,13 @@ Windows 10+ 无需额外依赖。
 
 ## ⚙️ 安装
 
-### 全局安装 (推荐)
+### 直接安装 (推荐)
 
-全局安装以从任何地方使用 `jav` 命令：
+直接从 GitHub 安装，无需克隆和构建：
 
 ```bash
-# 克隆仓库
-git clone https://github.com/raawaa/jav-scrapy.git
-cd jav-scrapy
-
-# 安装依赖
-npm install
-
-# 构建项目
-npm run build
-
-# 全局安装
-npm install -g . --force
+# 直接从 GitHub 安装
+npm install -g raawaa/jav-scrapy
 
 # 现在可以从任何地方使用 'jav' 命令
 jav --help
@@ -119,16 +109,11 @@ jav --help
 
 ### 使用 npx 本地使用
 
-无需全局安装：
+无需全局安装，直接从 GitHub 运行：
 
 ```bash
-# 克隆并构建
-git clone https://github.com/raawaa/jav-scrapy.git
-cd jav-scrapy
-npm install && npm run build
-
-# 使用 npx 运行
-npx jav-scrapy --help
+# 使用 npx 运行 (无需安装)
+npx raawaa/jav-scrapy --help
 ```
 
 ### 开发模式
@@ -332,7 +317,9 @@ jav-scrapy 使用复杂的四阶段流水线架构:
 - npm 8+
 - Git
 
-### 设置开发环境
+> **注意**: 如果您只想使用 jav-scrapy 而不需要修改代码，请使用上面的"直接安装"方式。下面的步骤仅适用于需要参与项目开发的开发者。
+
+### 设置开发环境 (仅限开发者)
 
 ```bash
 # 克隆仓库
@@ -424,13 +411,14 @@ git commit -m "feat(core): add proxy authentication support"
 
 ### 常见问题
 
-#### "Cannot find module './dist/jav.js'"
+#### "Cannot find module" 或安装问题
 ```bash
-# 首先构建项目
-npm run build
+# 如果直接安装失败，请确保使用最新版本
+npm install -g raawaa/jav-scrapy
 
-# 然后全局安装
-npm install -g . --force
+# 如果仍有问题，清除 npm 缓存后重试
+npm cache clean --force
+npm install -g raawaa/jav-scrapy
 ```
 
 #### Puppeteer 下载失败
