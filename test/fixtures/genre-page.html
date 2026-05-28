@@ -1,0 +1,973 @@
+  <!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>高清 - 有碼類別 - 影片</title>
+<meta name="keywords" content="">
+<meta name="description" content="">
+<link rel="alternate" href="https://www.javbus.com/en/genre/hd" hreflang="en" />
+<link rel="alternate" href="https://www.javbus.com/ja/genre/hd" hreflang="ja" />
+<link rel="alternate" href="https://www.javbus.com/ko/genre/hd" hreflang="ko" />
+<link rel="alternate" href="https://www.javbus.com/genre/hd" hreflang="zh" />
+<link rel="alternate" href="https://www.javbus.com/genre/hd" hreflang="x-default" />
+<link rel="canonical" href="https://www.javbus.com/genre/hd" />
+<link rel="preconnect" href="https://poweredby.jads.co" crossorigin>
+<link rel="dns-prefetch" href="https://poweredby.jads.co">
+<link rel="stylesheet" href="https://www.javbus.com/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://www.javbus.com/css/bootstrap-theme.min.css">
+<link rel="stylesheet" href="https://www.javbus.com/css/css-slider.css?v=9.3">
+<link rel="stylesheet" href="https://www.javbus.com/css/nav.overlay.css?v=3.9.8">
+<link rel="stylesheet" href="https://www.javbus.com/css/magnific-popup.css">
+<link rel="stylesheet" href="https://www.javbus.com/css/base.css?v=7.15">
+<script src="https://www.javbus.com/js/jquery.min.js"></script>
+<script src="https://www.javbus.com/js/jquery.magnific-popup.min.js"></script>
+<script src="https://www.javbus.com/js/bootstrap.min.js" defer></script>
+<script src="https://www.javbus.com/js/jquery.cookie.min.js" defer></script>
+<script src="https://www.javbus.com/js/base.js" defer></script>
+<script src="https://www.javbus.com/js/bootstrap-hover-dropdown.js" defer></script>
+<script src="https://www.javbus.com/js/nav.overlay.js?v=10.30.3" defer></script>
+<!--[if lt IE 9]> <script src="https://www.javbus.com/js/html5shiv.min.js"></script><script src="https://www.javbus.com/js/respond.min.js"></script><![endif]-->
+</head>
+<body>
+<script language="JavaScript">
+var mod = 0;
+var lang = 'zh';
+var info = '搜尋 識別碼, 影片, 演員';
+function searchs(obj){
+	var searchinput = $("#"+obj);
+	if(searchinput.val()=='')
+	{
+		$('#magnet-url-post').trigger("click");	
+		   return false;
+	}
+	else
+	{
+		//$('#search-loading').show();str.replace(/ /g, "-")
+		window.open("https://www.javbus.com/search/"+encodeURIComponent($.trim(searchinput.val()).replace(/ /g,"+"))+"&type=&parent=ce");
+	}
+}
+
+$(function(){
+		
+	var url ='https://www.javbus.com/ajax/search-modal.php?floor='+Math.floor(Math.random()*1000+1)+'&lang='+lang;
+       $.ajax({url: url,type: 'GET',success: function(msg){
+			$("#searchModal").append(msg);										  
+	   }});
+});
+</script>
+<div id="search-loading">
+    <table class="search-loading-box" border="0" cellpadding="0" cellspacing="0">
+        <tbody>
+            <tr>
+                <td align="center">
+                    <table height="80" width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr>
+                                <td height="40" align="center">
+                                	<div class="search-loading-text">搜尋中...</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td height="40" align="center">
+                                    <img src="https://www.javbus.com/images/search_loading.gif" border="0">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Search -->
+<div id="searchModal" class="modal fade" tabindex="-1" role="dialog"></div>
+
+<nav class="navbar navbar-default navbar-fixed-top top-bar" style="z-index:900">
+    <div class="container-fluid">
+        <div class="navbar-header mh50">
+            <a href="https://www.javbus.com/">
+                <img class="hidden-xs" height="50" alt="JavBus" src="https://www.javbus.com/images/logo.png" style="height:40px; margin-top:5px;">
+                <img class="visible-xs-inline" height="50" alt="JavBus" src="https://www.javbus.com/images/logo.png">
+            </a>                                                 
+
+            <div class="btn-group pull-right visible-xs-inline" role="group" style="margin:8px 8px 0 0;" onclick="window.location.href= '/forum/member.php?mod=logging&action=login&referer=%2F%2Fwww.javbus.com%2Fgenre%2Fhd'">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <img class="avatar" style="width:22px; height:22px;" src="https://uc.javbus22.com/uc/avatar.php?uid=0&size=small">                 </button>
+                            </div>
+            
+
+            <div class="btn-group pull-right visible-xs-inline" role="group" style="margin:8px 8px 0 0;">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <span class="glyphicon glyphicon-globe"></span>  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a href="https://www.javbus.com/en/genre/hd">English</a></li>
+                    <li><a href="https://www.javbus.com/ja/genre/hd">日本语</a></li>
+                    <li><a href="https://www.javbus.com/ko/genre/hd">한국의</a></li>
+                    <li><a href="https://www.javbus.com/genre/hd">中文</a></li>   
+                </ul>
+            </div>
+ 
+ 		             <div class="btn-group pull-right visible-xs-inline" role="group" style="margin:8px 8px 0 0;">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <span class="glyphicon glyphicon-magnet"></span>  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                	                    <li id="cellshowall"><a><span class="glyphicon glyphicon-film"></span> 全部影片</a></li>
+                     
+                </ul>
+            </div>
+        
+		                      
+ 
+        </div>
+ 
+        <div id="navbar" class="collapse navbar-collapse">
+            <div class="navbar-form navbar-left fullsearch-form">
+                <div class="input-group">
+                    <input id="search-input" type="text" class="form-control" placeholder="搜尋 識別碼, 影片, 演員">
+                    <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit" onClick="searchs('search-input')">搜尋</button>
+                    </span>
+                </div>
+            </div>
+            <ul class="nav navbar-nav">
+            	<li><a href="https://www.javbus.com/">有碼</a></li>                    
+                <li><a href="https://www.javbus.com/uncensored">無碼</a></li>
+                <li class="hidden-md hidden-sm"><!-- <div class="icon-new"></div> --><a href="https://www.javbus.hair/">歐美</a></li>
+				<li class="hidden-sm"><a href="https://www.javbus.com/forum/">論壇</a></li>            	
+                <li class="dropdown hidden-sm active">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false">類別 <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="https://www.javbus.com/genre">有碼類別</a></li>
+                        <li><a href="https://www.javbus.com/uncensored/genre">無碼類別</a></li>				
+                    </ul>
+                </li>
+                <li class="dropdown hidden-sm ">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false">女優 <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="https://www.javbus.com/actresses">有碼女優</a></li>
+                        <li><a href="https://www.javbus.com/uncensored/actresses">無碼女優</a></li>				
+                    </ul>
+                </li>                
+                <li class="dropdown"><a href="https://www.javbus.com/" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-menu-hamburger"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                    	<li class="visible-md-block visible-sm-block"><a href="https://www.javbus.hair/">歐美</a></li>
+                        <li class="visible-sm-block"><a href="https://www.javbus.com/forum/">論壇</a></li>                        <li class="visible-sm-block"><a href="https://www.javbus.com/genre">有碼類別</a></li>
+                        <li class="visible-sm-block"><a href="https://www.javbus.com/uncensored/genre">無碼類別</a></li>
+                        <li class="visible-sm-block"><a href="https://www.javbus.com/actresses">有碼女優</a></li>
+                        <li class="visible-sm-block"><a href="https://www.javbus.com/uncensored/actresses">無碼女優</a></li>                        
+                        <li><a href="https://www.javbus.com/genre/hd">高清</a></li>
+                        <li><a href="https://www.javbus.com/genre/sub">字幕</a></li>
+                    </ul>
+				</li> 
+            </ul>
+            
+            <ul class="nav navbar-nav navbar-right" onclick="window.location.href= '/forum/member.php?mod=logging&action=login&referer=%2F%2Fwww.javbus.com%2Fgenre%2Fhd'">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false"><img class="avatar" src="https://uc.javbus22.com/uc/avatar.php?uid=0&size=small"><span class="hidden-md hidden-sm ml5">登入</span> </a>
+                                    </li>
+            </ul>
+            
+            
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-globe" style="font-size:12px;"></span> <span class="hidden-md hidden-sm">English</span> <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="https://www.javbus.com/en/genre/hd">English</a></li>
+                        <li><a href="https://www.javbus.com/ja/genre/hd">日本语</a></li>
+                        <li><a href="https://www.javbus.com/ko/genre/hd">한국의</a></li>
+                        <li><a href="https://www.javbus.com/genre/hd">中文</a></li>   
+                    </ul>
+                </li>
+            </ul>
+
+                        
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-magnet" style="font-size:12px;"></span> <span class="hidden-md hidden-sm">已有磁力</span> <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                                            <li class="mypointer" id="showall"><a><span class="glyphicon glyphicon-film"></span> 全部影片</a></li>
+					  
+                    </ul>
+                </li>
+            </ul>
+                        
+        	              
+        </div>
+        <!--/.nav-collapse -->
+    </div>
+</nav>
+<div class="row visible-xs-inline footer-bar">
+    <div class="col-xs-3 text-center">
+        <a id="menu" class="btn btn-default trigger-overlay"><span class="glyphicon glyphicon-align-justify"></span></a>
+    </div>
+    <div class="col-xs-3 text-center">
+         </div>
+    <div class="col-xs-3 text-center">
+            <a id="prev" class="btn btn-default" href="/genre/hd/2" style="display:none"><span class="glyphicon glyphicon-chevron-right"></span></a>
+        </div>    
+    <div class="col-xs-3 text-center">
+        <a id="back" class="btn btn-default" href="javascript:window.history.back()"><span class="glyphicon glyphicon-share-alt flipx"></span></a>
+    </div>    
+</div>    
+<script src='https://www.javbus.com/js/focus.js?v=8.7'></script>  <link rel='stylesheet' type='text/css' href='https://www.javbus.com/css/main.css?v=9.6'>
+<script src='https://www.javbus.com/js/jquery.masonry.min.js'></script>
+<div class="container-fluid">
+    <div class="row">
+
+<div class="ad-box all-top">
+        <div class="ad-item"><a href="https://d2c9rohmoptac4.cloudfront.net?dc=JAST01" target="_blank" rel="nofollow"><img src="/ads/hjll_728x90_36.gif" width="728" height="90"></a></div>
+        <div class="ad-item"><div class="ad-juicy"><script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script><ins id="1024548" data-width="728" data-height="90"></ins><script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({"adzone":1024548});</script></div></div>
+        <div class="ad-item"><div class="ad-juicy"><script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script><ins id="1024550" data-width="728" data-height="90"></ins><script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({"adzone":1024550});</script></div></div>
+        <div class="ad-item"><div class="ad-juicy"><script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script><ins id="1024549" data-width="728" data-height="90"></ins><script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({"adzone":1024549});</script></div></div>
+    	<div id="ayx" class="ad-item">
+        <div class='csslider1 autoplay'>
+        <input name="cs_anchor1" id='cs_play1' type="radio" class='cs_anchor' checked>
+        <ul>
+            <li class="cs_skeleton"><img src="/forum/data/attachment/forum/ads/ayx_d7ph1n77nu3bu567b3g0_749133.jpg" style="width: 100%;"></li>
+            <li class="num0 img slide"><a href="https://www.87xivp.vip:7917/?i_code=8158251" target="_blank"><img src="/forum/data/attachment/forum/ads/ayx_d7ph1n77nu3bu567b3g0_749133.jpg" /></a></li>
+            <li class="num1 img slide"><a href="https://www.87xivp.vip:7917/?i_code=8158251" target="_blank"><img src="/forum/data/attachment/forum/ads/ayx_d848i9vb50huc6afaurg_552024.jpg" /></a></li>
+            <li class="num2 img slide"><a href="https://www.87xivp.vip:7917/?i_code=8158251" target="_blank"><img src="/forum/data/attachment/forum/ads/ayx_d7pjfgv7nu3bu567bbsg_155387.jpg" /></a></li>
+            <li class="num3 img slide"><a href="https://www.87xivp.vip:7917/?i_code=8158251" target="_blank"><img src="/forum/data/attachment/forum/ads/ayx_d7pi3p7b50huc6aeevb0_459399.jpg" /></a></li>
+            <li class="num4 img slide"><a href="https://www.87xivp.vip:7917/?i_code=8158251" target="_blank"><img src="/forum/data/attachment/forum/ads/ayx_d6tbv0n7nu3bu5652oa0_766743.jpg" /></a></li>
+        </ul>		
+        </div>
+    </div>
+    <div id="bob" class="ad-item">
+        <div class='csslider1 autoplay'>
+        <input name="cs_anchor2" id='cs_play2' type="radio" class='cs_anchor' checked>
+        <ul>
+            <li class="cs_skeleton"><img src="/forum/data/attachment/forum/ads/bob_f10a27005ade7611913ffa659fff400f.jpg" style="width: 100%;"></li>
+            <li class="num0 img slide"><a href="https://www.buauy9.vip:9973/?agent_code=50291851" target="_blank"><img src="/forum/data/attachment/forum/ads/bob_f10a27005ade7611913ffa659fff400f.jpg" /></a></li>
+            <li class="num1 img slide"><a href="https://www.buauy9.vip:9973/?agent_code=50291851" target="_blank"><img src="/forum/data/attachment/forum/ads/bob_d3fa68366fb12ea5df22a465222d0920.jpg" /></a></li>
+            <li class="num2 img slide"><a href="https://www.buauy9.vip:9973/?agent_code=50291851" target="_blank"><img src="/forum/data/attachment/forum/ads/bob_6f257b81991d07cb04c93d8fcbf8a6a9.jpg" /></a></li>
+            <li class="num3 img slide"><a href="https://www.buauy9.vip:9973/?agent_code=50291851" target="_blank"><img src="/forum/data/attachment/forum/ads/bob_e63b15f58ccd46eb50a85c2082f4de0d.jpg" /></a></li>
+            <li class="num4 img slide"><a href="https://www.buauy9.vip:9973/?agent_code=50291851" target="_blank"><img src="/forum/data/attachment/forum/ads/bob_d456c4d514ac9101bdb08d9c811dbec6.jpg" /></a></li>
+        </ul>
+        </div>    
+    </div>
+    </div>
+
+                
+
+<div class="alert alert-info alert-dismissable alert-common" style="position:relative">
+    <button type="button" class="close" style="position:absolute; right:8px; top:3px;" data-dismiss="alert" onclick='javascript:$.cookie("cnadd66", "off",{expires: 365,path: "/"})'>&times;</button>
+    <div class="row">
+    	<div class="col-xs-12 col-md-6 col-lg-3 text-center"><strong>永久域名：</strong><a href="https://www.javbus.com" target="_blank">https://www.javbus.com</a></div>
+<div class="col-xs-12 col-md-6 col-lg-3 text-center"><strong>防屏蔽地址：</strong><a href="https://www.buscdn.bond" rel="nofollow">https://www.buscdn.bond</a></div><div class="col-xs-12 col-md-6 col-lg-3 text-center"><strong>防屏蔽地址：</strong><a href="https://www.busdmm.bond" rel="nofollow">https://www.busdmm.bond</a></div><div class="col-xs-12 col-md-6 col-lg-3 text-center"><strong>防屏蔽地址：</strong><a href="https://www.fanbus.bond" rel="nofollow">https://www.fanbus.bond</a></div>         	
+	</div>
+</div>     		
+
+
+<div class="alert alert-success alert-common">
+    <p><b>高清 - 有碼類別 - 影片</b>&nbsp;：&nbsp;當前顯示<b><a class='mypointer' id='resultshowmag'>&nbsp;<span class='glyphicon glyphicon-magnet'></span>&nbsp;已有磁力&nbsp;174029&nbsp;</a></b>&nbsp;部，可切換至<b><a class='mypointer' id='resultshowall'>&nbsp;<span class='glyphicon glyphicon-film'></span>&nbsp;全部影片&nbsp;192021&nbsp;</a></b>&nbsp;部</div>
+
+        <div id="waterfall">
+<div id="waterfall">
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/ABF-354">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c973.jpg" title="ヤリ過ぎ中出し温泉旅館 ～極上の摩天楼ボディを好き放題～ 瀧本雫葉">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>ヤリ過ぎ中出し温泉旅館 ～極上の摩天楼ボディを好き放題～ 瀧本雫葉<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">5天前新種</button>						</div>                        	
+						<date>ABF-354</date> / <date>2026-06-05</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/ABF-352">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c8mr.jpg" title="地元の後輩に差し出された許嫁と… 禁断中出し小旅行。 中森ななみ【限定特典映像15分付き】">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>地元の後輩に差し出された許嫁と… 禁断中出し小旅行。 中森ななみ【限定特典映像15分付き】<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            						</div>                        	
+						<date>ABF-352</date> / <date>2026-06-05</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/ABF-353">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c8mq.jpg" title="八掛うみの「顔」で、ヌく。">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>八掛うみの「顔」で、ヌく。<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-warning" disabled="disabled" title="包含字幕的磁力連結">字幕</button> 
+                            						</div>                        	
+						<date>ABF-353</date> / <date>2026-06-05</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/DOCD-091">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c7h9.jpg" title="仲良し女子大生対抗！あっち向いホイ対決！上下左右指の先にはHで過激な罰ゲームが！高度な心理戦でゲームは白熱！先に全裸になったほうがデカチン即ハメ激ピス生中出し！">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>仲良し女子大生対抗！あっち向いホイ対決！上下左右指の先にはHで過激な罰ゲームが！高度な心理戦でゲームは白熱！先に全裸になったほうがデカチン即ハメ激ピス生中出し！<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            						</div>                        	
+						<date>DOCD-091</date> / <date>2026-06-04</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/300MIUM-1336">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9zd.jpg" title="【ドM女、お貸しします】旦那じゃ物足りないんです。一方的に性欲をぶつけられる、モノになりたい。顕現するオトナの喉技、イイ音鳴らそうイラマチ幕府。時間がくるまで好きホーダイ使いホーダイ。Mは何でもアリ。だってMだから……。【マゾの宅Q便】">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>【ドM女、お貸しします】旦那じゃ物足りないんです。一方的に性欲をぶつけられる、モノになりたい。顕現するオトナの喉技、イイ音鳴らそうイラマチ幕府。時間がくるまで好きホーダイ使いホーダイ。Mは何でもアリ。だってMだから……。【マゾの宅Q便】<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>300MIUM-1336</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/CJOD-504">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vy.jpg" title="エッチなお姉さんが痴女ってくる中出しOK回春アジアンメンズエステ 由衣陽菜">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>エッチなお姉さんが痴女ってくる中出しOK回春アジアンメンズエステ 由衣陽菜<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>CJOD-504</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SDJS-375">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vu.jpg" title="人事部の子に大量のビールを与えたら、イキまくってたww 与田ひかげ（22）">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>人事部の子に大量のビールを与えたら、イキまくってたww 与田ひかげ（22）<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SDJS-375</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SDAB-348">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vt.jpg" title="18 歳 AV デビュー「あちゃんです！！身バレ上等！！」タレ目のたぬき顔と四国育ちの阿波弁が可愛すぎる 穂村あいね">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>18 歳 AV デビュー「あちゃんです！！身バレ上等！！」タレ目のたぬき顔と四国育ちの阿波弁が可愛すぎる 穂村あいね<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SDAB-348</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SDMM-232">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vs.jpg" title="マジックミラー号 10代の学生男女が身体と相性で挑戦！ アオハル2人3脚！ ちょっとオトナのピクトグラムチャレンジ！ 全て成功したら、最新スマホをプレゼント！ 近くなりすぎた距離感が若い性欲を弾けさせる！？ ヤッてはいけない友達同士が禁断SEX！？">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>マジックミラー号 10代の学生男女が身体と相性で挑戦！ アオハル2人3脚！ ちょっとオトナのピクトグラムチャレンジ！ 全て成功したら、最新スマホをプレゼント！ 近くなりすぎた距離感が若い性欲を弾けさせる！？ ヤッてはいけない友達同士が禁断SEX！？<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SDMM-232</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SDAM-170">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vr.jpg" title="30万/h トップレイヤー顎崩壊バチボコ喉奥開発イラマチオ撮影会 ゴム無しOKナマ中出しOK首しめOKビンタOK">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>30万/h トップレイヤー顎崩壊バチボコ喉奥開発イラマチオ撮影会 ゴム無しOKナマ中出しOK首しめOKビンタOK<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SDAM-170</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/MOGI-159">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vq.jpg" title="「汗っかきで困ってるんですよね…」脇・谷間・股間に滴る汗を隠し撮り！汗だく交尾で連続絶頂 石川くるみ（22）">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>「汗っかきで困ってるんですよね…」脇・谷間・股間に滴る汗を隠し撮り！汗だく交尾で連続絶頂 石川くるみ（22）<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>MOGI-159</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/START-576">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vp.jpg" title="新川空と初対面のイケメン男を2人きりの部屋に置いてきた ヤリたくなったらいつでもOK！赤面イチャイチャセックスを24時間モニタリング 新川空">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>新川空と初対面のイケメン男を2人きりの部屋に置いてきた ヤリたくなったらいつでもOK！赤面イチャイチャセックスを24時間モニタリング 新川空<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>START-576</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/START-575">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vo.jpg" title="厳正な職務のため就任以来セックスを禁じられている女捜査官 徹底的に焦らされて「お願いしますイカせてください」とこんな反社集団に頭を下げることになるなんて… 本庄鈴">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>厳正な職務のため就任以来セックスを禁じられている女捜査官 徹底的に焦らされて「お願いしますイカせてください」とこんな反社集団に頭を下げることになるなんて… 本庄鈴<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>START-575</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SDNM-550">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vn.jpg" title="舐め回したくなる先生のカラダ 熊本県立●校の人妻英語教員 一度だけの不倫体験 桃瀬理央 31歳">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>舐め回したくなる先生のカラダ 熊本県立●校の人妻英語教員 一度だけの不倫体験 桃瀬理央 31歳<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SDNM-550</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SDJS-365">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vl.jpg" title="秘書 守屋よしの 会社のために中出し解禁">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>秘書 守屋よしの 会社のために中出し解禁<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SDJS-365</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/START-563">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vk.jpg" title="旦那の連れ子に溜まり切った性の捌け口として性欲処理玩具にされました。あまりの絶倫勃起チ○ポに夫とするより感じてしまい… 渚恋生">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>旦那の連れ子に溜まり切った性の捌け口として性欲処理玩具にされました。あまりの絶倫勃起チ○ポに夫とするより感じてしまい… 渚恋生<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>START-563</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/START-566">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vj.jpg" title="恋渕ももなのドエロいテクニックで精子空っぽになるまで骨抜きチャレンジ！合計13射精">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>恋渕ももなのドエロいテクニックで精子空っぽになるまで骨抜きチャレンジ！合計13射精<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>START-566</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/START-578">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9vi.jpg" title="大嫌いな女上司とデリヘルで出会ったから…5日間予約してポリネシアンセックスで立場逆転させた。 紗倉まな">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>大嫌いな女上司とデリヘルで出会ったから…5日間予約してポリネシアンセックスで立場逆転させた。 紗倉まな<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>START-578</date> / <date>2026-05-25</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/INSTV-712">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9xr.jpg" title="NTRスワッピング 夫婦交換サークル参加変態夫婦性癖爆発生中出し種付け乱交">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>NTRスワッピング 夫婦交換サークル参加変態夫婦性癖爆発生中出し種付け乱交<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>INSTV-712</date> / <date>2026-05-24</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/NAMH-065">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9xp.jpg" title="145cmのパイパン美膣に10発 小さなカラダで真正中出し解禁 日向由奈">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>145cmのパイパン美膣に10発 小さなカラダで真正中出し解禁 日向由奈<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>NAMH-065</date> / <date>2026-05-24</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/SGKI-088">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9xh.jpg" title="公衆電話ボックス360度 顔面最強美乳J〇きき乳首チャレンジ">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>公衆電話ボックス360度 顔面最強美乳J〇きき乳首チャレンジ<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>SGKI-088</date> / <date>2026-05-24</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/GMEM-151">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9v3.jpg" title="ULTRA SWEET 赤貝 美少女戦士強烈2穴強●絶頂調教 ～SUPER淫穴おマ〇コとケツマ〇コ悲惨なるイキ地獄～ あおい藍">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>ULTRA SWEET 赤貝 美少女戦士強烈2穴強●絶頂調教 ～SUPER淫穴おマ〇コとケツマ〇コ悲惨なるイキ地獄～ あおい藍<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>GMEM-151</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/AVSA-436">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9v0.jpg" title="ケツ穴＊舐められハラスメント！残業中の激臭アナルをしつこく嗅がれ舐められたデカ尻ムチムチ巨乳部下がスメハラ逆襲からの肛門クンニ誘惑SEX 羽月乃蒼">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>ケツ穴＊舐められハラスメント！残業中の激臭アナルをしつこく嗅がれ舐められたデカ尻ムチムチ巨乳部下がスメハラ逆襲からの肛門クンニ誘惑SEX 羽月乃蒼<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>AVSA-436</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/AVSA-437">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9uz.jpg" title="ぬるテカ肉感ドエロ極上ボディ 光沢ぬるぬる恵体を激しく突き上げ爆乳揺らして止まらない快感痙攣絶頂 波多野結衣">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>ぬるテカ肉感ドエロ極上ボディ 光沢ぬるぬる恵体を激しく突き上げ爆乳揺らして止まらない快感痙攣絶頂 波多野結衣<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>AVSA-437</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/BDA-219">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9uy.jpg" title="緊縛解禁 社会の厳しさを縄で知らしめる！縛り拷問覚醒 桃瀬くるみ">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>緊縛解禁 社会の厳しさを縄で知らしめる！縛り拷問覚醒 桃瀬くるみ<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>BDA-219</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/LUCY-027">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9uu.jpg" title="女上司の秘密 プライベートはメス堕ちマゾ女だった 卯水咲流">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>女上司の秘密 プライベートはメス堕ちマゾ女だった 卯水咲流<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>LUCY-027</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/RAPD-012">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9ur.jpg" title="リアルドキュメント強●ドラマ 人妻レ●プ事件簿 美人五十路妻たちを襲う極悪男たち！ 卑劣な性犯罪者に欲望のまま犯●れ慰み者となった驚愕の強●現場！！ 翔田千里・柏木舞子・平岡里枝子">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>リアルドキュメント強●ドラマ 人妻レ●プ事件簿 美人五十路妻たちを襲う極悪男たち！ 卑劣な性犯罪者に欲望のまま犯●れ慰み者となった驚愕の強●現場！！ 翔田千里・柏木舞子・平岡里枝子<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">昨日新種</button>						</div>                        	
+						<date>RAPD-012</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/BLOR-299">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9uj.jpg" title="オドオド…はにかみ気弱おねえさんを酒と巨根で狂わせました 最初は囁くような声だったのに巨根ブチ込まれると「おごぉぉぉ」って力強いオホ声絶叫 汗、ヨダレ、潮にまみれめちゃくちゃになるまでイカされた">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>オドオド…はにかみ気弱おねえさんを酒と巨根で狂わせました 最初は囁くような声だったのに巨根ブチ込まれると「おごぉぉぉ」って力強いオホ声絶叫 汗、ヨダレ、潮にまみれめちゃくちゃになるまでイカされた<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-danger " disabled="disabled" title="包含最新出種的磁力連結">前日新種</button>						</div>                        	
+						<date>BLOR-299</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/CHC-032">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9ui.jpg" title="美女子弄び個撮ハメ撮り～オヤジに完全服従セックス！！ まりかさん 保育士 鮎川万里香">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>美女子弄び個撮ハメ撮り～オヤジに完全服従セックス！！ まりかさん 保育士 鮎川万里香<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>CHC-032</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+        
+            <div class="item">
+                <a class="movie-box" href="https://www.javbus.com/HALT-083">
+                    <div class="photo-frame">
+                        <img src="/pics/thumb/c9uh.jpg" title="キメセクオフィス監禁 媚薬漬けで逆らえず…首輪をつけられペット扱い 踏みつけられながらのキメセクで喘ぎ中出し懺悔を強要される社畜OL 似鳥日菜">
+                    </div>                     
+					<div class="photo-info">                                   
+						<span>キメセクオフィス監禁 媚薬漬けで逆らえず…首輪をつけられペット扱い 踏みつけられながらのキメセクで喘ぎ中出し懺悔を強要される社畜OL 似鳥日菜<br />
+						<div class="item-tag">
+                            <button class="btn btn-xs btn-primary" disabled="disabled" title="包含高清HD的磁力連結">高清</button> 			
+                            <button class="btn btn-xs btn-success " disabled="disabled" title="包含最新出種的磁力連結">3天前新種</button>						</div>                        	
+						<date>HALT-083</date> / <date>2026-05-22</date></span>
+					</div>
+                </a>
+            </div>
+</div>        </div>
+    </div>
+</div>
+<script language="JavaScript">
+    (function($) {
+        $('#waterfall').masonry({
+            itemSelector: ".item",
+            isAnimated: false,
+            isFitWidth: true
+        });
+    })(jQuery);
+</script>
+
+
+<div class="ad-box">
+        <div class="ad-item"><a href="https://d1jta2y3nz042i.cloudfront.net/?dc=YJDK36" target="_blank" rel="nofollow"><img src="/ads/hjll_728x90_32.gif" width="728" height="90"></a></div>
+        <div class="ad-item"><div class="ad-juicy"><script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script><ins id="1024551" data-width="728" data-height="90"></ins><script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({"adzone":1024551});</script></div></div>
+        <div class="ad-item"><a href="https://xn--fwza.162hou.info/#/?ai=157284" target="_blank" rel="nofollow"><img src="/ads/51fl_728x90_2.jpg" width="728" height="90"></a></div>
+        <div class="ad-item"><a href="https://dujjibxrmlnwm.cloudfront.net/?dc=YJDK36A" target="_blank" rel="nofollow"><img src="/ads/hjll_728x90_31.gif" width="728" height="90"></a></div>
+        <div class="ad-item"><a href="https://twud84.com" target="_blank" rel="nofollow"><img src="/ads/hjll_728x90_18.gif" width="728" height="90"></a></div>
+        <div class="ad-item"><div class="ad-juicy"><script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script><ins id="1024552" data-width="728" data-height="90"></ins><script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({"adzone":1024552});</script></div></div>
+    </div>
+
+
+<div class="text-center hidden-xs">
+    <ul class="pagination pagination-lg">
+    	<li class="active"><a href="/genre/hd/1">1</a></li><li ><a href="/genre/hd/2">2</a></li><li ><a href="/genre/hd/3">3</a></li><li ><a href="/genre/hd/4">4</a></li><li ><a href="/genre/hd/5">5</a></li><li ><a href="/genre/hd/6">6</a></li><li ><a href="/genre/hd/7">7</a></li><li ><a href="/genre/hd/8">8</a></li><li ><a href="/genre/hd/9">9</a></li><li ><a href="/genre/hd/10">10</a></li>        <li>
+            <a id="next" href="/genre/hd/2">下一頁</a>
+        </li>
+            </ul>
+</div><footer class="footer hidden-xs">
+	<div class="container-fluid">
+        <p><a href="https://www.javbus.com/doc/terms">Terms</a> / <a href="https://www.javbus.com/doc/privacy">Privacy</a> / <a href="https://www.javbus.com/doc/usc">2257</a> / <a href="http://www.rtalabel.org/" target="_blank" rel="external nofollow">RTA</a> / <a href="javascript:bootstr(1);" r>廣告投放</a> / <a href="javascript:bootstr(2);" >聯絡我們</a><br /><a href="#formModal" id="adscontact" data-toggle="modal"></a>
+        Copyright © 2013 JavBus. All Rights Reserved. All other trademarks and copyrights are the property of their respective holders. The reviews and comments expressed at or through this website are the opinions of the individual author and do not reflect the opinions or views of JavBus. JavBus is not responsible for the accuracy of any of the information supplied here.</p>
+	</div>
+</footer>
+<div class="visible-xs-block footer-bar-placeholder"></div>
+
+<script language=javascript>
+    function bootstr(type){
+    	ads = "廣告投放";
+    	contact = "聯絡我們";
+    	translate = "翻譯";
+    	$("#adstype").val(type);
+    	if(type==1){
+    		$("#contactModalLab").html(ads);
+    		$("#qqskype").show();
+    		$("#transinfo").hide();
+    		$("#translanguage").hide();
+    		$("#mailcontent").show();		
+    	}else if(type==2){
+    		$("#contactModalLab").html(contact);
+    		$("#qqskype").show();
+    		$("#transinfo").hide();
+    		$("#translanguage").hide();
+    		$("#mailcontent").show();
+    	}else if(type==3){
+    		$("#contactModalLab").html(translate);
+    		$("#qqskype").hide();
+    		$("#transinfo").show();
+    		$("#translanguage").show();
+    		$("#mailcontent").hide();
+    	}
+    	$("#adscontact").trigger("click");
+		getverifycode();    	
+    };
+    function getverifycode(){
+       $('#verify').attr("src","/post/verify?"+Math.random()*10000);
+    };
+    function IsMail(mail){
+     var remail= /^([a-zA-Z0-9_-])+(\.)?([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/;
+     return(remail.test(mail));
+    };
+    function checkform(){
+    	var post = true; 
+      if($("#verifycode").val().length!=5){
+    	  	alert("驗證碼輸入錯誤!") 
+    		$("#verifycode").focus(); 
+    		post = false;
+    	  }
+      if($("#contact").val().length>255){
+    	  	alert("聯繫方式字數過多!") 
+    		$("#contact").focus(); 
+    		post = false;
+    	  }
+      
+      if(!IsMail($("#mail").val())){
+    	alert("請輸入正確的電郵地址!") 
+     	$("#mail").focus(); 
+        post = false;
+      }
+      
+      if($("#intention").val().length>25500){
+    	  	alert("投放意向字數過多!") 
+    		$("#intention").focus(); 
+    		post = false;
+    	  }
+    	  
+      if($("#trans").val().length>255){
+    	  	alert("Too many words in your language textbox!") 
+    		$("#intention").focus(); 
+    		post = false;
+    	  }	  
+      if(post== true){
+    	  $("#modalclose").trigger("click");
+    	  $("#postform").attr("action", "/post/contact");
+    	  $("#postform").submit();
+    	}
+      return post;
+    };
+</script>
+
+<script>
+$("#showmag,#cellshowmag,#resultshowmag").click(function(){
+	$.cookie("existmag", "mag",{expires:365,path:'/'}); 
+	location.reload() 
+});
+
+$("#showall,#cellshowall,#resultshowall").click(function(){
+	$.cookie("existmag", "all",{expires:365,path:'/'}); 
+	location.reload() 
+});
+$("#showonline").click(function(){
+	$.cookie("existmag", "online",{expires:365,path:'/'}); 
+	location.reload() 
+});
+$(".info .mypointer").click(function(){
+	var obj = $(this);
+	var code = obj.attr('value');
+	var token = $("#token").val();
+	var e = "../ajax/addfavorite.php?code=" + encodeURIComponent(code) + "&token=" + encodeURIComponent(token) + "&floor=" + Math.floor(Math.random() * 1e3 + 1);
+    $.ajax({
+        url: e,
+        type: "POST",
+		//dataType: "json",
+		cache:false,
+        success: function (json) {
+			//obj.html(json);
+			ajaxobj=eval("("+json+")");
+			if(ajaxobj.act=='err'){
+				alert('收藏次數達上限，請稍候再試');	
+			}else{
+				obj.html(ajaxobj.act);
+				obj.attr('value',ajaxobj.code);
+				obj.attr('title',ajaxobj.title);
+				$("#token").val(ajaxobj.token);
+			}
+        }
+    });
+});
+
+$(".glyphicon-heart-empty").hover(function () {
+    $(this).removeClass('glyphicon-heart-empty');
+	$(this).addClass('glyphicon-heart');
+}, function () {
+    $(this).removeClass('glyphicon-heart');
+    $(this).addClass('glyphicon-heart-empty');
+});
+$(".glyphicon-heart").hover(function () {
+    $(this).removeClass('glyphicon-heart');
+	$(this).addClass('glyphicon-heart-empty');
+}, function () {
+    $(this).removeClass('glyphicon-heart-empty');
+    $(this).addClass('glyphicon-heart');
+});
+</script>
+
+<!-- Modal Forms -->
+<div id="formModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="formModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button id="modalclose" type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="contactModalLab">聯絡我們</h4>
+            </div>
+            <div class="modal-body">                     
+                <form class="form-horizontal" name="postform" method="post" id="postform" enctype="multipart/form-data" >
+                    <fieldset>
+                                                <div class="form-group" id="qqskype">
+                            <label class="col-sm-4 control-label" for="contact">QQ / Skype</label>
+                            <div class="col-sm-6">
+                                <input id="contact" name="contact" type="text" placeholder="" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label" for="mail">Email</label>
+                            <div class="col-sm-6">
+                                <input id="mail" name="mail" type="text" placeholder="" class="form-control">  
+                            </div>
+                        </div>
+                        <div class="form-group" id="translanguage">
+                            <label class="col-sm-4 control-label" for="trans">Your Language</label>
+                            <div class="col-sm-6">
+                                <input id="trans" name="trans" type="text" placeholder="" class="form-control">  
+                            </div>
+                        </div>
+                        <div class="form-group" id="mailcontent">
+                            <label class="col-sm-4 control-label" for="intention" id="inten-trans">內容</label>
+                            <div class="col-sm-6">                     
+                                <textarea id="intention" name="intention" rows="9" class="form-control"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label" for="verify">驗證碼</label>
+                            <div class="col-sm-6">                     
+                                <input type="text" id="verifycode" name="verifycode" style="width:50px"/>
+                                <img id="verify" src="" style="cursor: pointer; vertical-align:middle;" onclick="getverifycode()"/>
+                            </div>
+                        </div>
+                        <input type="hidden" id="adstype" name="adstype" value="1" />
+                    </fieldset>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" button class="btn btn-primary" onclick="checkform()">送出</button>  
+                <button type="button" button class="btn btn-default" data-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ////////////////////////////////////////////////// -->
+<div class="overlay overlay-contentscale">
+    <div class="row">
+        <div class="col-xs-12 text-center ptb20">
+                 <div class="input-group col-xs-offset-2 col-xs-8">
+                      <input id="search-input-mobile" type="text" class="form-control" placeholder="搜尋 識別碼, 影片, 演員">
+                      <span class="input-group-btn">
+                      <button class="btn btn-default" type="submit" onClick="searchs('search-input-mobile')">搜尋</button>
+                      </span>
+                 </div>
+        </div>             
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/">有碼</a></div>
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/uncensored">無碼</a></div>   
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/genre">有碼類別</a></div>
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/uncensored/genre">無碼類別</a></div>
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/actresses">有碼女優</a></div>
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/uncensored/actresses">無碼女優</a></div>
+		<div class="col-xs-6 text-center"><a href="https://www.javbus.hair/">歐美</a></div>
+        <div class="col-xs-6 text-center"><a href="https://www.javbus.com/forum/">論壇</a></div>
+    
+       <div class="col-xs-12 text-center overlay-close">
+          <i class="glyphicon glyphicon-remove"></i>
+       </div>  
+    </div>
+</div>
+
+
+</body>
+</html>

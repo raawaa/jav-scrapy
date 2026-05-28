@@ -13,7 +13,6 @@
     "chalk": "^5.4.1",
     "cli-progress": "^3.12.0",
     "commander": "12.1.0",
-    
     "puppeteer-core": "^24.28.0",
     "tunnel": "^0.0.6",
     "winreg": "^1.2.5",
@@ -34,6 +33,7 @@
     "husky": "^9.1.7",
     "mocha": "^11.7.4",
     "nodemon": "^3.1.10",
+    "sinon": "^22.0.0",
     "temp": "^0.9.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -45,7 +45,9 @@
     "dist"
   ],
   "scripts": {
-    "test": "mocha test/*.test.js",
+    "test": "mocha --config test/mocha.config.js 'test/**/*.test.js'",
+    "test:unit": "mocha --config test/mocha.config.js 'test/unit/**/*.test.js'",
+    "test:integration": "mocha --config test/mocha.config.js 'test/integration/**/*.test.js'",
     "build": "npx tsc",
     "dev": "ts-node src/jav.ts",
     "dev:watch": "nodemon --exec ts-node src/jav.ts",

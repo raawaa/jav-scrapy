@@ -110,89 +110,10 @@ class RequestHandler {
         'Connection': 'keep-alive'
       }
     };
-    this.retries = 3; // 减少重试次数，避免过度请求
-    this.retryDelay = Math.max(this.config.delay || 2000, 3000); // 增加基础延迟，至少3秒
+    this.retries = 3; // 重试次数
+    this.retryDelay = Math.max(this.config.delay || 2000, 3000); // 基础延迟，至少3秒
     // 获取共享的 PuppeteerPool 实例（不创建新实例，由 QueueManager 统一管理）
     this.puppeteerPool = PuppeteerPool.getInstance();
-    // Cloudflare 绕过器将在需要时异步初始化
-    // 配置axios重试
-    axiosRetry(axios, {
-      retries: this.retries, // 使用配置的重试次数
-      retryDelay: (retryCount) => {
-        // 指数退避策略，加上随机延迟，基础延迟更长
-        const baseDelay = Math.max(this.retryDelay, 3000); // 至少3秒基础延迟
-        const exponentialDelay = Math.min(baseDelay * Math.pow(1.5, retryCount), 30000); // 1.5倍指数增长
-        const randomDelay = Math.floor(Math.random() * 2000); // 0-2秒随机延迟
-        const totalDelay = exponentialDelay + randomDelay;
-        logger.debug(`重试延迟计算: 基础=${Math.round(baseDelay/1000)}秒, 指数增长=${Math.round(exponentialDelay/1000)}秒, 随机=${Math.round(randomDelay/1000)}秒, 总计=${Math.round(totalDelay/1000)}秒 (重试次数: ${retryCount})`);
-        return totalDelay;
-      },
-      retryCondition: (error: any) => {
-        // 在以下情况下重试：
-        // 1. 网络错误
-        // 2. 5xx服务器错误
-        // 3. 429 Too Many Requests
-        // 4. 403 Forbidden (Cloudflare拦截)
-        // 5. 超时错误
-        // 6. SSL证书错误（首次重试时自动跳过验证）
-        const currentRetry = (error.config && error.config['axios-retry'] && error.config['axios-retry'].retryCount) || 0;
-        const isSSLError = error.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY' ||
-                          error.code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
-                          error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE';
-
-        // 首次SSL错误：自动降级并跳过SSL验证
-        if (isSSLError && currentRetry === 0 && this.config.strictSSL !== false) {
-          logger.warn(`检测到SSL证书错误: ${error.code}，将自动跳过验证进行重试`);
-          this.config.strictSSL = false; // 临时禁用SSL验证
-          return true; // 允许重试
-        }
-
-        const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-                         (error.response?.status && [500, 502, 503, 504, 429, 403].includes(error.response.status)) ||
-                         (error.code && ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'SELF_SIGNED_CERT_IN_CHAIN', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'].includes(error.code));
-
-        if (shouldRetry) {
-          // 计算延迟时间
-          const baseDelay = Math.max(this.retryDelay, 3000);
-          const exponentialDelay = Math.min(baseDelay * Math.pow(1.5, currentRetry), 30000);
-          const randomDelay = Math.floor(Math.random() * 2000);
-          const totalDelay = exponentialDelay + randomDelay;
-
-          if (isSSLError) {
-            logger.warn(`SSL证书错误，正在重试 (${currentRetry + 1}/5)，${Math.round(totalDelay / 1000)}秒后重试: ${error.config?.url || '未知URL'} - 错误: ${error.code} (已自动跳过验证)`);
-          } else {
-            logger.warn(`请求失败，正在重试 (${currentRetry + 1}/5)，${Math.round(totalDelay / 1000)}秒后重试: ${error.config?.url || '未知URL'} - 错误: ${error.code || error.message}`);
-          }
-        }
-        return shouldRetry;
-      },
-      // 添加重试时更换User-Agent的逻辑
-      onRetry: (retryCount, error, requestConfig) => {
-        // 每次重试时更换User-Agent
-        const newUserAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-        if (requestConfig.headers) {
-          requestConfig.headers['User-Agent'] = newUserAgent;
-          // 同时更新 sec-ch-ua 以匹配新的 User-Agent
-          const isChrome = newUserAgent.includes('Chrome');
-          const isFirefox = newUserAgent.includes('Firefox');
-          const isEdge = newUserAgent.includes('Edge');
-          // 提取浏览器版本号
-          const versionMatch = newUserAgent.match(/(Chrome|Firefox|Edge|Edg)[\/\s](\d+)/);
-          const browserVersion = versionMatch ? versionMatch[2] : '119';
-          // 设置 Sec-Ch-Ua 和浏览器指纹
-          let secChUa = '';
-          if (isChrome || isEdge) {
-            const brandVersion = isEdge ? 'Microsoft Edge' : 'Chromium';
-            secChUa = `"${brandVersion}";v="${browserVersion}", "Not?A_Brand";v="99"`;
-          } else if (isFirefox) {
-            secChUa = `"Not.A/Brand";v="8", "Chromium";v="${browserVersion}", "Google Chrome";v="${browserVersion}"`;
-          } else {
-            secChUa = `"Chromium";v="${browserVersion}", "Not?A_Brand";v="99"`;
-          }
-          requestConfig.headers['Sec-Ch-Ua'] = secChUa;
-        }
-      }
-    });
     // 添加HTTPS代理拦截器
     axios.interceptors.request.use((config) => {
       if (this.requestConfig.proxy && config.url?.startsWith('https')) {
@@ -298,71 +219,97 @@ class RequestHandler {
     }
 
     // 未启用 Cloudflare 绕过，使用传统 HTTP 请求
+    const maxAttempts = this.config.retryCount + 1;
     let attempts = 0;
-    while (attempts <= this.config.retryCount) {
+    while (attempts < maxAttempts) {
 
       try {
-
-        logger.debug(`开始请求页面: ${url} (尝试 ${attempts + 1}/${this.config.retryCount + 1})`);
+        logger.debug(`开始请求页面: ${url} (尝试 ${attempts + 1}/${maxAttempts})`);
         const headers = { ...this.requestConfig.headers };
         // 检查是否已手动设置了cookies
         const hasManualCookies = this.config.headers && this.config.headers.Cookie &&
                                 this.config.headers.Cookie !== 'existmag=mag';
         if (hasManualCookies) {
-
-            // 使用手动设置的cookies
-            headers.Cookie = this.config.headers.Cookie;
-            logger.debug(`使用手动设置的 Cookies: ${this.config.headers.Cookie}`);
+          headers.Cookie = this.config.headers.Cookie;
+          logger.debug(`使用手动设置的 Cookies: ${this.config.headers.Cookie}`);
         } else {
-
-          // 使用默认的existmag=mag
           headers.Cookie = 'existmag=mag';
           logger.debug('使用默认 Cookie: existmag=mag');
         }
-        logger.debug(`请求头信息: ${JSON.stringify(headers)}`);
-        // 使用 axios 发送请求
-        const mergedOptions = {
 
-          ...this.requestConfig,
-          ...options,
-          url,
+        // 非首次尝试时轮换 User-Agent
+        if (attempts > 0) {
+          const newUserAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+          headers['user-agent'] = newUserAgent;
+          // 更新 sec-ch-ua 以匹配新 UA
+          const isChrome = newUserAgent.includes('Chrome');
+          const isEdge = newUserAgent.includes('Edge');
+          const versionMatch = newUserAgent.match(/(Chrome|Firefox|Edge|Edg)[\/\s](\d+)/);
+          const browserVersion = versionMatch ? versionMatch[2] : '125';
+          if (isChrome || isEdge) {
+            const brandVersion = isEdge ? 'Microsoft Edge' : 'Chromium';
+            headers['sec-ch-ua'] = `"${brandVersion}";v="${browserVersion}", "Not?A_Brand";v="99"`;
+          } else if (newUserAgent.includes('Firefox')) {
+            headers['sec-ch-ua'] = `"Not.A/Brand";v="8", "Chromium";v="${browserVersion}", "Google Chrome";v="${browserVersion}"`;
+          }
+          logger.debug(`重试时轮换了 User-Agent: ${newUserAgent}`);
+        }
+
+        const response = await axios.get(url, {
+          timeout: this.requestConfig.timeout,
           headers
-        };
-        const response = await axios.get(mergedOptions.url, {
-
-          timeout: mergedOptions.timeout,
-          headers: mergedOptions.headers
         });
         return { statusCode: response.status, body: response.data };
       } catch (error) {
-
         const err = error as AxiosError;
-        logger.error(`请求页面 ${url} 失败: ${err.message}`);
-        if (err.response) {
+        const statusCode = err.response?.status;
 
-          logger.error(`响应状态码: ${err.response.status}`);
-          if (err.response.data) {
-
-            const responseData = err.response.data as any;
-            // 如果是字符串且长度较短，记录详细内容
-            if (typeof responseData === 'string' && responseData.length < 1000) {
-
-              logger.error(`响应内容 (前500字符): ${responseData.substring(0, 500)}`);
-            }
+        // 检测是否被重定向到驾考题页面（年龄验证）
+        if (statusCode === 302) {
+          const redirectUrl = err.response?.headers?.['location'];
+          if (redirectUrl && redirectUrl.includes('driver-verify')) {
+            logger.error(`请求被重定向到年龄验证页面。这可能是由于请求头不完整被识别为机器人。`);
+            logger.error(`建议: 检查代理是否有效，或尝试在浏览器中访问 ${url} 确认是否可正常打开`);
+            return null;
           }
         }
-        if (axiosRetry.isNetworkOrIdempotentRequestError(err) ||
-          (err.response?.status && [500, 429, 403].includes(err.response.status))) {
 
-          await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * Math.pow(2, attempts)));
-          attempts++;
+        // 403 友好提示
+        if (statusCode === 403) {
+          logger.error(`请求被拒绝 (403): ${url}`);
+          logger.error(`这可能是由于以下原因:`);
+          logger.error(`  1. 代理 IP 被 Cloudflare 封禁 — 尝试更换代理或使用住宅代理`);
+          logger.error(`  2. 请求头不完整 — 更新 User-Agent 或使用 --cloudflare 模式`);
+          logger.error(`  3. 请求过于频繁 — 尝试增加延迟 (--delay) 或降低并发 (--parallel)`);
+          if (err.response?.data) {
+            const responseData = err.response.data as string;
+            if (typeof responseData === 'string' && responseData.length < 1000) {
+              logger.error(`响应内容: ${responseData.substring(0, 500)}`);
+            }
+          }
         } else {
+          logger.error(`请求页面 ${url} 失败: ${err.message}`);
+          if (statusCode) {
+            logger.error(`响应状态码: ${statusCode}`);
+          }
+        }
 
-          throw err;
+        // 判断是否可以重试
+        const isRetryable = !err.response || // 无响应（网络错误）
+          (statusCode && [500, 502, 503, 504, 429, 403].includes(statusCode)) ||
+          (err.code && ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED'].includes(err.code));
+
+        if (isRetryable && attempts < maxAttempts - 1) {
+          attempts++;
+          const delay = this.config.retryDelay * Math.pow(2, attempts - 1);
+          logger.warn(`将在 ${Math.round(delay / 1000)} 秒后重试 (${attempts}/${maxAttempts - 1})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          logger.error(`请求失败，已耗尽所有重试次数: ${url}`);
+          return null;
         }
       }
     }
-    // 如果所有重试都失败了，返回 null
     return null;
   }
 
