@@ -14,7 +14,6 @@
 ### 防屏蔽能力
 - **代理支持**: 自动检测并使用系统代理 (HTTP/HTTPS/SOCKS)
 - **URL 轮换**: 从本地 URL 缓存中随机选择以避免封禁
-- **Cloudflare 绕过**: 可选的基于 Puppeteer 的年龄验证绕过
 - **User-Agent 轮换**: 使用现代 Chrome 头的动态轮换
 - **Cookie 管理**: 自动 Cookie 验证和生命周期管理
 
@@ -23,7 +22,8 @@
 - **指数退避**: 网络错误的 1.5x 退避重试机制
 - **进度跟踪**: 实时进度条和队列监控
 - **超时保护**: 卡住进程的 10 分钟强制关闭
-- **结构化日志**: Winston 基础的多级日志系统
+- **三级输出架构**: 用户面向输出、调试文件日志、错误 stderr 分离
+- **日志管理**: 统一数据目录、运行 ID 追踪、`jav logs` 命令
 
 ## 📋 目录
 
@@ -32,8 +32,11 @@
 - [快速开始](#-快速开始)
 - [使用方法](#-使用方法)
 - [配置选项](#-配置选项)
+- [数据目录](#-数据目录)
 - [架构概述](#-架构概述)
 - [开发设置](#-开发设置)
+- [日志与调试](#-日志与调试)
+- [故障排除](#-故障排除)
 - [贡献指南](#-贡献指南)
 
 ## ⚙️ 系统要求
@@ -46,43 +49,6 @@
 | **npm** | 8.x 或更高 | 最新 (10.x+) |
 | **操作系统** | Windows 10+, macOS 10.14+, 或 Linux | 最新稳定版 |
 
-### Puppeteer 依赖
-
-Puppeteer (用于 Cloudflare 绕过) 需要额外的系统库：
-
-#### Ubuntu/Debian
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-  gconf-service libasound2 libatk1.0-0 \
-  libcairo2 libcups2 libdbus-1-3 \
-  libexpat1 libfontconfig1 libgcc1 \
-  libgconf-2-4 libgdk-pixbuf2.0-0 \
-  libglib2.0-0 libgtk-3-0 libnspr4 \
-  libpango-1.0-0 libpangocairo-1.0-0 \
-  libstdc++6 libx11-6 libx11-xcb1 libxcb1 \
-  libxcomposite1 libxcursor1 libxdamage1 libxext6 \
-  libxfixes3 libxi6 libxrandr2 libxrender1 \
-  libxss1 libxtst6 ca-certificates fonts-liberation \
-  libappindicator1 libnss3 lsb-release xdg-utils \
-  wget
-```
-
-#### CentOS/RHEL/Fedora
-```bash
-sudo yum install -y \
-  atk cups-libs gtk3 libdrm libXcomposite \
-  libXcursor libXdamage libXext libXi libXrandr \
-  libXScrnSaver libXss libXtst pango \
-  xorg-x11-fonts-Type1 xorg-x11-fonts-misc \
-  alsa-lib GConf2 nss
-```
-
-#### macOS
-无需额外依赖 (Puppeteer 下载 Chromium)。
-
-#### Windows
-Windows 10+ 无需额外依赖。
 
 ### 内存要求
 
@@ -170,12 +136,6 @@ jav crawl --limit 100
 jav crawl --proxy http://proxy.example.com:8080
 ```
 
-### 启用 Cloudflare 绕过
-
-```bash
-jav crawl --cloudflare
-```
-
 ### 跳过图片下载
 
 ```bash
@@ -199,6 +159,9 @@ jav crawl [options]
 # 更新防屏蔽 URLs 缓存
 jav update
 
+# 查看和管理日志
+jav logs [options]
+
 # 显示帮助
 jav --help
 
@@ -215,11 +178,11 @@ jav --version
 | `--delay <seconds>` | 请求间的基础延迟 | 2 |
 | `--timeout <ms>` | 请求超时时间 (毫秒) | 30000 |
 | `--proxy <url>` | 代理 URL (如未指定则自动检测) | - |
-| `--cloudflare` | 通过 Puppeteer 启用 Cloudflare 绕过 | false |
 | `--nomag` | 跳过没有磁力链接的影片 | false |
 | `--allmag` | 获取所有磁力链接 (不仅仅是最大的) | false |
 | `--nopic` | 跳过图片下载 | false |
-| `--debug` | 启用调试日志 | false |
+| `-v, --verbose` | 显示详细调试信息 | false |
+| `-q, --quiet` | 静默模式，只显示错误和最终摘要 | false |
 
 ### 高级用法示例
 
@@ -229,13 +192,12 @@ jav crawl \
   --limit 500 \
   --parallel 3 \
   --delay 3 \
-  --proxy http://user:pass@proxy.example.com:8080 \
-  --cloudflare
+  --proxy http://user:pass@proxy.example.com:8080
 ```
 
-#### 开发模式下的调试日志
+#### 查看详细调试信息
 ```bash
-npm run dev -- crawl --debug --limit 10
+jav crawl --verbose --limit 10
 ```
 
 #### 更新防屏蔽 URLs
@@ -250,9 +212,27 @@ jav update
 配置按以下顺序加载 (从高到低优先级):
 
 1. **CLI 参数** - 命令行标志
-2. **本地缓存** - `~/.jav-scrapy-antiblock-urls.json`
+2. **本地缓存** - 防屏蔽地址文件（见下文「数据目录」）
 3. **系统代理** - 从系统设置自动检测
 4. **默认值** - 内置默认值
+
+### 数据目录
+
+应用的所有持久化数据统一存放在以下位置：
+
+| 平台 | 数据目录 |
+|------|----------|
+| macOS | `~/.jav-scrapy/` |
+| Windows | `%LOCALAPPDATA%\jav-scrapy\` |
+| Linux | `~/.local/share/jav-scrapy/` |
+
+```
+数据目录/
+├── antiblock-urls.json    # 防屏蔽地址缓存（自动从旧位置迁移）
+└── logs/
+    ├── jav-scrapy.log     # 主日志（所有级别）
+    └── error.log          # 错误日志
+```
 
 ### 代理配置
 
@@ -320,8 +300,10 @@ jav-scrapy 使用复杂的四阶段流水线架构:
 - **QueueManager** (`src/core/queueManager.ts`): 编排四阶段流水线
 - **RequestHandler** (`src/core/requestHandler.ts`): 带重试和代理支持的 HTTP 客户端
 - **Parser** (`src/core/parser.ts`): 基于 Cheerio 的 HTML 解析器，带回退策略
-- **PuppeteerPool** (`src/core/puppeteerPool.ts`): 管理 Cloudflare 绕过的浏览器实例
 - **Config** (`src/core/config.ts`): 多源配置管理
+- **Logger** (`src/core/logger.ts`): 三通道输出架构（控制台/文件/错误）
+- **Output** (`src/output.ts`): 用户面向的输出格式化
+- **Paths** (`src/core/paths.ts`): 应用路径统一管理（跨平台）
 
 ## 🛠️ 开发设置
 
@@ -371,20 +353,19 @@ npm test
 ```
 src/
 ├── jav.ts                     # CLI 入口点
+├── output.ts                  # 用户面向输出模块
 ├── core/                      # 核心模块
 │   ├── config.ts             # 配置管理
 │   ├── constants.ts          # 默认值，用户代理
 │   ├── fileHandler.ts        # 文件操作
-│   ├── logger.ts             # Winston 日志
+│   ├── logger.ts             # Winston 日志（三通道输出）
 │   ├── parser.ts             # HTML 解析
+│   ├── paths.ts              # 应用路径统一管理
 │   ├── queueManager.ts       # 四队列系统
 │   ├── requestHandler.ts     # 带重试的 HTTP 客户端
-│   ├── puppeteerPool.ts      # 浏览器实例池
-│   └── resourceMonitor.ts    # 资源跟踪
 ├── types/
 │   └── interfaces.ts         # TypeScript 接口
 └── utils/
-    ├── cloudflareBypass.ts   # Cloudflare 绕过
     ├── delayManager.ts       # 延迟控制
     ├── errorHandler.ts       # 错误分类
     └── systemProxy.ts        # 代理检测
@@ -402,9 +383,9 @@ src/
 
 - **无全局依赖**: 所有工具必须是本地 npm 依赖
 - 使用 `npx` 运行包: `npx pkg` 而不是 `pkg`
-- **错误处理**: 集中化错误分类
-- **日志记录**: Winston 多级日志带调试支持
-- **文件路径**: 始终使用绝对路径
+- **错误处理**: 集中化错误分类（含 `uncaughtException` 崩溃保护）
+- **日志记录**: 三通道输出架构（Output 模块 + Winston 文件日志）
+- **应用路径**: 统一通过 `src/core/paths.ts` 管理，跨平台兼容
 
 ### 提交规范
 
@@ -435,14 +416,6 @@ npm cache clean --force
 npm install -g https://github.com/raawaa/jav-scrapy/tarball/main
 ```
 
-#### Puppeteer 下载失败
-```bash
-# 安装 Chromium 依赖 (Linux)
-sudo apt-get install -y gconf-service libasound2 libatk1.0-0
-
-# 或使用带系统 Chrome 的 puppeteer-core
-# 设置 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-```
 
 #### 代理不工作
 ```bash
@@ -462,11 +435,8 @@ curl -x http://proxy.example.com:8080 http://httpbin.org/ip
 --delay 1
 ```
 
-#### Cloudflare 阻止请求
+#### 请求被阻止
 ```bash
-# 启用 Cloudflare 绕过
---cloudflare
-
 # 增加延迟
 --delay 5
 
@@ -474,20 +444,48 @@ curl -x http://proxy.example.com:8080 http://httpbin.org/ip
 --proxy http://proxy.example.com:8080
 ```
 
-### 调试模式
+## 📊 日志与调试
 
-启用调试日志获取详细信息:
+### 三通道输出架构
+
+应用的输出分为三个独立通道：
+
+| 通道 | 目标 | 内容 |
+|------|------|------|
+| **用户通道** | stdout | 业务进展、结果、摘要（无日志前缀） |
+| **调试通道** | 文件 | 所有 debug/info/warn/error 级别的完整日志 |
+| **错误通道** | stderr | 错误消息 |
+
+### 日志详细级别
+
+通过命令行选项控制控制台输出的详细程度：
 
 ```bash
-jav crawl --debug --limit 10
+jav crawl --limit 10            # 默认：只显示进度、结果和警告/错误
+jav crawl --limit 10 --verbose  # 详细：显示所有调试信息
+jav crawl --limit 10 --quiet    # 静默：只显示最终摘要和错误
 ```
 
-日志将包含:
-- 队列状态更新
-- 请求/响应详情
-- 解析操作
-- 错误追踪
-- 资源使用情况
+### 日志文件
+
+日志写入统一数据目录下的 `logs/` 子目录：
+
+- `jav-scrapy.log` — 所有级别的完整运行日志
+- `error.log` — 仅错误日志
+
+每次运行会自动记录以下信息到日志文件：
+- **运行 ID** — 每次运行生成唯一标识，日志行带 `[runId]` 前缀
+- **启动快照** — Node.js 版本、操作系统、配置参数、可用内存
+- **运行分隔** — 多次运行的日志在文件中有清晰的 `==== 运行 xxx 开始 ====` 分隔标记
+- **崩溃记录** — `uncaughtException`/`unhandledRejection` 自动将错误和队列状态写入日志
+
+### 日志管理
+
+```bash
+jav logs                   # 显示日志文件路径
+jav logs --tail 100        # 显示最后 100 行日志
+jav logs --export          # 导出日志到当前目录，方便分享
+```
 
 ## 👥 贡献指南
 
@@ -597,7 +595,6 @@ git commit -m "test: 添加单元测试"
 
 - **Cheerio** HTML 解析
 - **Axios** HTTP 请求
-- **Puppeteer** 浏览器自动化
 - **Winston** 日志记录
 - **Commander.js** CLI 框架
 - **TypeScript** 类型安全

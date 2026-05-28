@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import logger from './core/logger';
+import logger, { setConsoleLevel, setRunId, writeRunSeparator } from './core/logger';
+import { getMainLogPath, getLogDir, getAntiBlockUrlsPath } from './core/paths';
 import { program } from 'commander';
 import ConfigManager from './core/config';
 import QueueManager from './core/queueManager';
@@ -13,9 +14,11 @@ import RequestHandler from './core/requestHandler';
 import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
 import fs from 'fs';
 import * as path from 'path';
+import os from 'os';
 import { ErrorHandler } from './utils/errorHandler';
 import { getRandomDelay, getExponentialBackoffDelay } from './core/constants';
 import { delayManager, DelayType } from './utils/delayManager';
+import { Output } from './output';
 
 // 版本号 - 从package.json动态读取
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -41,8 +44,9 @@ program
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .option('-N, --nopic', '不抓取图片')
     .option('-c, --cookies <string>', '手动设置Cookies，格式: "key1=value1; key2=value2"')
-    .option('--cloudflare', '启用 Cloudflare 绕过功能')
     .option('--no-strict-ssl', '禁用SSL证书严格验证（用于代理SSL证书问题）')
+    .option('-v, --verbose', '显示详细调试信息')
+    .option('-q, --quiet', '静默模式，只显示错误和最终摘要')
     .action(async (options, program) => {
         const configManager = new ConfigManager();
         await configManager.updateFromProgram(program);
@@ -53,8 +57,17 @@ program
             PROGRAM_CONFIG.delay = 2;
         }
 
+        // 根据命令行参数设置日志级别
+        if (options.verbose) {
+            setConsoleLevel('debug');
+            logger.debug('已启用详细日志模式 (--verbose)');
+        }
+        if (options.quiet) {
+            setConsoleLevel('error');
+            logger.debug('已启用静默模式 (--quiet)');
+        }
+
         logger.debug('程序配置初始化完成');
-        logger.debug(`完整配置: ${JSON.stringify(PROGRAM_CONFIG, null, 2)}`);
 
         const requestHandler = new RequestHandler(PROGRAM_CONFIG);
         const scraper = new JavScraper(PROGRAM_CONFIG, requestHandler);
@@ -66,6 +79,44 @@ program
             scraper.destroy();
             process.exit(1);
         }
+    });
+
+program
+    .command('logs')
+    .description('查看日志')
+    .option('--tail <num>', '显示最后 N 行日志', parseInt)
+    .option('--export', '导出日志到当前目录')
+    .action((options) => {
+        const logPath = getMainLogPath();
+        const logDir = getLogDir();
+
+        console.log(`📁 日志目录: ${chalk.cyan(logDir)}`);
+        console.log(`📄 日志文件: ${chalk.cyan(logPath)}`);
+
+        if (!fs.existsSync(logPath)) {
+            console.log(chalk.yellow('暂无日志记录。'));
+            return;
+        }
+
+        if (options.export) {
+            const exportName = `jav-scrapy-logs-${Date.now()}.log`;
+            fs.copyFileSync(logPath, exportName);
+            console.log(`✅ 已导出到: ${chalk.green(exportName)}`);
+            return;
+        }
+
+        if (options.tail) {
+            const content = fs.readFileSync(logPath, 'utf-8');
+            const lines = content.split('\n').filter(Boolean);
+            const tailLines = lines.slice(-options.tail);
+            console.log('');
+            console.log(chalk.gray(`--- 最后 ${options.tail} 行 ---`));
+            tailLines.forEach(line => console.log(line));
+            return;
+        }
+
+        console.log('');
+        console.log(chalk.gray('使用 --tail N 查看最后 N 行，或 --export 导出日志。'));
     });
 
 program
@@ -91,9 +142,8 @@ program
         const pageData = await requestHandler.getPage(config.base || config.BASE_URL);
         const antiBlockUrls = Parser.extractAntiBlockUrls(pageData?.body || '');
 
-        const homeDir = (process.platform === 'win32' ? process.env.USERPROFILE : process.env.HOME) || process.cwd();
-        // 定义保存防屏蔽地址的文件路径
-        const antiblockUrlsFilePath = path.join(homeDir, '.jav-scrapy-antiblock-urls.json');
+        // 防屏蔽地址文件路径（统一管理，包含旧位置迁移）
+        const antiblockUrlsFilePath = getAntiBlockUrlsPath();
         let existingUrls: string[] = [];
 
         // 读取现有防屏蔽地址文件
@@ -154,14 +204,7 @@ class JavScraper {
                 hideCursor: true
             }, cliProgress.Presets.shades_classic);
             this.progressBar = this.multibar.create(this.config.limit, 0);
-        }
-    }
-
-    private logInfo(message: string): void {
-        if (this.multibar) {
-            this.multibar.log(message + '\n');
-        } else {
-            console.log(message);
+            Output.setMultibar(this.multibar);
         }
     }
 
@@ -180,43 +223,71 @@ class JavScraper {
 
     async mainExecution(): Promise<void> {
         const executionStartTime = Date.now();
-        logger.info(`mainExecution: 开始执行程序，启动时间: ${new Date().toISOString()}`);
+
+        // 生成运行 ID
+        const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        setRunId(runId);
+        writeRunSeparator(runId);
+
+        // 启动快照：记录运行环境和配置到日志
+        logger.info(`运行 ${runId} 开始`);
+        logger.info(`版本: ${version}`);
+        logger.info(`Node.js: ${process.version}, 平台: ${process.platform}, 架构: ${process.arch}`);
+        logger.info(`主机: ${os.hostname()}, 用户: ${os.userInfo().username}`);
+        logger.info(`内存: ${Math.round(os.totalmem() / 1024 / 1024 / 1024 * 10) / 10}GB 总计`);
+        logger.info(`配置: ${JSON.stringify({
+            parallel: this.config.parallel,
+            delay: this.config.delay,
+            limit: this.config.limit,
+            timeout: this.config.timeout,
+            proxy: this.config.proxy ? '[已设置]' : '未设置',
+            nomag: this.config.nomag,
+            allmag: this.config.allmag,
+            nopic: this.config.nopic,
+            output: this.config.output,
+            base: this.config.base || this.config.BASE_URL,
+            search: this.config.search
+        })}`);
+        logger.debug(`完整配置: ${JSON.stringify(this.config, (key, value) =>
+            key === 'headers' ? '[REDACTED]' : value, 2)}`);
 
         // 启动横幅
-        this.logInfo(chalk.cyan('╔══════════════════════════════════════════╗'));
-        this.logInfo(chalk.cyan('║         Jav Scrapy - 开始抓取             ║'));
-        this.logInfo(chalk.cyan('╚══════════════════════════════════════════╝'));
-        this.logInfo(chalk.gray(`版本: ${version}`));
-        if (this.config.limit > 0) {
-            this.logInfo(`目标: ${chalk.white(this.config.limit)} 部影片`);
-        }
-        this.logInfo(`并发: ${chalk.white(this.config.parallel)} | 延迟: ${chalk.white(this.config.delay || 8)}s` +
-            (this.config.proxy ? ` | 代理: ${chalk.green('✓')}` : ` | 代理: ${chalk.red('✗')}`) +
-            (this.config.nomag ? ` | 无磁链: ${chalk.yellow('跳过')}` : ''));
-        this.logInfo(`起始页: ${chalk.underline(this.config.base || this.config.BASE_URL)}`);
-
-        // 输出更详细的配置信息
-        logger.debug(`mainExecution: 代理设置: ${this.config.proxy || '未设置'}`);
-        logger.debug(`mainExecution: 起始URL: ${this.config.base || this.config.BASE_URL}`);
-        logger.debug(`mainExecution: 并行数: ${this.config.parallel}`);
-        logger.debug(`mainExecution: 超时时间: ${this.config.timeout}ms`);
+        Output.banner(this.config, version);
 
         const queueManager = new QueueManager(this.config);
         logger.debug(`mainExecution: QueueManager 初始化完成`);
         let shouldStop = false;
 
+        // 未捕获异常处理
+        const handleUncaught = (error: Error) => {
+            logger.error(`未捕获的异常: ${error.message}`);
+            logger.error(`错误堆栈: ${error.stack || ''}`);
+            try {
+                logger.error(`最终队列状态: ${queueManager.getDetailedQueueStatus()}`);
+            } catch { /* 队列可能未初始化 */ }
+            logger.info(`运行 ${runId} 异常结束`);
+            process.exit(1);
+        };
+        process.on('uncaughtException', handleUncaught);
+        process.on('unhandledRejection', (reason) => {
+            const error = reason instanceof Error ? reason : new Error(String(reason));
+            handleUncaught(error);
+        });
+
         // 添加信号处理
         const setupSignalHandlers = () => {
             const handleShutdown = async (signal: string) => {
-                logger.info(`mainExecution: 收到${signal}信号，开始优雅退出...`);
-                logger.info(`mainExecution: 最终队列状态: ${queueManager.getDetailedQueueStatus()}`);
+                logger.info(`收到${signal}信号，开始优雅退出...`);
+                logger.info(`最终队列状态: ${queueManager.getDetailedQueueStatus()}`);
                 queueManager.shutdown();
                 try {
                     await this.destroy();
-                    logger.info(`mainExecution: ${signal}信号处理完成`);
+                    logger.info(`${signal}信号处理完成`);
+                    logger.info(`运行 ${runId} 被${signal}中断`);
                     process.exit(0);
                 } catch (error) {
-                    logger.error(`mainExecution: 销毁过程中发生错误: ${error instanceof Error ? error.message : String(error)}`);
+                    logger.error(`销毁过程中发生错误: ${error instanceof Error ? error.message : String(error)}`);
+                    logger.info(`运行 ${runId} 销毁失败`);
                     process.exit(1);
                 }
             };
@@ -237,8 +308,7 @@ class JavScraper {
             if (event.data && 'links' in event.data) {
                 const links = event.data.links;
                 logger.debug(`第${this.pageIndex}页解析完成，找到 ${links.length} 部影片链接`);
-                const color = links.length > 0 ? chalk.green : chalk.yellow;
-                this.logInfo(`  ${color('✓')} 第${this.pageIndex}页: ${links.length} 部影片`);
+                Output.pageProgress(this.pageIndex, links.length);
 
                 if (links.length === 0) {
                     logger.warn(`第${this.pageIndex}页未找到任何影片，可能需要检查页面内容或代理设置`);
@@ -257,7 +327,7 @@ class JavScraper {
                     this.filmsQueued += linksToAdd.length;
 
                     logger.debug(`本页添加 ${linksToAdd.length} 个影片到队列，总共已加入 ${this.filmsQueued}/${this.config.limit} 个影片`);
-                    this.logInfo(`已添加 ${linksToAdd.length} 个影片到处理队列 (${this.filmsQueued}/${this.config.limit})`);
+                    Output.filmQueued(linksToAdd.length, this.filmsQueued, this.config.limit);
 
                     queueManager.getDetailPageQueue().push(linksToAdd.map((link: string) => ({ link })));
                 } else {
@@ -286,8 +356,7 @@ class JavScraper {
                         const progressValue = Math.min(this.filmCount, this.config.limit);
                         this.progressBar.update(progressValue);
                     } else {
-                        const magnetIcon = event.data.filmData.magnetLinks?.length ? ' [磁链]' : ' [无磁链]';
-                        this.logInfo(`  ${chalk.green('✓')} ${event.data.filmData.title} ${magnetIcon}`);
+                        Output.filmResult(event.data.filmData.title, !!event.data.filmData.magnetLinks?.length);
                     }
                 }
 
@@ -340,22 +409,22 @@ class JavScraper {
                 // 添加随机延迟，避免请求过于频繁
                 const randomDelayMs = getRandomDelay(this.config.delay || 8, (this.config.delay || 8) + 7);
                 logger.debug(`页面抓取延迟: ${Math.round(randomDelayMs/1000)}秒`);
-                this.logInfo(chalk.gray(`  ⏳ ${Math.round(randomDelayMs / 1000)}秒后下一页...`));
+                Output.delay(Math.round(randomDelayMs / 1000));
                 await new Promise(resolve => setTimeout(resolve, randomDelayMs));
                 logger.debug(`页面抓取延迟等待完成，准备抓取第${this.pageIndex}页`);
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : String(err);
-                this.logInfo(chalk.red(`  ✗ 第${this.pageIndex}页出错: ${errorMessage}`));
+                Output.pageError(this.pageIndex, errorMessage);
                 logger.error(`页面抓取错误 [第${this.pageIndex}页]: ${errorMessage}`);
 
                 // 如果是网络相关错误，使用指数退避等待更长时间再重试
                 if (errorMessage.includes('ECONNRESET') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ENOTFOUND')) {
                     const backoffDelay = getExponentialBackoffDelay(10000, 1, 30000);
-                    this.logInfo(chalk.yellow(`  网络错误，${Math.round(backoffDelay / 1000)}秒后重试...`));
+                    Output.networkRetry(Math.round(backoffDelay / 1000));
                     await new Promise(resolve => setTimeout(resolve, backoffDelay));
                 } else {
                     const errorDelay = getRandomDelay(5, 10);
-                    this.logInfo(chalk.yellow(`  等待 ${Math.round(errorDelay / 1000)} 秒后重试...`));
+                    Output.genericRetry(Math.round(errorDelay / 1000));
                     await new Promise(resolve => setTimeout(resolve, errorDelay));
                     logger.debug(`一般错误延迟等待完成，准备重试第${this.pageIndex}页`);
                 }
@@ -366,7 +435,7 @@ class JavScraper {
         const stopTime = Date.now();
         const executionSoFar = Math.round((stopTime - executionStartTime) / 1000);
         logger.info(`mainExecution: 抓取停止条件已满足，开始等待队列清空 (已执行 ${executionSoFar}s)`);
-        this.logInfo(chalk.yellow('正在等待队列中的任务完成...'));
+        Output.waitingForDrain();
 
         // 等待工作队列完成
         const queueWaitStart = Date.now();
@@ -388,18 +457,18 @@ class JavScraper {
         const totalExecutionTime = Math.round((Date.now() - executionStartTime) / 1000);
 
         // 最终统计摘要
-        this.logInfo('');
-        this.logInfo(chalk.cyan('══════════════════ 抓取完成 ══════════════════'));
-        this.logInfo(`  总耗时: ${chalk.white(totalExecutionTime)} 秒`);
-        this.logInfo(`  扫描页数: ${chalk.white(this.pageIndex - 1)}`);
-        this.logInfo(`  发现影片: ${chalk.white(this.filmsQueued)}`);
-        this.logInfo(`  处理完成: ${chalk.green(this.filmCount)}`);
-        if (this.filmsAttempted > this.filmCount) {
-            this.logInfo(`  失败: ${chalk.red(this.filmsAttempted - this.filmCount)}`);
-        }
-        this.logInfo(`  保存位置: ${chalk.underline(this.config.output)}`);
-        this.logInfo(chalk.cyan('═════════════════════════════════════════════'));
-        this.logInfo('');
+        const summary = {
+            totalTime: totalExecutionTime,
+            pages: this.pageIndex - 1,
+            filmsFound: this.filmsQueued,
+            filmsCompleted: this.filmCount,
+            filmsFailed: Math.max(0, this.filmsAttempted - this.filmCount),
+            output: this.config.output
+        };
+        Output.summary(summary);
+        logger.info(`运行 ${runId} 完成: 耗时 ${summary.totalTime}s, ` +
+            `页面 ${summary.pages}, 发现 ${summary.filmsFound}, ` +
+            `完成 ${summary.filmsCompleted}, 失败 ${summary.filmsFailed}`);
     }
 
     private async cleanup(): Promise<void> {
@@ -417,16 +486,7 @@ class JavScraper {
             logger.debug(`mainExecution: 多进度条已停止`);
         }
 
-        // 关闭RequestHandler (这会关闭Cloudflare绕过器和Puppeteer浏览器)
-        if (this.requestHandler) {
-            try {
-                await this.requestHandler.close();
-                this.requestHandler = null;
-                logger.debug(`mainExecution: RequestHandler已关闭`);
-            } catch (error) {
-                logger.warn(`mainExecution: 关闭RequestHandler失败: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
+        logger.debug(`mainExecution: 不需要关闭 RequestHandler (无需要清理的资源)`);
 
         // 关闭延迟管理器
         if (delayManager) {

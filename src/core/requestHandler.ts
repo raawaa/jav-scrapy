@@ -10,8 +10,6 @@ import fs from 'fs'; // 导入 fs 模块，用于文件操作
 import { USER_AGENTS } from './constants';
 import { ErrorHandler } from '../utils/errorHandler';
 import logger from './logger';
-import CloudflareBypass from '../utils/cloudflareBypass';
-import { PuppeteerPool, PuppeteerInstance } from './puppeteerPool';
 /**
  * 请求配置接口
  */
@@ -51,11 +49,6 @@ class RequestHandler {
   private config: Config;
   private retries: number;
     private retryDelay: number;
-    private cloudflareBypass: CloudflareBypass | null = null;
-    private cloudflareCookies: string | null = null;
-    private lastCookieRefresh: number = 0;
-    private cookieRefreshInterval: number = 30 * 60 * 1000; // 30分钟刷新一次cookies
-    private puppeteerPool: PuppeteerPool;
   /**
    * 构造函数
    * @param config 配置对象
@@ -112,8 +105,6 @@ class RequestHandler {
     };
     this.retries = 3; // 重试次数
     this.retryDelay = Math.max(this.config.delay || 2000, 3000); // 基础延迟，至少3秒
-    // 获取共享的 PuppeteerPool 实例（不创建新实例，由 QueueManager 统一管理）
-    this.puppeteerPool = PuppeteerPool.getInstance();
     // 添加HTTPS代理拦截器
     axios.interceptors.request.use((config) => {
       if (this.requestConfig.proxy && config.url?.startsWith('https')) {
@@ -148,77 +139,7 @@ class RequestHandler {
       return null;
     }
 
-    // 如果启用 Cloudflare 绕过，直接使用 Puppeteer
-    if (this.config.useCloudflareBypass) {
-      logger.debug(`getPage: 使用 Cloudflare 绕过模式: ${url}`);
-      if (!this.cloudflareBypass) {
-        logger.debug(`getPage: Cloudflare 绕过器未初始化，开始初始化...`);
-        await this.initCloudflareBypass();
-      }
-
-      if (this.cloudflareBypass) {
-        try {
-          logger.debug(`getPage: 开始使用 Puppeteer 获取页面: ${url}`);
-          const pageAccessStartTime = Date.now();
-          const pageContent = await this.cloudflareBypass.bypassCloudflare(url);
-          const pageAccessTime = Date.now() - pageAccessStartTime;
-          logger.debug(`getPage: Puppeteer 获取页面成功 (耗时: ${pageAccessTime}ms), 内容长度: ${pageContent.length}`);
-          return { statusCode: 200, body: pageContent };
-        } catch (error) {
-          const pageAccessTime = Date.now() - (this as any)._pageAccessStartTime || 0;
-          logger.error(`getPage: Cloudflare 绕过获取页面失败: ${url}, 错误: ${error instanceof Error ? error.message : String(error)}`);
-          logger.error(`getPage: 错误类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}`);
-          logger.error(`getPage: 错误耗时: ${pageAccessTime}ms`);
-
-          // 详细记录错误信息
-          logger.debug(`getPage: 完整错误对象: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`);
-
-          // 检查是否是网络错误，如果是则尝试常规HTTP请求作为fallback
-          const isNetworkError = error instanceof Error && (
-            error.message.includes('net::ERR_ABORTED') ||
-            error.message.includes('net::ERR_CONNECTION') ||
-            error.message.includes('timeout') ||
-            error.message.includes('Navigation timeout') ||
-            error.message.includes('获取 Puppeteer 实例失败') // 添加池相关错误
-          );
-
-          const isPuppeteerError = error instanceof Error && (
-            error.message.includes('Cannot read properties of null') ||
-            error.message.includes('page 为 null') ||
-            error.message.includes('从共享池获取的页面实例为 null')
-          );
-
-          if (isNetworkError || isPuppeteerError) {
-            logger.warn(`getPage: Cloudflare 绕过遇到${isNetworkError ? '网络' : 'Puppeteer'}错误，尝试常规HTTP请求作为fallback: ${url}`);
-            logger.debug(`fallback原因: ${error instanceof Error ? error.message : String(error)}`);
-            logger.debug(`fallback错误类型: ${isNetworkError ? '网络错误' : 'Puppeteer错误'}`);
-
-            // 记录当前配置信息
-            logger.debug(`getPage: 当前配置 - timeout: ${this.config.timeout}, proxy: ${this.config.proxy || '无'}, cloudflare: ${this.config.useCloudflareBypass}`);
-
-            // 设置Cloudflare绕过器为null，强制使用常规请求
-            this.cloudflareBypass = null;
-            // 继续执行下面的常规HTTP请求逻辑
-          } else {
-            // 非网络错误，直接抛出
-            logger.error(`getPage: 非网络错误，直接抛出: ${error instanceof Error ? error.message : String(error)}`);
-            logger.error(`getPage: 错误详情 - 类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}, 消息: ${error instanceof Error ? error.message : String(error)}`);
-
-            // 尝试记录错误时的堆栈信息
-            if (error instanceof Error && error.stack) {
-              logger.debug(`getPage: 错误堆栈前20行:\n${error.stack.split('\n').slice(0, 20).join('\n')}`);
-            }
-
-            throw error;
-          }
-        }
-      } else {
-        logger.error(`getPage: Cloudflare 绕过器初始化失败: ${url}`);
-        return null;
-      }
-    }
-
-    // 未启用 Cloudflare 绕过，使用传统 HTTP 请求
+    // 使用传统 HTTP 请求
     const maxAttempts = this.config.retryCount + 1;
     let attempts = 0;
     while (attempts < maxAttempts) {
@@ -279,7 +200,7 @@ class RequestHandler {
           logger.error(`请求被拒绝 (403): ${url}`);
           logger.error(`这可能是由于以下原因:`);
           logger.error(`  1. 代理 IP 被 Cloudflare 封禁 — 尝试更换代理或使用住宅代理`);
-          logger.error(`  2. 请求头不完整 — 更新 User-Agent 或使用 --cloudflare 模式`);
+          logger.error(`  2. 请求头不完整 — 更新 User-Agent`);
           logger.error(`  3. 请求过于频繁 — 尝试增加延迟 (--delay) 或降低并发 (--parallel)`);
           if (err.response?.data) {
             const responseData = err.response.data as string;
@@ -324,11 +245,6 @@ class RequestHandler {
     try {
 
       logger.debug(`开始发送AJAX请求: ${url}`);
-      // 如果启用 Cloudflare 绕过且还没有获取 Cloudflare Cookies，先获取
-      if (this.config.useCloudflareBypass && !this.cloudflareCookies) {
-
-        await this.getCloudflareCookies();
-      }
       // 构建AJAX专用请求头
       const urlObj = new URL(url);
       const headers: Record<string, string> = {
@@ -352,30 +268,15 @@ class RequestHandler {
         'X-Requested-With': 'XMLHttpRequest',
         'Connection': 'keep-alive'
       };
-      // Cookie 优先级：手动设置 > Cloudflare Cookies > 默认 Cookies
+      // Cookie 使用手动设置或默认 Cookie
       const hasManualCookies = this.config.headers && this.config.headers.Cookie &&
                               this.config.headers.Cookie !== 'existmag=mag';
-      let cookieSet = false;
       if (hasManualCookies) {
 
         // 使用安全Cookie设置方法
-        cookieSet = this.setCookieHeader(headers, this.config.headers.Cookie!);
-        if (cookieSet) {
-
-          logger.debug(`在XMLHttpRequest中使用手动设置的 Cookies`);
-        }
-      }
-      if (!cookieSet && this.cloudflareCookies) {
-
-        // 使用 Cloudflare 绕过获取的 Cookies
-        cookieSet = this.setCookieHeader(headers, this.cloudflareCookies);
-        if (cookieSet) {
-
-          logger.debug('在XMLHttpRequest中使用 Cloudflare Cookies');
-        }
-      }
-      // 如果所有Cookie都无效，使用默认Cookie
-      if (!cookieSet) {
+        this.setCookieHeader(headers, this.config.headers.Cookie!);
+        logger.debug(`在XMLHttpRequest中使用手动设置的 Cookies`);
+      } else {
 
         headers.Cookie = 'existmag=mag';
         logger.debug('在XMLHttpRequest中使用默认 Cookie: existmag=mag');
@@ -481,65 +382,17 @@ class RequestHandler {
 
     let response: { statusCode: number; body: string } | null = null;
 
-    // 如果启用 Cloudflare 绕过，直接使用 Cloudflare 方式
-    if (this.config.useCloudflareBypass) {
-      logger.debug(`fetchMagnet: 使用 Cloudflare 绕过模式: ${metadata.title}`);
-      if (!this.cloudflareBypass) {
-        logger.debug(`fetchMagnet: Cloudflare 绕过器未初始化，开始初始化...`);
-        await this.initCloudflareBypass();
-      }
-
-      if (this.cloudflareBypass) {
-        try {
-          logger.debug(`fetchMagnet: 开始 Cloudflare AJAX 请求: ${metadata.title}`);
-          const cfAjaxStart = Date.now();
-          const cloudflareResponse = await this.executeAjaxWithCloudflare(url);
-          const cfAjaxTime = Date.now() - cfAjaxStart;
-
-          if (cloudflareResponse) {
-            response = { statusCode: 200, body: cloudflareResponse };
-            logger.info(`fetchMagnet: Cloudflare 绕过 AJAX 请求成功: ${metadata.title} (耗时: ${Math.round(cfAjaxTime/1000)}s)`);
-          } else {
-            logger.warn(`fetchMagnet: Cloudflare 绕过返回空响应: ${metadata.title}`);
-          }
-        } catch (cfError: unknown) {
-          const cfFailedTime = Date.now() - fetchStartTime;
-          logger.error(`fetchMagnet: Cloudflare 绕过 AJAX 请求失败: ${metadata.title} (耗时: ${Math.round(cfFailedTime/1000)}s)`);
-          logger.error(`错误类型: ${cfError instanceof Error ? cfError.constructor.name : '未知类型'}`);
-          logger.error(`错误信息: ${cfError instanceof Error ? cfError.message : String(cfError)}`);
-          
-          // 如果是AxiosError，记录更详细的响应信息
-          if (cfError instanceof Error && cfError.name === 'AxiosError') {
-            const axiosError = cfError as any;
-            logger.error(`响应状态码: ${axiosError.response?.status || 'N/A'}`);
-            if (axiosError.response) {
-              logger.error(`完整响应数据: ${JSON.stringify(axiosError.response.data, null, 2)}`);
-              logger.error(`响应头: ${JSON.stringify(axiosError.response.headers || {}, null, 2)}`);
-            }
-            if (axiosError.config) {
-              logger.debug(`请求方法: ${axiosError.config.method || 'N/A'}`);
-              logger.debug(`请求头: ${JSON.stringify(axiosError.config.headers || {}, null, 2)}`);
-            }
-          }
-          
-          logger.error(`错误堆栈: ${cfError instanceof Error ? cfError.stack : '无堆栈信息'}`);
-        }
-      } else {
-        logger.warn(`fetchMagnet: Cloudflare 绕过器初始化失败: ${metadata.title}`);
-      }
-    } else {
-      // 未启用 Cloudflare 绕过，使用传统 AJAX 请求
-      try {
-        logger.debug(`fetchMagnet: 开始尝试常规 AJAX 请求: ${metadata.title}`);
-        const regularAjaxStart = Date.now();
-        response = await this.getXMLHttpRequest(url);
-        const regularAjaxTime = Date.now() - regularAjaxStart;
-        logger.debug(`fetchMagnet: 常规 AJAX 请求完成: ${metadata.title} (耗时: ${Math.round(regularAjaxTime/1000)}s)`);
-      } catch (error) {
-        const regularFailedTime = Date.now() - fetchStartTime;
-        logger.warn(`fetchMagnet: 常规 AJAX 请求失败: ${metadata.title} (耗时: ${Math.round(regularFailedTime/1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);
-        throw error;
-      }
+    // 使用传统 AJAX 请求
+    try {
+      logger.debug(`fetchMagnet: 开始尝试 AJAX 请求: ${metadata.title}`);
+      const ajaxStart = Date.now();
+      response = await this.getXMLHttpRequest(url);
+      const ajaxTime = Date.now() - ajaxStart;
+      logger.debug(`fetchMagnet: AJAX 请求完成: ${metadata.title} (耗时: ${Math.round(ajaxTime/1000)}s)`);
+    } catch (error) {
+      const failedTime = Date.now() - fetchStartTime;
+      logger.warn(`fetchMagnet: AJAX 请求失败: ${metadata.title} (耗时: ${Math.round(failedTime/1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
     if (!response) {
       const totalTime = Date.now() - fetchStartTime;
@@ -604,8 +457,7 @@ class RequestHandler {
         magnetLinks: magnetLinks
       };
 
-      logger.info(`fetchMagnet: 成功获取所有磁力链接: ${metadata.title} (共${parsedPairs.length}个) (总耗时: ${Math.round(totalTime/1000)}s)`);
-      logger.debug(`fetchMagnet: 返回所有磁力链接，预览: ${result.magnet.substring(0, 200)}...`);
+      logger.debug(`fetchMagnet: 成功获取所有磁力链接: ${metadata.title} (共${parsedPairs.length}个) (总耗时: ${Math.round(totalTime/1000)}s)`);
     } else {
       // 返回最大的磁力链接（默认行为）
       const maxSizePair = parsedPairs.reduce((prev, current) => {
@@ -621,8 +473,7 @@ class RequestHandler {
           }]
         };
 
-        logger.info(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
-        logger.info(`fetchMagnet: 返回最大磁力链接: ${result.magnet.substring(0, 100)}...`);
+        logger.debug(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
       } else {
         logger.error(`fetchMagnet: 未能确定最大磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
       }
@@ -688,19 +539,6 @@ class RequestHandler {
         logger.debug(`downloadImage: 从图片URL自动生成Referer: ${refererUrl}`);
       }
       headers.referer = refererUrl;
-      
-      // 如果启用 Cloudflare 绕过，确保使用有效的 cookies
-      if (this.config.useCloudflareBypass) {
-        if (!this.cloudflareCookies) {
-          logger.debug(`downloadImage: 获取 Cloudflare Cookies 用于图片下载`);
-          await this.getCloudflareCookies();
-        }
-
-        if (this.cloudflareCookies) {
-          headers.Cookie = this.cloudflareCookies;
-          logger.debug(`downloadImage: 使用 Cloudflare Cookies 下载图片: ${filename}, Referer: ${refererUrl}`);
-        }
-      }
 
       // 创建 HTTPS Agent 用于图片下载（支持 SSL 配置）
       const httpsAgent = this.createHttpsAgent();
@@ -741,19 +579,6 @@ class RequestHandler {
               logger.debug(`downloadImage (简化): 从图片URL自动生成Referer: ${simplifiedRefererUrl}`);
             }
             simplifiedHeaders.referer = simplifiedRefererUrl;
-
-            // 如果启用 Cloudflare 绕过，确保使用有效的 cookies
-            if (this.config.useCloudflareBypass) {
-              if (!this.cloudflareCookies) {
-                logger.debug(`downloadImage (简化): 获取 Cloudflare Cookies 用于图片下载`);
-                await this.getCloudflareCookies();
-              }
-
-              if (this.cloudflareCookies) {
-                simplifiedHeaders.Cookie = this.cloudflareCookies;
-                logger.debug(`downloadImage (简化): 使用 Cloudflare Cookies 下载图片: ${simplifiedFilename}, Referer: ${simplifiedRefererUrl}`);
-              }
-            }
 
             // 创建 HTTPS Agent 用于简化文件名图片下载
             const httpsAgent = this.createHttpsAgent();
@@ -797,150 +622,6 @@ class RequestHandler {
           ErrorHandler.handleFileError(error, `保存图片: ${filename}`);
           throw error;
         }
-    }
-  }
-  /**
-     * 初始化Cloudflare绕过器
-     */
-    private async initCloudflareBypass(): Promise<void> {
-        try {
-            logger.info('正在初始化Cloudflare绕过器...');
-            // 不再创建新的CloudflareBypass实例，而是使用共享池
-            this.cloudflareBypass = new CloudflareBypass({
-                headless: true,
-                timeout: this.requestConfig.timeout,
-                proxy: this.requestConfig.proxy,
-                puppeteerPool: this.puppeteerPool  // 传入共享池
-            });
-
-            await this.cloudflareBypass.init();
-            logger.info('Cloudflare绕过器初始化成功');
-
-            // 设置年龄认证相关Cookie
-            logger.info('正在设置年龄认证相关Cookie...');
-            await this.cloudflareBypass.setAgeVerificationCookies();
-            logger.info('年龄认证Cookie设置完成');
-        } catch (error) {
-            logger.error('Cloudflare绕过器初始化失败:', error);
-            this.cloudflareBypass = null;
-            throw error;
-        }
-    }
-  /**
-   * 获取 Cloudflare Cookies
-   */
-  private async getCloudflareCookies(): Promise<string | null> {
-    if (!this.config.useCloudflareBypass) {
-      logger.debug('Cloudflare绕过未启用，跳过获取Cookies');
-      return null;
-    }
-    const currentTime = Date.now();
-    // 检查是否需要刷新cookies（从未获取或超过刷新间隔）
-    if (this.cloudflareCookies && (currentTime - this.lastCookieRefresh) < this.cookieRefreshInterval) {
-      logger.debug(`使用缓存的 Cloudflare Cookies (剩余有效时间: ${Math.floor((this.cookieRefreshInterval - (currentTime - this.lastCookieRefresh)) / 1000 / 60)} 分钟)`);
-      return this.cloudflareCookies;
-    }
-    // 如果还没有初始化，先初始化
-    if (!this.cloudflareBypass) {
-      logger.debug('Cloudflare绕过器未初始化，开始初始化...');
-      await this.initCloudflareBypass();
-    }
-    if (!this.cloudflareBypass) {
-      logger.warn('Cloudflare绕过器初始化失败，无法获取Cookies');
-      return null;
-    }
-    try {
-      const baseUrl = this.config.base || this.config.BASE_URL;
-      if (this.cloudflareCookies) {
-        logger.info('Cloudflare Cookies 已过期，正在刷新...');
-      } else {
-        logger.info('正在通过 Cloudflare 绕过获取 Cookies...');
-      }
-      logger.debug(`目标URL: ${baseUrl}`);
-      // 先尝试绕过 Cloudflare
-      await this.cloudflareBypass.bypassCloudflare(baseUrl);
-      // 获取 cookies
-      logger.debug('正在从页面获取Cookies...');
-      const cookies = await this.cloudflareBypass.getCookies();
-      if (cookies && cookies.trim().length > 0) {
-        this.cloudflareCookies = cookies;
-        this.lastCookieRefresh = currentTime;
-        logger.info(`Cloudflare Cookies 获取成功: ${cookies.split(';').length} 个 cookies，有效期 ${this.cookieRefreshInterval / 1000 / 60} 分钟`);
-        logger.debug(`获取到的Cookies: ${cookies}`);
-        // 验证获取到的cookies是否有效
-        const isValid = this.isValidCookieString(cookies);
-        logger.debug(`Cookie验证结果: ${isValid}`);
-        if (isValid) {
-          return cookies;
-        } else {
-          logger.warn('获取到的 Cloudflare Cookies 包含无效字符');
-          return null;
-        }
-      } else {
-        logger.warn('未获取到有效的 Cloudflare Cookies');
-        return null;
-      }
-    } catch (error) {
-      logger.error(`获取 Cloudflare Cookies 失败: ${error instanceof Error ? error.message : String(error)}`);
-      logger.error(`错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
-      return null;
-    }
-  }
-  /**
-   * 使用 Cloudflare 绕过器执行 AJAX 请求
-   */
-
-  private async executeAjaxWithCloudflare(url: string): Promise<string | null> {
-    const cfStartTime = Date.now();
-
-    if (!this.cloudflareBypass) {
-      logger.warn('executeAjaxWithCloudflare: Cloudflare绕过器未初始化，无法执行AJAX请求');
-      return null;
-    }
-
-    try {
-      logger.info('executeAjaxWithCloudflare: 正在使用 Cloudflare 绕过器执行 AJAX 请求...');
-      logger.debug(`executeAjaxWithCloudflare: AJAX请求URL: ${url}`);
-
-      logger.debug(`executeAjaxWithCloudflare: 开始调用 bypass.executeAjax`);
-      const executeStart = Date.now();
-      const result = await this.cloudflareBypass.executeAjax(url);
-      const executeTime = Date.now() - executeStart;
-
-      if (result) {
-        const totalTime = Date.now() - cfStartTime;
-        logger.info(`executeAjaxWithCloudflare: AJAX 请求成功，状态码: 200`);
-        logger.debug(`executeAjaxWithCloudflare: AJAX 响应详情: status=200, statusText=, responseLength=${result.length}`);
-        logger.debug(`executeAjaxWithCloudflare: 执行耗时: ${Math.round(executeTime/1000)}s, 总耗时: ${Math.round(totalTime/1000)}s`);
-        logger.debug(`executeAjaxWithCloudflare: AJAX 响应内容 (前500字符): ${result.substring(0, 500)}`);
-        return result;
-      } else {
-        const totalTime = Date.now() - cfStartTime;
-        logger.warn(`executeAjaxWithCloudflare: AJAX 请求返回空响应 (耗时: ${Math.round(totalTime/1000)}s)`);
-        return null;
-      }
-    } catch (error) {
-      const totalTime = Date.now() - cfStartTime;
-      logger.error(`executeAjaxWithCloudflare: AJAX 请求失败 (耗时: ${Math.round(totalTime/1000)}s)`);
-      logger.error(`executeAjaxWithCloudflare: 错误详情: ${error instanceof Error ? error.message : String(error)}`);
-      logger.error(`executeAjaxWithCloudflare: 错误类型: ${error instanceof Error ? error.constructor.name : 'Unknown'}`);
-      
-      // 如果是AxiosError，记录更详细的响应信息
-      if (error instanceof Error && error.name === 'AxiosError') {
-        const axiosError = error as any;
-        logger.error(`executeAjaxWithCloudflare: 响应状态码: ${axiosError.response?.status || 'N/A'}`);
-        if (axiosError.response) {
-          logger.error(`executeAjaxWithCloudflare: 完整响应数据: ${JSON.stringify(axiosError.response.data, null, 2)}`);
-          logger.error(`executeAjaxWithCloudflare: 响应头: ${JSON.stringify(axiosError.response.headers || {}, null, 2)}`);
-        }
-        if (axiosError.config) {
-          logger.debug(`executeAjaxWithCloudflare: 请求方法: ${axiosError.config.method || 'N/A'}`);
-          logger.debug(`executeAjaxWithCloudflare: 请求头: ${JSON.stringify(axiosError.config.headers || {}, null, 2)}`);
-        }
-      }
-      
-      logger.error(`executeAjaxWithCloudflare: 错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
-      return null;
     }
   }
   /**
@@ -1079,13 +760,10 @@ class RequestHandler {
   }
 
   /**
-   * 关闭 Cloudflare 绕过器
+   * 关闭请求处理器（清理资源）
    */
   public async close(): Promise<void> {
-    if (this.cloudflareBypass) {
-      await this.cloudflareBypass.close();
-      this.cloudflareBypass = null;
-    }
+    // 无需清理的资源（Cloudflare 绕过器已移除）
   }
 }
 

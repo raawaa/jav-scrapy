@@ -22,6 +22,7 @@ import chalk from 'chalk'; // 引入 chalk 库用于美化输出
 import * as path from 'path';
 import { DEFAULT_CONFIG, BASE_URL, DEFAULT_HEADERS } from './constants';
 import { ErrorHandler } from '../utils/errorHandler';
+import { getAntiBlockUrlsPath } from './paths';
 
 
 class ConfigManager {
@@ -50,15 +51,6 @@ class ConfigManager {
             delay: 2, // 添加默认延迟参数
             strictSSL: DEFAULT_CONFIG.strictSSL, // 是否严格验证SSL证书
             proxy: undefined,
-            useCloudflareBypass: false, // 默认不启用 Cloudflare 绕过
-            // Puppeteer池配置 - 优化内存使用
-            puppeteerPool: {
-                maxSize: Math.max(1, Math.min(2, Math.floor(DEFAULT_CONFIG.parallel / 2))), // 限制最大实例数，减少内存占用
-                maxIdleTime: 3 * 60 * 1000, // 3分钟（从5分钟降低）
-                healthCheckInterval: 30 * 1000, // 30秒
-                requestTimeout: 60000, // 1分钟
-                retryAttempts: 3
-            }
         };
         this.configPath = `${process.env.HOME}/.config.json`; // 配置文件路径
     }
@@ -150,12 +142,6 @@ class ConfigManager {
             this.config.delay = parseInt(program.opts().delay);
         }
 
-        // 处理 Cloudflare 绕过选项
-        if (program.opts().cloudflare) {
-            this.config.useCloudflareBypass = true;
-            logger.info('已启用 Cloudflare 绕过功能');
-        }
-
         // 处理SSL验证选项（--no-strict-ssl）
         // 注意：--no-xxx选项在Commander中会设置为undefined，我们需要特殊处理
         const hasStrictSSLFlag = Object.prototype.hasOwnProperty.call(program.opts(), 'strictSSL');
@@ -186,11 +172,10 @@ class ConfigManager {
     }
 
     private loadAntiBlockUrls(): string[] {
-        const homeDir = (process.platform === 'win32' ? process.env.USERPROFILE : process.env.HOME) || process.cwd();
-        const antiblockUrlsFilePath = path.join(homeDir, '.jav-scrapy-antiblock-urls.json');
+        const filePath = getAntiBlockUrlsPath();
         try {
-            if (fs.existsSync(antiblockUrlsFilePath)) {
-                const data = fs.readFileSync(antiblockUrlsFilePath, 'utf-8');
+            if (fs.existsSync(filePath)) {
+                const data = fs.readFileSync(filePath, 'utf-8');
                 const parsedUrls = JSON.parse(data);
                 if (Array.isArray(parsedUrls) && parsedUrls.length > 0) {
                     return parsedUrls;

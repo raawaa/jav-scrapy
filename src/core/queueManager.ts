@@ -7,8 +7,6 @@ import FileHandler from './fileHandler';
 import Parser from './parser';
 import { ErrorHandler } from '../utils/errorHandler';
 import { delayManager, DelayType } from '../utils/delayManager';
-import { PuppeteerPool } from './puppeteerPool';
-import { ResourceMonitor } from './resourceMonitor';
 
 
 export interface QueueTask {
@@ -43,8 +41,6 @@ class QueueManager {
     private config: Config;
     private requestHandler: RequestHandler;
     private fileHandler: FileHandler;
-    private puppeteerPool: PuppeteerPool;
-    private resourceMonitor: ResourceMonitor | null = null;
 
     // 队列相关
     private fileWriteQueue: async.QueueObject<FilmData> | null = null;
@@ -68,33 +64,6 @@ class QueueManager {
     */
     constructor(config: Config) {
         this.config = config;
-
-        // 初始化Puppeteer池（如果需要Cloudflare绕过）
-        if (config.useCloudflareBypass) {
-            this.puppeteerPool = PuppeteerPool.getInstance({
-                maxSize: Math.max(2, Math.floor(config.parallel / 1.5)), // 根据并发数动态调整
-                maxIdleTime: 5 * 60 * 1000, // 5分钟
-                healthCheckInterval: 30 * 1000, // 30秒
-                requestTimeout: 60000, // 1分钟
-                retryAttempts: 3
-            });
-
-            // 启动资源监控
-            this.resourceMonitor = ResourceMonitor.getInstance(this.puppeteerPool);
-            this.resourceMonitor.startMonitoring(30000); // 30秒监控间隔
-
-            logger.info('QueueManager: 已启用Puppeteer池和资源监控');
-        } else {
-            // 仍然创建池实例以保持兼容性，但不启用监控
-            this.puppeteerPool = PuppeteerPool.getInstance({
-                maxSize: 1,
-                maxIdleTime: 10 * 60 * 1000,
-                healthCheckInterval: 60 * 1000,
-                requestTimeout: 60000,
-                retryAttempts: 3
-            });
-        }
-
         this.requestHandler = new RequestHandler(config);
         this.fileHandler = new FileHandler(config.output);
 
@@ -139,7 +108,7 @@ class QueueManager {
                     // 传递正确的Referer信息给downloadImage方法
                     await this.requestHandler.downloadImage(imageUrl, metadata.title + '.jpg', baseUrl);
                     const downloadTime = Date.now() - startTime;
-                    logger.info(`QueueManager: [图片下载] 完成下载: ${metadata.title} (耗时: ${Math.round(downloadTime/1000)}s)`);
+                    logger.debug(`QueueManager: [图片下载] 完成下载: ${metadata.title} (耗时: ${Math.round(downloadTime/1000)}s)`);
 
                     // 延迟由外部管理器处理，任务完成后立即释放
                     logger.debug(`QueueManager: [图片下载] 任务完成: ${metadata.title}`);
@@ -181,7 +150,7 @@ class QueueManager {
                 try {
                     await this.fileHandler.writeFilmDataToFile(filmData);
                     const writeTime = Date.now() - startTime;
-                    logger.info(`QueueManager: [文件写入] 完成写入: ${filmData.title} (耗时: ${Math.round(writeTime/1000)}s)`);
+                    logger.debug(`QueueManager: [文件写入] 完成写入: ${filmData.title} (耗时: ${Math.round(writeTime/1000)}s)`);
                 } catch (error) {
                     const failedTime = Date.now() - startTime;
                     logger.error(`QueueManager: [文件写入] 任务失败: ${filmData.title} (耗时: ${Math.round(failedTime/1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);
@@ -209,16 +178,8 @@ class QueueManager {
         if (!this.detailPageQueue) {
             logger.debug('QueueManager: 创建详情页处理队列');
 
-            // 根据资源状态动态调整并发数
+            // 详情页使用 0.75x 基础并发
             let detailPageConcurrency = Math.max(1, Math.floor(this.config.parallel * 0.75));
-            if (this.config.useCloudflareBypass && this.resourceMonitor) {
-                const poolStats = this.puppeteerPool.getStats();
-                // 如果Puppeteer池使用率过高，进一步降低并发
-                if (poolStats.inUse >= poolStats.total * 0.8) {
-                    detailPageConcurrency = Math.max(1, Math.floor(detailPageConcurrency * 0.6));
-                    logger.debug(`QueueManager: Puppeteer池使用率高，降低详情页队列并发数至 ${detailPageConcurrency}`);
-                }
-            }
 
             logger.debug(`QueueManager: 详情页队列并发数: ${detailPageConcurrency}`);
             this.detailPageQueue = async.queue(async (task: DetailPageTask) => {
@@ -250,7 +211,7 @@ class QueueManager {
                         const magnetFetchTime = Date.now() - magnetFetchStart;
 
                         if (magnetResult) {
-                            logger.info(`QueueManager: [详情页] 磁力链接获取成功: ${metadata.title} (耗时: ${Math.round(magnetFetchTime/1000)}s)`);
+                            logger.debug(`QueueManager: [详情页] 磁力链接获取成功: ${metadata.title} (耗时: ${Math.round(magnetFetchTime/1000)}s)`);
                         } else {
                             logger.warn(`QueueManager: [详情页] 磁力链接获取失败: ${metadata.title}`);
                         }
@@ -304,16 +265,8 @@ class QueueManager {
         if (!this.indexPageQueue) {
             logger.debug('QueueManager: 创建索引页队列');
 
-            // 根据资源状态动态调整并发数
+            // 索引页使用基础并发
             let concurrency = this.config.parallel;
-            if (this.config.useCloudflareBypass && this.resourceMonitor) {
-                const poolStats = this.puppeteerPool.getStats();
-                // 如果Puppeteer池使用率过高，降低并发
-                if (poolStats.inUse >= poolStats.total * 0.8) {
-                    concurrency = Math.max(1, Math.floor(concurrency * 0.7));
-                    logger.debug(`QueueManager: Puppeteer池使用率高，降低索引页队列并发数至 ${concurrency}`);
-                }
-            }
 
             logger.debug(`QueueManager: 索引页队列并发数: ${concurrency}`);
             this.indexPageQueue = async.queue(async (task: IndexPageTask) => {
@@ -475,9 +428,9 @@ class QueueManager {
                 }
             }
 
-            // 每30秒输出一次状态报告
+            // 每30秒输出一次状态报告（仅调试级别）
             if (runningTasks > 0 || longRunningTasks.length > 0) {
-                logger.info(`QueueManager: [心跳] 队列状态 - 索引(等待:${stats.indexPageQueue.waiting}, 运行:${stats.indexPageQueue.running}) ` +
+                logger.debug(`QueueManager: [心跳] 队列状态 - 索引(等待:${stats.indexPageQueue.waiting}, 运行:${stats.indexPageQueue.running}) ` +
                     `详情(等待:${stats.detailPageQueue.waiting}, 运行:${stats.detailPageQueue.running}) ` +
                     `文件(等待:${stats.fileWriteQueue.waiting}, 运行:${stats.fileWriteQueue.running}) ` +
                     `图片(等待:${stats.imageDownloadQueue.waiting}, 运行:${stats.imageDownloadQueue.running}) ` +

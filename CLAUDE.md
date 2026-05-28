@@ -31,7 +31,7 @@ npm run dev                # Run TypeScript directly with ts-node
 npm run dev:watch          # Auto-restart on file changes
 
 # Testing
-npm test                   # Run tests with mocha (note: no tests exist currently)
+npm test                   # Run tests with mocha (48 tests, 4 test suites)
 
 # Version Management
 npm run release            # Run semantic-release
@@ -45,6 +45,7 @@ npm install -g . --force   # Install globally for CLI usage
 jav                         # Run crawl with default settings
 jav crawl                   # Explicit crawl command
 jav update                  # Update anti-blocking URLs
+jav logs                    # View and export log files
 jav --help                  # Show all options
 ```
 
@@ -80,10 +81,11 @@ The application uses a **four-stage pipeline** with separate async queues:
 
 **Entry Point** (`src/jav.ts`):
 - CLI using Commander.js with extensive options
-- Two commands: `crawl` (default), `update`
-- Signal handling (SIGINT, SIGTERM) for graceful shutdown
+- Three commands: `crawl` (default), `update`, `logs`
+- Signal handling (SIGINT, SIGTERM) with queue state dump on shutdown
+- Uncaught exception/rejection handlers for crash logging
 - Progress bar with MultiBar support
-- Main execution orchestrator
+- Run ID generation and startup environment snapshot in logs
 
 **Queue Manager** (`src/core/queueManager.ts`):
 - Four specialized async queues with event-driven architecture
@@ -95,7 +97,7 @@ The application uses a **four-stage pipeline** with separate async queues:
 - Multi-source config with precedence:
   1. Default constants (`src/core/constants.ts`)
   2. System proxy (auto-detected)
-  3. Local anti-block URLs (`~/.jav-scrapy-antiblock-urls.json`)
+  3. Local anti-block URLs (stored in app data directory, see `src/core/paths.ts`)
   4. CLI arguments (highest priority)
 - URL normalization, cookie management
 
@@ -103,7 +105,6 @@ The application uses a **four-stage pipeline** with separate async queues:
 - Axios client with 1.5x exponential backoff retry
 - Dynamic User-Agent rotation
 - Proxy support (HTTP/HTTPS/SOCKS)
-- Cloudflare bypass via Puppeteer (`--cloudflare` flag)
 - AJAX requests for magnet links
 - Cookie validation
 
@@ -115,15 +116,14 @@ The application uses a **four-stage pipeline** with separate async queues:
 
 ### Supporting Infrastructure
 
-- **Puppeteer Pool** (`src/core/puppeteerPool.ts`): Resource management for browser instances
-- **Resource Monitor** (`src/core/resourceMonitor.ts`): System resource tracking
 - **File Handler** (`src/core/fileHandler.ts`): Path sanitization, concurrent writes
-- **Logger** (`src/core/logger.ts`): Winston-based multi-level logging
+- **Logger** (`src/core/logger.ts`): Three-channel output (console/files/errors) with Winston
+- **Output** (`src/output.ts`): User-facing formatted output (banner, progress, summary)
+- **Paths** (`src/core/paths.ts`): Cross-platform application data directory management
 - **Constants** (`src/core/constants.ts`): Default config, user agents, delay utilities
 
 ### Utilities
 
-- **Cloudflare Bypass** (`src/utils/cloudflareBypass.ts`): Puppeteer with age verification
 - **System Proxy** (`src/utils/systemProxy.ts`): Cross-platform proxy detection
 - **Error Handler** (`src/utils/errorHandler.ts`): Centralized error categorization
 - **Delay Manager** (`src/utils/delayManager.ts`): Centralized delay with exponential backoff
@@ -146,7 +146,6 @@ All operations use configurable concurrency and exponential backoff to avoid ser
 - `delay`: Base delay seconds (default: 2)
 - `limit`: Max films (0 = unlimited)
 - `proxy`: Proxy URL (auto-detected)
-- `useCloudflareBypass`: Enable Puppeteer bypass
 - `nomag`: Skip films without magnets
 - `allmag`: Fetch all magnets vs largest only
 - `nopic`: Skip image downloads
@@ -206,6 +205,7 @@ All operations use configurable concurrency and exponential backoff to avoid ser
 - **Parsing**: Multiple fallback strategies with debug logging
 - **Validation**: Input sanitization prevents injection
 - **Timeouts**: 10-minute forced shutdown
+- **Crash protection**: `uncaughtException`/`unhandledRejection` handlers log error and queue state before exit
 
 ## Development Best Practices
 
@@ -216,19 +216,15 @@ All operations use configurable concurrency and exponential backoff to avoid ser
 - Prevents system environment pollution
 
 ### Testing Status
-- **No test files exist** in the repository
-- Test infrastructure configured (Mocha, Chai, Nock)
-- `test/*.test.js` pattern expected
-- Tests should be added for new features
+- **Test cases across 3 test suites** (Parser, ErrorHandler, DelayManager)
+- Test infrastructure: Mocha, Chai, Nock
+- All tests pass: `npm test`
 
 ### Browser Fingerprinting
 - User-Agent rotation includes modern Chrome headers (Sec-CH-UA)
-- Puppeteer stealth plugin for anti-detection
 - Updated for 2024+ standards
 
 ### Resource Management
-- Puppeteer instance pooling
-- System resource monitoring
 - Centralized delay management
 - Signal handling for clean shutdown
 
@@ -237,20 +233,19 @@ All operations use configurable concurrency and exponential backoff to avoid ser
 ```
 src/
 ├── jav.ts                     # CLI entry point
+├── output.ts                  # User-facing output formatting
 ├── core/                      # Core modules
 │   ├── config.ts             # Configuration management
 │   ├── constants.ts          # Default values, user agents
 │   ├── fileHandler.ts        # File operations
-│   ├── logger.ts             # Winston logging
+│   ├── logger.ts             # Three-channel logging (console/files/errors)
 │   ├── parser.ts             # HTML parsing
+│   ├── paths.ts              # Cross-platform app data paths
 │   ├── queueManager.ts       # Four-queue system
 │   ├── requestHandler.ts     # HTTP client with retry
-│   ├── puppeteerPool.ts      # Browser instance pool
-│   └── resourceMonitor.ts    # Resource tracking
 ├── types/
 │   └── interfaces.ts         # TypeScript interfaces
 └── utils/
-    ├── cloudflareBypass.ts   # Cloudflare bypass
     ├── delayManager.ts       # Delay control
     ├── errorHandler.ts       # Error categorization
     └── systemProxy.ts        # Proxy detection
@@ -270,20 +265,21 @@ src/
 - Centralized DelayManager for graceful interruption
 
 ### Anti-Blocking Strategy
-- Local URL cache: `~/.jav-scrapy-antiblock-urls.json`
+- Local URL cache: stored in app data directory (see `src/core/paths.ts`)
 - Random URL selection from cache
-- Cloudflare bypass via Puppeteer (optional)
 - Dynamic browser fingerprinting
 
 ## Debugging & Monitoring
 
-- Queue status reporting every 30 seconds
+- Queue status reporting at debug level (file only, not visible in console)
 - Long-running task alerts (>60s)
-- Debug-level request/response logging
-- Performance timing per operation
+- Verbose console output with `--verbose` flag
+- Log file location: app data directory (see `src/core/paths.ts`)
+- Log management via `jav logs` (tail, export)
+- Run ID tracking for multi-session log separation
+- Uncaught exception/rejection crash logging with queue state dump
 - Cookie lifecycle management
 - Proxy configuration validation
-- Resource monitoring
 
 ## Development Workflow
 

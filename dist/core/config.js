@@ -12,39 +12,6 @@
  * @exports Config - Config 接口的导出。
  * @author raawaa
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -53,9 +20,9 @@ const systemProxy_1 = require("../utils/systemProxy");
 const logger_1 = __importDefault(require("./logger")); // 引入日志记录器模块
 const fs_1 = __importDefault(require("fs")); // 引入文件系统模块
 const chalk_1 = __importDefault(require("chalk")); // 引入 chalk 库用于美化输出
-const path = __importStar(require("path"));
 const constants_1 = require("./constants");
 const errorHandler_1 = require("../utils/errorHandler");
+const paths_1 = require("./paths");
 class ConfigManager {
     constructor() {
         this.config = {
@@ -79,15 +46,6 @@ class ConfigManager {
             delay: 2, // 添加默认延迟参数
             strictSSL: constants_1.DEFAULT_CONFIG.strictSSL, // 是否严格验证SSL证书
             proxy: undefined,
-            useCloudflareBypass: false, // 默认不启用 Cloudflare 绕过
-            // Puppeteer池配置 - 优化内存使用
-            puppeteerPool: {
-                maxSize: Math.max(1, Math.min(2, Math.floor(constants_1.DEFAULT_CONFIG.parallel / 2))), // 限制最大实例数，减少内存占用
-                maxIdleTime: 3 * 60 * 1000, // 3分钟（从5分钟降低）
-                healthCheckInterval: 30 * 1000, // 30秒
-                requestTimeout: 60000, // 1分钟
-                retryAttempts: 3
-            }
         };
         this.configPath = `${process.env.HOME}/.config.json`; // 配置文件路径
     }
@@ -170,11 +128,6 @@ class ConfigManager {
         if (program.opts().delay !== undefined && program.opts().delay !== null) {
             this.config.delay = parseInt(program.opts().delay);
         }
-        // 处理 Cloudflare 绕过选项
-        if (program.opts().cloudflare) {
-            this.config.useCloudflareBypass = true;
-            logger_1.default.info('已启用 Cloudflare 绕过功能');
-        }
         // 处理SSL验证选项（--no-strict-ssl）
         // 注意：--no-xxx选项在Commander中会设置为undefined，我们需要特殊处理
         const hasStrictSSLFlag = Object.prototype.hasOwnProperty.call(program.opts(), 'strictSSL');
@@ -202,11 +155,10 @@ class ConfigManager {
         return this.config;
     }
     loadAntiBlockUrls() {
-        const homeDir = (process.platform === 'win32' ? process.env.USERPROFILE : process.env.HOME) || process.cwd();
-        const antiblockUrlsFilePath = path.join(homeDir, '.jav-scrapy-antiblock-urls.json');
+        const filePath = (0, paths_1.getAntiBlockUrlsPath)();
         try {
-            if (fs_1.default.existsSync(antiblockUrlsFilePath)) {
-                const data = fs_1.default.readFileSync(antiblockUrlsFilePath, 'utf-8');
+            if (fs_1.default.existsSync(filePath)) {
+                const data = fs_1.default.readFileSync(filePath, 'utf-8');
                 const parsedUrls = JSON.parse(data);
                 if (Array.isArray(parsedUrls) && parsedUrls.length > 0) {
                     return parsedUrls;
