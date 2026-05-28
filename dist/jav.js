@@ -197,11 +197,18 @@ class JavScraper {
     async mainExecution() {
         const executionStartTime = Date.now();
         logger_1.default.info(`mainExecution: 开始执行程序，启动时间: ${new Date().toISOString()}`);
-        this.logInfo('开始抓取 Jav 影片...');
+        // 启动横幅
+        this.logInfo(chalk_1.default.cyan('╔══════════════════════════════════════════╗'));
+        this.logInfo(chalk_1.default.cyan('║         Jav Scrapy - 开始抓取             ║'));
+        this.logInfo(chalk_1.default.cyan('╚══════════════════════════════════════════╝'));
+        this.logInfo(chalk_1.default.gray(`版本: ${version}`));
         if (this.config.limit > 0) {
-            this.logInfo(`目标抓取数量: ${this.config.limit} 部影片`);
+            this.logInfo(`目标: ${chalk_1.default.white(this.config.limit)} 部影片`);
         }
-        this.logInfo(`使用配置: ${JSON.stringify(this.config, null, 2)}`);
+        this.logInfo(`并发: ${chalk_1.default.white(this.config.parallel)} | 延迟: ${chalk_1.default.white(this.config.delay || 8)}s` +
+            (this.config.proxy ? ` | 代理: ${chalk_1.default.green('✓')}` : ` | 代理: ${chalk_1.default.red('✗')}`) +
+            (this.config.nomag ? ` | 无磁链: ${chalk_1.default.yellow('跳过')}` : ''));
+        this.logInfo(`起始页: ${chalk_1.default.underline(this.config.base || this.config.BASE_URL)}`);
         // 输出更详细的配置信息
         logger_1.default.debug(`mainExecution: 代理设置: ${this.config.proxy || '未设置'}`);
         logger_1.default.debug(`mainExecution: 起始URL: ${this.config.base || this.config.BASE_URL}`);
@@ -233,14 +240,14 @@ class JavScraper {
         queueManager.on(queueManager_2.QueueEventType.INDEX_PAGE_START, (event) => {
             if (event.data && 'link' in event.data) {
                 logger_1.default.debug(`开始抓取索引页: ${event.data.link}`);
-                this.logInfo(`正在抓取第${this.pageIndex}页: ${event.data.link}`);
             }
         });
         queueManager.on(queueManager_2.QueueEventType.INDEX_PAGE_PROCESSED, (event) => {
             if (event.data && 'links' in event.data) {
                 const links = event.data.links;
                 logger_1.default.debug(`第${this.pageIndex}页解析完成，找到 ${links.length} 部影片链接`);
-                this.logInfo(`第${this.pageIndex}页抓取到${links.length}部影片`);
+                const color = links.length > 0 ? chalk_1.default.green : chalk_1.default.yellow;
+                this.logInfo(`  ${color('✓')} 第${this.pageIndex}页: ${links.length} 部影片`);
                 if (links.length === 0) {
                     logger_1.default.warn(`第${this.pageIndex}页未找到任何影片，可能需要检查页面内容或代理设置`);
                 }
@@ -269,7 +276,6 @@ class JavScraper {
             if (event.data && 'link' in event.data) {
                 this.filmsAttempted++;
                 logger_1.default.debug(`开始处理详情页: ${event.data.link} (第 ${this.filmsAttempted} 个影片)`);
-                this.logInfo(`开始处理详情页: ${event.data.link}`);
             }
         });
         queueManager.on(queueManager_2.QueueEventType.DETAIL_PAGE_PROCESSED, (event) => {
@@ -279,14 +285,12 @@ class JavScraper {
                 if (this.config.limit <= 0 || this.filmCount < this.config.limit) {
                     this.filmCount++;
                     if (this.progressBar) {
-                        // 确保进度条不超过限制数量
                         const progressValue = Math.min(this.filmCount, this.config.limit);
                         this.progressBar.update(progressValue);
-                        this.logInfo(`${chalk_1.default.yellowBright('已处理:')} ${event.data.filmData.title}`);
                     }
                     else {
-                        logger_1.default.debug(`影片数据已处理: ${event.data.filmData.title}`);
-                        this.logInfo(`已抓取 ${event.data.filmData.title}`);
+                        const magnetIcon = event.data.filmData.magnetLinks?.length ? ' [磁链]' : ' [无磁链]';
+                        this.logInfo(`  ${chalk_1.default.green('✓')} ${event.data.filmData.title} ${magnetIcon}`);
                     }
                 }
                 // 无论是否达到限制，都要保存成功处理的影片数据
@@ -321,7 +325,6 @@ class JavScraper {
         while (!shouldStop) {
             try {
                 const currentUrl = this.getCurrentIndexPageUrl();
-                this.logInfo(`正在抓取第${this.pageIndex}页: ${currentUrl}`);
                 await queueManager.getIndexPageQueue().push({ url: currentUrl });
                 this.pageIndex++;
                 // 检查是否达到限制数量，如果达到则停止循环
@@ -334,27 +337,24 @@ class JavScraper {
                 }
                 // 添加随机延迟，避免请求过于频繁
                 const randomDelayMs = (0, constants_1.getRandomDelay)(this.config.delay || 8, (this.config.delay || 8) + 7);
-                logger_1.default.debug(`页面抓取延迟配置: 基础延迟=${this.config.delay || 8}秒, 随机延迟=${Math.round(randomDelayMs / 1000)}秒`);
-                this.logInfo(`等待 ${Math.round(randomDelayMs / 1000)} 秒后继续抓取下一页...`);
+                logger_1.default.debug(`页面抓取延迟: ${Math.round(randomDelayMs / 1000)}秒`);
+                this.logInfo(chalk_1.default.gray(`  ⏳ ${Math.round(randomDelayMs / 1000)}秒后下一页...`));
                 await new Promise(resolve => setTimeout(resolve, randomDelayMs));
                 logger_1.default.debug(`页面抓取延迟等待完成，准备抓取第${this.pageIndex}页`);
             }
             catch (err) {
                 const errorMessage = err instanceof Error ? err.message : String(err);
-                this.logInfo(`抓取第${this.pageIndex}页时出错: ${errorMessage}`);
+                this.logInfo(chalk_1.default.red(`  ✗ 第${this.pageIndex}页出错: ${errorMessage}`));
                 logger_1.default.error(`页面抓取错误 [第${this.pageIndex}页]: ${errorMessage}`);
                 // 如果是网络相关错误，使用指数退避等待更长时间再重试
                 if (errorMessage.includes('ECONNRESET') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ENOTFOUND')) {
                     const backoffDelay = (0, constants_1.getExponentialBackoffDelay)(10000, 1, 30000);
-                    logger_1.default.debug(`网络错误指数退避延迟: ${Math.round(backoffDelay / 1000)}秒 (基础: 10秒)`);
-                    this.logInfo(`检测到网络错误，等待 ${Math.round(backoffDelay / 1000)} 秒后重试...`);
+                    this.logInfo(chalk_1.default.yellow(`  网络错误，${Math.round(backoffDelay / 1000)}秒后重试...`));
                     await new Promise(resolve => setTimeout(resolve, backoffDelay));
-                    logger_1.default.debug(`网络错误延迟等待完成，准备重试第${this.pageIndex}页`);
                 }
                 else {
                     const errorDelay = (0, constants_1.getRandomDelay)(5, 10);
-                    logger_1.default.debug(`一般错误延迟: ${Math.round(errorDelay / 1000)}秒 (随机范围: 5-10秒)`);
-                    this.logInfo(`等待 ${Math.round(errorDelay / 1000)} 秒后重试...`);
+                    this.logInfo(chalk_1.default.yellow(`  等待 ${Math.round(errorDelay / 1000)} 秒后重试...`));
                     await new Promise(resolve => setTimeout(resolve, errorDelay));
                     logger_1.default.debug(`一般错误延迟等待完成，准备重试第${this.pageIndex}页`);
                 }
@@ -364,57 +364,35 @@ class JavScraper {
         const stopTime = Date.now();
         const executionSoFar = Math.round((stopTime - executionStartTime) / 1000);
         logger_1.default.info(`mainExecution: 抓取停止条件已满足，开始等待队列清空 (已执行 ${executionSoFar}s)`);
-        this.logInfo('抓取停止条件已满足，等待队列清空...');
-        // 检查队列状态
-        const queueStats = queueManager.getQueueStats();
-        this.logInfo(`队列状态统计:`);
-        this.logInfo(`  索引页队列: ${queueStats.indexPageQueue.waiting} 等待中, ${queueStats.indexPageQueue.running} 运行中`);
-        this.logInfo(`  详情页队列: ${queueStats.detailPageQueue.waiting} 等待中, ${queueStats.detailPageQueue.running} 运行中`);
-        this.logInfo(`  文件写入队列: ${queueStats.fileWriteQueue.waiting} 等待中, ${queueStats.fileWriteQueue.running} 运行中`);
-        this.logInfo(`  图片下载队列: ${queueStats.imageDownloadQueue.waiting} 等待中, ${queueStats.imageDownloadQueue.running} 运行中`);
-        this.logInfo(`影片处理统计: 已加入队列 ${this.filmsQueued} 个, 开始处理 ${this.filmsAttempted} 个, 成功完成 ${this.filmCount} 个`);
-        logger_1.default.debug(`mainExecution: 详细队列状态: ${queueManager.getDetailedQueueStatus()}`);
-        // 使用新的状态检测等待所有工作队列完成
-        this.logInfo('等待所有工作队列完成...');
-        logger_1.default.info(`mainExecution: 开始使用精确状态检测等待队列完成`);
-        let waitCount = 0;
-        const queueCheckInterval = setInterval(() => {
-            waitCount++;
-            const areFinished = queueManager.areWorkQueuesFinished();
-            const delayStats = queueManager.hasActiveDelays();
-            const stats = queueManager.getQueueStats();
-            this.logInfo(`[队列等待 ${waitCount}] 工作队列${areFinished ? '已完成' : '进行中'}, 延迟${delayStats ? '进行中' : '已完成'}`);
-            logger_1.default.debug(`mainExecution: 索引:等待${stats.indexPageQueue.waiting}+运行${stats.indexPageQueue.running}, ` +
-                `详情:等待${stats.detailPageQueue.waiting}+运行${stats.detailPageQueue.running}, ` +
-                `文件:等待${stats.fileWriteQueue.waiting}+运行${stats.fileWriteQueue.running}, ` +
-                `图片:等待${stats.imageDownloadQueue.waiting}+运行${stats.imageDownloadQueue.running}`);
-            if (areFinished && !delayStats) {
-                clearInterval(queueCheckInterval);
-                logger_1.default.debug('mainExecution: 队列状态检测interval清理完成');
-            }
-        }, 2000);
-        // 等待工作队列完成（使用新的检测方法）
+        this.logInfo(chalk_1.default.yellow('正在等待队列中的任务完成...'));
+        // 等待工作队列完成
         const queueWaitStart = Date.now();
+        let lastDot = 0;
         while (!queueManager.areWorkQueuesFinished()) {
             await new Promise(resolve => setTimeout(resolve, 500));
+            const elapsed = Math.round((Date.now() - queueWaitStart) / 1000);
+            if (elapsed > 10 && elapsed > lastDot) {
+                lastDot = elapsed;
+            }
         }
         const queueWaitTime = Math.round((Date.now() - queueWaitStart) / 1000);
-        this.logInfo('所有工作队列已完成');
         logger_1.default.info(`mainExecution: 工作队列完成 (耗时: ${queueWaitTime}s)`);
         // 等待所有延迟完成
-        this.logInfo('等待所有延迟完成...');
-        const delayWaitStart = Date.now();
         await queueManager.waitForDelays();
-        const delayWaitTime = Math.round((Date.now() - delayWaitStart) / 1000);
-        this.logInfo('所有延迟已完成');
-        logger_1.default.info(`mainExecution: 延迟等待完成 (耗时: ${delayWaitTime}s)`);
-        // 清理检查interval
-        clearInterval(queueCheckInterval);
-        this.logInfo('所有抓取任务完成。');
         const totalExecutionTime = Math.round((Date.now() - executionStartTime) / 1000);
-        logger_1.default.info(`mainExecution: 程序执行完成，总耗时: ${totalExecutionTime}s`);
-        logger_1.default.info(`mainExecution: 最终统计 - 加入队列: ${this.filmsQueued}, 开始处理: ${this.filmsAttempted}, 成功完成: ${this.filmCount}`);
-        await this.destroy(); // 调用 cleanup 方法并输出完成信息
+        // 最终统计摘要
+        this.logInfo('');
+        this.logInfo(chalk_1.default.cyan('══════════════════ 抓取完成 ══════════════════'));
+        this.logInfo(`  总耗时: ${chalk_1.default.white(totalExecutionTime)} 秒`);
+        this.logInfo(`  扫描页数: ${chalk_1.default.white(this.pageIndex - 1)}`);
+        this.logInfo(`  发现影片: ${chalk_1.default.white(this.filmsQueued)}`);
+        this.logInfo(`  处理完成: ${chalk_1.default.green(this.filmCount)}`);
+        if (this.filmsAttempted > this.filmCount) {
+            this.logInfo(`  失败: ${chalk_1.default.red(this.filmsAttempted - this.filmCount)}`);
+        }
+        this.logInfo(`  保存位置: ${chalk_1.default.underline(this.config.output)}`);
+        this.logInfo(chalk_1.default.cyan('═════════════════════════════════════════════'));
+        this.logInfo('');
     }
     async cleanup() {
         logger_1.default.debug(`mainExecution: 开始清理资源`);
