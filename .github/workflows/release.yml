@@ -50,6 +50,5 @@ jobs:
           Please see [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
           EOF
           gh release create "${{ github.ref }}" \
-            --title "Release ${{ github.ref }}" \
-            --notes-file /tmp/release-notes.md \
-            --verify-tag
+            --title "Release v${{ env.VERSION }}" \
+            --notes-file /tmp/release-notes.md
