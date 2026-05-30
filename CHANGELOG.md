@@ -1,3 +1,14 @@
+## 1.2.0 (2026-05-30)
+
+* chore: 取消追踪构建产物 dist/*.map ([c44dd44](https://github.com/raawaa/jav-scrapy/commit/c44dd44))
+* feat(cli): 为 update 命令添加 --proxy 代理支持并优化 README 文档 ([3e3b51e](https://github.com/raawaa/jav-scrapy/commit/3e3b51e))
+* feat(cli): 改进用户交互体验 ([be12b10](https://github.com/raawaa/jav-scrapy/commit/be12b10))
+* feat(core): 更新 User-Agent、修复双重试机制，添加测试体系 ([642b2ed](https://github.com/raawaa/jav-scrapy/commit/642b2ed))
+* feat(core): 集成 koonjs 绕过 Cloudflare TLS 指纹检测并清理废弃框架 ([6679c01](https://github.com/raawaa/jav-scrapy/commit/6679c01))
+* refactor(core): 移除 Puppeteer 相关代码和依赖 ([94f193a](https://github.com/raawaa/jav-scrapy/commit/94f193a))
+
+
+
 ## 1.0.0 (2025-11-08)
 
 
