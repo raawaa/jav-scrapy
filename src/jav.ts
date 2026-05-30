@@ -133,16 +133,21 @@ program
 program
     .command('update')
     .description('更新防屏蔽地址')
-    .action(async () => {
+    .option('-x, --proxy <url>', '通过代理更新，例：-x http://127.0.0.1:8087')
+    .action(async (options) => {
         const configManager = new ConfigManager();
-        // 直接在这里读取并应用系统代理配置
-        const systemProxy = await getSystemProxy();
-        logger.info(`系统代理设置: ${JSON.stringify(systemProxy)}`);
+        const config = configManager.getConfig();
 
-        const config = configManager.getConfig(); // 获取当前配置
-        if (systemProxy.enabled && systemProxy.server) {
-            // 将系统代理设置到获取到的 config 对象中
-            config.proxy = parseProxyServer(systemProxy.server);
+        // CLI proxy 优先，其次是系统代理
+        if (options.proxy) {
+            config.proxy = options.proxy;
+            logger.info(`使用命令行指定的代理: ${options.proxy}`);
+        } else {
+            const systemProxy = await getSystemProxy();
+            logger.info(`系统代理设置: ${JSON.stringify(systemProxy)}`);
+            if (systemProxy.enabled && systemProxy.server) {
+                config.proxy = parseProxyServer(systemProxy.server);
+            }
         }
 
         logger.info('🚀 开始检测最新防屏蔽地址...');

@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Lessons Learned (from session 2026-05-30)
+
+### 1. TLS fingerprint vs HTTP headers
+When Cloudflare returns 403 on AJAX endpoints but 200 on main pages, the issue is likely **TLS fingerprint** (JA3), not HTTP headers. System `curl` (LibreSSL) and Node.js (OpenSSL) have different TLS stacks — test with `curl` first to isolate the cause. Don't waste time tweaking headers if curl works.
+
+### 2. No native binary downloads behind GFW
+Never try to install packages that download native binaries from GitHub releases in this environment. GitHub release assets are blocked. Prefer:
+- Pure JS solutions (no native addons)
+- Packages with pre-built binaries on npm registry (via optional dependencies)
+- Subprocess calls to system tools (curl)
+
+### 3. Check Agent compatibility before integrating
+`axios-cookiejar-support` is incompatible with custom HTTPS agents (`tunnel.httpsOverHttp`). Test small integrations incrementally — don't batch changes and discover breakage only at runtime.
+
+### 4. Git revert loses uncommitted context
+`git checkout -- file.ts` reverts to the committed version. If the working tree has other uncommitted changes (renamed methods, new types), the reverted file will reference symbols that no longer exist. Prefer selective undo over full revert.
+
+### 5. Clean up failed experiments
+Don't leave installed-but-unused packages in `package.json`. Each npm install adds to audit surface and lockfile churn. Uninstall promptly when switching approaches.
+
 ## Quick Start
 
 ### Essential Development Commands

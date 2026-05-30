@@ -4,54 +4,63 @@
 
 ## 安装
 
-### 全局安装（推荐）
+推荐全局安装，安装后终端可直接使用 `jav` 命令：
 
 ```bash
 npm install -g raawaa/jav-scrapy
 ```
 
-安装后可直接使用 `jav` 命令。
-
-### 临时使用
+如果只想临时尝鲜，无需安装：
 
 ```bash
 npx raawaa/jav-scrapy --help
 ```
 
-### 系统要求
-
-- **Node.js**: 16.x 或更高（推荐 18.x LTS）
-- **磁盘空间**: 100 MB（应用）+ 下载内容
+> **要求**：Node.js 16+（推荐 18 LTS）。
 
 ## 快速开始
 
-### 基本爬取
+以下命令从默认片源爬取影片信息，自动提取元数据、磁力链接和海报：
 
 ```bash
-jav crawl
+jav crawl                      # 直接开爬，使用默认参数
+jav crawl --limit 100          # 最多爬 100 部影片就停
+jav crawl --proxy http://proxy.example.com:8080  # 通过代理爬取
+jav crawl --nopic              # 跳过海报下载，只需元数据
+jav crawl --limit 500 --parallel 3 --delay 3  # 高并发深度爬取
 ```
 
-### 限制数量
+## 爬取结果
 
-```bash
-jav crawl --limit 100
+运行 `jav crawl` 后，结果会保存到当前工作目录（可通过 `-o <path>` 指定）：
+
+```
+<output-dir>/
+├── filmData.json           # 所有爬取结果汇总为一个 JSON 数组
+├── START-001.jpg           # 封面海报
+└── WAAA-002.jpg            # 每部影片对应一个图片文件
 ```
 
-### 使用代理
+`filmData.json` 每条记录包含以下字段：
 
-```bash
-jav crawl --proxy http://proxy.example.com:8080
+```json
+{
+  "title": "START-001 影片标题",
+  "magnetLinks": [
+    { "link": "magnet:?xt=urn:btih:...", "size": "5.23GB" }
+  ],
+  "category": ["高清画质", "剧情片"],
+  "actress": ["演员名"]
+}
 ```
 
-### 跳过图片
-
-```bash
-jav crawl --nopic
-```
+> 自动去重：重复爬取时，会按标题 → 影片ID → 磁力链接依次检测重复，并用信息更完整的条目覆盖已有数据。
 
 ## 命令参考
 
 ### `jav crawl` — 执行爬取（默认命令）
+
+程序会依次遍历索引页 → 详情页 → 提取磁力链接，最后写入文件和下载海报：
 
 ```bash
 jav crawl [options]
@@ -67,10 +76,15 @@ jav crawl [options]
 | `--nomag` | 跳过无磁力链接的影片 | false |
 | `--allmag` | 获取所有磁力链接（默认仅最大） | false |
 | `--nopic` | 跳过图片下载 | false |
+| `-o, --output <path>` | 输出目录（默认当前目录） | `process.cwd()` |
 | `-v, --verbose` | 详细调试输出 | false |
 | `-q, --quiet` | 仅显示错误和最终摘要 | false |
 
-### `jav update` — 更新防屏蔽 URL 缓存
+### `jav update` — 更新防屏蔽镜像地址
+
+目标网站有多个防屏蔽镜像域名。运行此命令会从首页提取最新的可用镜像地址并缓存到本地。`jav crawl` 启动时会随机选用一个，避免单一域名被封导致爬取失败。建议每周运行一次，或发现爬取异常时先执行 `jav update`。
+
+> 如果目标网站被 GFW 屏蔽，`jav update` 也需要代理才能访问首页提取镜像地址：`jav update --proxy http://127.0.0.1:8087`。未指定 `--proxy` 时会自动检测系统代理。
 
 ### `jav logs` — 日志管理
 
@@ -80,65 +94,38 @@ jav logs --tail 100   # 查看最后 100 行
 jav logs --export     # 导出日志到当前目录
 ```
 
-### 其他
-
-```bash
-jav --help       # 显示帮助
-jav --version    # 显示版本
-```
+所有命令支持 `--help` 和 `--version`。
 
 ## 配置
 
-### 配置优先级
+配置按以下优先级依次覆盖（高优先级生效）：
 
-1. **CLI 参数**（最高）
-2. **本地缓存**（防屏蔽地址文件）
-3. **系统代理**（自动检测）
+1. **CLI 参数** — 命令行的 `--proxy` 等选项优先
+2. **本地缓存** — 防屏蔽地址文件自动更新
+3. **系统代理** — 自动检测系统代理设置
 4. **内置默认值**
 
 ### 代理支持
 
-支持 HTTP、HTTPS、SOCKS4、SOCKS5 代理：
+支持 HTTP、HTTPS、SOCKS4、SOCKS5：
 
 ```bash
-# 无认证
---proxy http://proxy.example.com:8080
-
-# 带认证
---proxy http://username:password@proxy.example.com:8080
+--proxy http://proxy.example.com:8080                    # 无认证
+--proxy http://username:password@proxy.example.com:8080   # 带认证
 ```
 
-系统代理自动检测：Windows（注册表）、macOS（系统偏好设置）、Linux（环境变量 `http_proxy` 等）。
+系统代理自动检测：Windows（注册表）、macOS（系统偏好设置）、Linux（环境变量）。
 
-### 数据目录
+### 应用数据
 
-应用数据统一存储在：
-
-| 平台 | 路径 |
-|------|------|
-| macOS | `~/.jav-scrapy/` |
-| Windows | `%LOCALAPPDATA%\jav-scrapy\` |
-| Linux | `~/.local/share/jav-scrapy/` |
+不同平台位置不同（macOS `~/.jav-scrapy/`、Windows `%LOCALAPPDATA%\jav-scrapy\`、Linux `~/.local/share/jav-scrapy/`）：
 
 ```
-数据目录/
+~/.jav-scrapy/
 ├── antiblock-urls.json    # 防屏蔽地址缓存
 └── logs/
-    ├── jav-scrapy.log     # 完整运行日志
+    ├── jav-scrapy.log     # 运行日志
     └── error.log          # 错误日志
-```
-
-## 高级用法
-
-```bash
-# 高并发深度爬取
-jav crawl --limit 500 --parallel 3 --delay 3
-
-# 调试模式
-jav crawl --verbose --limit 10
-
-# 仅爬取有磁力链接的影片
-jav crawl --nomag --nopic
 ```
 
 ## 故障排除
