@@ -9,7 +9,7 @@
  * @exports USER_AGENTS
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_REQUEST_HEADERS = exports.USER_AGENTS = exports.DEFAULT_CONFIG = exports.DEFAULT_HEADERS = exports.BASE_URL = void 0;
+exports.USER_AGENTS = exports.DEFAULT_CONFIG = exports.DEFAULT_HEADERS = exports.BASE_URL = void 0;
 exports.getRandomDelay = getRandomDelay;
 exports.getExponentialBackoffDelay = getExponentialBackoffDelay;
 // 基础URL配置
@@ -77,17 +77,4 @@ function getExponentialBackoffDelay(baseDelay, attempt, maxDelay = 30000) {
     const jitter = Math.random() * 1000; // 添加随机抖动
     return Math.min(exponentialDelay + jitter, maxDelay);
 }
-// 默认请求头配置
-exports.DEFAULT_REQUEST_HEADERS = {
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'accept-encoding': 'gzip, deflate, br',
-    'accept-language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-    'cache-control': 'max-age=0',
-    'sec-fetch-dest': 'document',
-    'sec-fetch-mode': 'navigate',
-    'sec-fetch-site': 'same-origin',
-    'sec-fetch-user': '?1',
-    'upgrade-insecure-requests': '1',
-    'Connection': 'keep-alive'
-};
 //# sourceMappingURL=constants.js.map

@@ -1,12 +1,30 @@
+# Dependencies
 /node_modules
-.tern-project
-.eslintrc.json
 
-/test
+# Build output
+dist/*.map
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Log files
+*.log
+
+# IDE / editors
 /.vscode
 /.trae
-error.log
-combined.log
-bash.exe.stackdump
+.tern-project
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime data
 filmData.json
-debug.log
+bash.exe.stackdump
+
+# Dev config (local-only)
+.eslintrc.json

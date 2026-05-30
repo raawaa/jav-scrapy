@@ -15,15 +15,12 @@ interface SystemProxyConfig {
 
 export async function getSystemProxy(): Promise<SystemProxyConfig> {
     const platform = os.platform();
-    
+
     if (platform === 'darwin') {
-        // macOS系统代理检测
         return await getMacOSProxy();
     } else if (platform === 'win32') {
-        // Windows系统代理检测
         return await getWindowsProxy();
     } else {
-        // Linux或其他系统，暂时返回未启用
         return { enabled: false };
     }
 }
@@ -32,19 +29,21 @@ async function getMacOSProxy(): Promise<SystemProxyConfig> {
     try {
         const { stdout } = await execAsync('scutil --proxy');
         const lines = stdout.split('\n');
-        
+
         const proxyConfig: SystemProxyConfig = {
             enabled: false
         };
-        
+
         let httpEnable = false;
         let httpsEnable = false;
         let httpServer = '';
         let httpsServer = '';
-        
+        let httpPort = '';
+        let httpsPort = '';
+
         for (const line of lines) {
             const trimmedLine = line.trim();
-            
+
             if (trimmedLine.startsWith('HTTPEnable')) {
                 httpEnable = trimmedLine.includes('1');
             } else if (trimmedLine.startsWith('HTTPSEnable')) {
@@ -59,6 +58,16 @@ async function getMacOSProxy(): Promise<SystemProxyConfig> {
                 if (match) {
                     httpsServer = match[1].trim();
                 }
+            } else if (trimmedLine.startsWith('HTTPPort')) {
+                const match = trimmedLine.match(/HTTPPort : (\d+)/);
+                if (match) {
+                    httpPort = match[1].trim();
+                }
+            } else if (trimmedLine.startsWith('HTTPSPort')) {
+                const match = trimmedLine.match(/HTTPSPort : (\d+)/);
+                if (match) {
+                    httpsPort = match[1].trim();
+                }
             } else if (trimmedLine.startsWith('ProxyAutoConfigURLString')) {
                 const match = trimmedLine.match(/ProxyAutoConfigURLString : (.+)/);
                 if (match) {
@@ -66,20 +75,18 @@ async function getMacOSProxy(): Promise<SystemProxyConfig> {
                 }
             }
         }
-        
-        // 如果HTTP或HTTPS代理启用，则认为代理已启用
+
         proxyConfig.enabled = httpEnable || httpsEnable;
-        
-        // 优先使用HTTPS代理，如果没有则使用HTTP代理
+
         if (httpsEnable && httpsServer) {
-            proxyConfig.server = httpsServer;
+            proxyConfig.server = httpsPort ? `${httpsServer}:${httpsPort}` : httpsServer;
         } else if (httpEnable && httpServer) {
-            proxyConfig.server = httpServer;
+            proxyConfig.server = httpPort ? `${httpServer}:${httpPort}` : httpServer;
         }
-        
+
         return proxyConfig;
     } catch (error) {
-        console.warn('读取macOS系统代理设置失败:', error instanceof Error ? error.message : String(error));
+        console.warn('read macOS proxy failed:', error instanceof Error ? error.message : String(error));
         return { enabled: false };
     }
 }
@@ -92,10 +99,10 @@ async function getWindowsProxy(): Promise<SystemProxyConfig> {
         });
 
         const results: Record<string, string> = {};
-        
+
         regKey.values((err: Error, items: winreg.RegistryItem[]) => {
             if (err) {
-                console.warn('读取Windows系统代理设置失败:', err.message);
+                console.warn('read Windows proxy failed:', err.message);
                 resolve({ enabled: false });
                 return;
             }
@@ -116,18 +123,16 @@ async function getWindowsProxy(): Promise<SystemProxyConfig> {
 
 export function parseProxyServer(server?: string): string | undefined {
     if (!server) return undefined;
-    
-    // 处理V2rayN默认格式 "127.0.0.1:10809"
+
     if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(server)) {
         return `http://${server}`;
     }
-    
-    // 处理已有协议的情况
+
     try {
         new URL(server);
         return server;
     } catch {
-        console.warn('代理地址格式无效:', server);
+        console.warn('invalid proxy address:', server);
         return undefined;
     }
-} 
+}

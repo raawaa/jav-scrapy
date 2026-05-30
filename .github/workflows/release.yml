@@ -12,7 +12,6 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +22,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Get tag version
         id: get_version
@@ -43,20 +41,15 @@ jobs:
           ls -la dist/
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ## [${{ env.VERSION }}] - $(date +'%Y-%m-%d')
-            
-            Please see [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
-          draft: false
-          prerelease: false
+        run: |
+          cat > /tmp/release-notes.md << EOF
+          ## [${{ env.VERSION }}] - $(date +'%Y-%m-%d')
 
-      - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          Please see [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
+          EOF
+          gh release create "${{ github.ref }}" \
+            --title "Release ${{ github.ref }}" \
+            --notes-file /tmp/release-notes.md \
+            --verify-tag

@@ -27,7 +27,6 @@ import { getAntiBlockUrlsPath } from './paths';
 
 class ConfigManager {
     private config: Config;
-    private configPath: string;
 
     constructor() {
         this.config = {
@@ -44,7 +43,6 @@ class ConfigManager {
             timeout: DEFAULT_CONFIG.timeout,
             search: null,
             base: null,
-            nomag: false,
             allmag: false,
             nopic: false,
             limit: 0,
@@ -52,7 +50,6 @@ class ConfigManager {
             strictSSL: DEFAULT_CONFIG.strictSSL, // 是否严格验证SSL证书
             proxy: undefined,
         };
-        this.configPath = `${process.env.HOME}/.config.json`; // 配置文件路径
     }
 
     public async updateFromProgram(program: Command): Promise<void> {
@@ -126,9 +123,6 @@ class ConfigManager {
                 // 保持原有Referer
             }
         }
-        if (program.opts().nomag !== undefined && program.opts().nomag !== null) {
-            this.config.nomag = program.opts().nomag;
-        }
         if (program.opts().allmag !== undefined && program.opts().allmag !== null) {
             this.config.allmag = program.opts().allmag;
         }
@@ -153,17 +147,6 @@ class ConfigManager {
             if (!this.config.strictSSL) {
                 logger.warn('已禁用SSL证书严格验证，可能存在安全风险');
             }
-        }
-    }
-
-    public updateConfig(newConfig: Partial<Config>): void {
-        logger.debug(`正在保存配置到: ${this.configPath}`);
-        this.config = { ...this.config, ...newConfig };
-        try {
-            fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
-            logger.debug('配置保存成功');
-        } catch (error) {
-            ErrorHandler.handleFileError(error, '更新配置文件');
         }
     }
 

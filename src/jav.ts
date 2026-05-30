@@ -9,7 +9,7 @@ import { QueueEventType } from './core/queueManager';
 import { Config } from './types/interfaces';
 import * as cliProgress from 'cli-progress';
 import chalk from 'chalk';
-import Parser from './core/parser';
+import { extractAntiBlockUrls } from './core/parser';
 import RequestHandler from './core/requestHandler';
 import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
 import fs from 'fs';
@@ -17,8 +17,8 @@ import * as path from 'path';
 import os from 'os';
 import { ErrorHandler } from './utils/errorHandler';
 import { getRandomDelay, getExponentialBackoffDelay } from './core/constants';
-import { delayManager, DelayType } from './utils/delayManager';
 import { Output } from './output';
+import { checkLatestVersion, isOfflineMode, isAuxiliaryCommand, isHelpOrVersion } from './core/versionCheck';
 
 // 版本号 - 从package.json动态读取
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -27,7 +27,18 @@ const version = packageJson.version;
 
 
 program
-    .version(version);
+    .version(version)
+    .option('--offline', '跳过版本更新检查');
+
+// 版本更新检查（非阻塞，后台运行）
+if (!isOfflineMode() && !isAuxiliaryCommand() && !isHelpOrVersion()) {
+    checkLatestVersion(version).then(latest => {
+        if (latest) {
+            console.log(chalk.yellow(`\n⚠ 新版本 ${latest} 可用！运行以下命令升级:`));
+            console.log(chalk.cyan('  npm install -g raawaa/jav-scrapy\n'));
+        }
+    });
+}
 
 program
     .command('crawl', { isDefault: true })
@@ -40,7 +51,6 @@ program
     .option('-b, --base <url>', '自定义抓取的起始页')
     .option('-x, --proxy <url>', '使用代理服务器, 例：-x http://127.0.0.1:8087')
     .option('-d, --delay <num>', '设置请求间隔时间(秒)。默认值：2秒')
-    .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .option('-N, --nopic', '不抓取图片')
     .option('-c, --cookies <string>', '手动设置Cookies，格式: "key1=value1; key2=value2"')
@@ -74,9 +84,10 @@ program
 
         try {
             await scraper.mainExecution();
+            await scraper.destroy();
         } catch (error) {
-            ErrorHandler.handleGenericError(error, '程序执行');
-            scraper.destroy();
+            ErrorHandler.handleError(error, '程序执行');
+            await scraper.destroy();
             process.exit(1);
         }
     });
@@ -140,7 +151,7 @@ program
         // 使用可能包含系统代理的 config 来创建 RequestHandler
         const requestHandler = new RequestHandler(config);
         const pageData = await requestHandler.getPage(config.base || config.BASE_URL);
-        const antiBlockUrls = Parser.extractAntiBlockUrls(pageData?.body || '');
+        const antiBlockUrls = extractAntiBlockUrls(pageData?.body || '');
 
         // 防屏蔽地址文件路径（统一管理，包含旧位置迁移）
         const antiblockUrlsFilePath = getAntiBlockUrlsPath();
@@ -169,7 +180,7 @@ program
                 fs.writeFileSync(antiblockUrlsFilePath, JSON.stringify(allUrls, null, 2));
                 logger.success(`检测到 ${antiBlockUrls.length} 个新的防屏蔽地址，已更新到文件: ${chalk.underline.blue(antiblockUrlsFilePath)}`);
             } catch (error) {
-                ErrorHandler.handleFileError(error, '保存防屏蔽地址文件');
+                ErrorHandler.handleError(error, '保存防屏蔽地址文件');
             }
 
         } else if (existingUrls.length > 0) {
@@ -241,7 +252,6 @@ class JavScraper {
             limit: this.config.limit,
             timeout: this.config.timeout,
             proxy: this.config.proxy ? '[已设置]' : '未设置',
-            nomag: this.config.nomag,
             allmag: this.config.allmag,
             nopic: this.config.nopic,
             output: this.config.output,
@@ -451,9 +461,6 @@ class JavScraper {
         const queueWaitTime = Math.round((Date.now() - queueWaitStart) / 1000);
         logger.info(`mainExecution: 工作队列完成 (耗时: ${queueWaitTime}s)`);
 
-        // 等待所有延迟完成
-        await queueManager.waitForDelays();
-
         const totalExecutionTime = Math.round((Date.now() - executionStartTime) / 1000);
 
         // 最终统计摘要
@@ -488,15 +495,6 @@ class JavScraper {
 
         logger.debug(`mainExecution: 不需要关闭 RequestHandler (无需要清理的资源)`);
 
-        // 关闭延迟管理器
-        if (delayManager) {
-            try {
-                delayManager.shutdown();
-                logger.debug(`mainExecution: 延迟管理器已关闭`);
-            } catch (error) {
-                logger.warn(`mainExecution: 关闭延迟管理器失败: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
 
         logger.debug(`mainExecution: 资源清理完成`);
     }

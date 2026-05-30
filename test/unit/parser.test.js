@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 // 从编译后的 JS 加载 Parser
-const Parser = require('../../dist/core/parser').default;
+const { parsePageLinks, parseMetadata, parseCategories, parseActress, parseFilmData, extractAntiBlockUrls } = require("../../dist/core/parser");
 
 const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
 
@@ -28,7 +28,7 @@ describe('Parser', function () {
   // ─── parsePageLinks ────────────────────────────────────
   describe('parsePageLinks', function () {
     it('从首页提取 30 个影片链接', function () {
-      const links = Parser.parsePageLinks(homepageHtml);
+      const links = parsePageLinks(homepageHtml);
       assert.ok(Array.isArray(links), '应返回数组');
       assert.strictEqual(links.length, 30, '首页应有 30 部影片');
       links.forEach((link, i) => {
@@ -40,17 +40,17 @@ describe('Parser', function () {
     });
 
     it('从第 2 页提取 30 个影片链接', function () {
-      const links = Parser.parsePageLinks(page2Html);
+      const links = parsePageLinks(page2Html);
       assert.ok(Array.isArray(links));
       assert.strictEqual(links.length, 30, '第 2 页应有 30 部影片');
     });
 
     it('空 HTML 返回空数组', function () {
-      assert.deepStrictEqual(Parser.parsePageLinks(''), []);
+      assert.deepStrictEqual(parsePageLinks(''), []);
     });
 
     it('驾考题页面（无影片链接）返回空数组', function () {
-      const links = Parser.parsePageLinks(ageVerifyHtml);
+      const links = parsePageLinks(ageVerifyHtml);
       assert.ok(Array.isArray(links));
       assert.strictEqual(links.length, 0, '驾考题页面不应有影片链接');
     });
@@ -59,7 +59,7 @@ describe('Parser', function () {
   // ─── parseMetadata ────────────────────────────────────
   describe('parseMetadata', function () {
     it('从详情页提取完整元数据', function () {
-      const meta = Parser.parseMetadata(detailPageHtml);
+      const meta = parseMetadata(detailPageHtml);
       assert.ok(meta, '应返回元数据对象');
       assert.ok(typeof meta.gid === 'string' && meta.gid.length > 0, 'gid 应是非空字符串');
       assert.ok(typeof meta.uc === 'string' && meta.uc.length > 0, 'uc 应是非空字符串');
@@ -70,14 +70,14 @@ describe('Parser', function () {
     });
 
     it('空 HTML 抛出 Error', function () {
-      assert.throws(() => Parser.parseMetadata(''), Error);
+      assert.throws(() => parseMetadata(''), Error);
     });
   });
 
   // ─── parseCategories ────────────────────────────────────
   describe('parseCategories', function () {
     it('从详情页提取分类标签', function () {
-      const cats = Parser.parseCategories(detailPageHtml);
+      const cats = parseCategories(detailPageHtml);
       assert.ok(Array.isArray(cats), '应返回数组');
       assert.ok(cats.length > 0, '应有至少一个分类');
       cats.forEach((c, i) => {
@@ -86,14 +86,14 @@ describe('Parser', function () {
     });
 
     it('空 HTML 返回空数组', function () {
-      assert.deepStrictEqual(Parser.parseCategories(''), []);
+      assert.deepStrictEqual(parseCategories(''), []);
     });
   });
 
   // ─── parseActress ────────────────────────────────────
   describe('parseActress', function () {
     it('从详情页提取演员列表', function () {
-      const actresses = Parser.parseActress(detailPageHtml);
+      const actresses = parseActress(detailPageHtml);
       assert.ok(Array.isArray(actresses), '应返回数组');
       actresses.forEach((a, i) => {
         assert.ok(typeof a === 'string' && a.length > 0, `演员 #${i} 应为非空字符串`);
@@ -101,15 +101,15 @@ describe('Parser', function () {
     });
 
     it('空 HTML 返回空数组', function () {
-      assert.deepStrictEqual(Parser.parseActress(''), []);
+      assert.deepStrictEqual(parseActress(''), []);
     });
   });
 
   // ─── parseFilmData ────────────────────────────────────
   describe('parseFilmData', function () {
     it('从 Metadata 构造 FilmData', function () {
-      const meta = Parser.parseMetadata(detailPageHtml);
-      const filmData = Parser.parseFilmData(meta, 'https://www.javbus.com/START-563');
+      const meta = parseMetadata(detailPageHtml);
+      const filmData = parseFilmData(meta, 'https://www.javbus.com/START-563');
       assert.ok(filmData, '应返回 FilmData 对象');
       assert.strictEqual(filmData.title, meta.title, '标题应一致');
       assert.deepStrictEqual(filmData.category, meta.category, '分类应一致');
@@ -120,19 +120,19 @@ describe('Parser', function () {
   // ─── extractAntiBlockUrls ──────────────────────────────
   describe('extractAntiBlockUrls', function () {
     it('从首页提取防屏蔽地址', function () {
-      const urls = Parser.extractAntiBlockUrls(homepageHtml);
+      const urls = extractAntiBlockUrls(homepageHtml);
       assert.ok(Array.isArray(urls), '应返回数组');
       assert.ok(urls.length > 0, '应提取到至少一个防屏蔽地址');
     });
 
     it('从驾考题页面也应能提取（如果存在）', function () {
-      const urls = Parser.extractAntiBlockUrls(ageVerifyHtml);
+      const urls = extractAntiBlockUrls(ageVerifyHtml);
       assert.ok(Array.isArray(urls));
       // 驾考题页面可能没有防屏蔽地址，空数组也可以接受
     });
 
     it('空 HTML 返回空数组', function () {
-      assert.deepStrictEqual(Parser.extractAntiBlockUrls(''), []);
+      assert.deepStrictEqual(extractAntiBlockUrls(''), []);
     });
   });
 });

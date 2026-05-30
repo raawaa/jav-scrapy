@@ -1,6 +1,0 @@
-{
-  "statusLine": {
-    "type": "command",
-    "command": "bash D:\\Code\\jav-scrapy\\statusline-command.sh"
-  }
-}

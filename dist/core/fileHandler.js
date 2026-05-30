@@ -159,12 +159,12 @@ class FileHandler {
                 logger_1.default.debug(`FileHandler: JSON数据长度: ${jsonData.length} 字符`);
                 // 写入文件
                 fs_1.default.writeFileSync(filePath, jsonData);
-                logger_1.default.info(`FileHandler: 影片数据成功写入文件: ${filePath}`);
-                logger_1.default.info(`FileHandler: 影片标题: ${data.title}`);
+                logger_1.default.debug(`FileHandler: 影片数据成功写入文件: ${filePath}`);
+                logger_1.default.debug(`FileHandler: 影片标题: ${data.title}`);
                 const magnetPreview = data.magnetLinks && data.magnetLinks.length > 0
                     ? data.magnetLinks.map(ml => ml.link).slice(0, 2).join('\n').substring(0, 100) + '...'
                     : '无';
-                logger_1.default.info(`FileHandler: 磁力链接: ${magnetPreview}`);
+                logger_1.default.debug(`FileHandler: 磁力链接: ${magnetPreview}`);
             }
             else {
                 // 如果是重复数据，智能检查是否需要更新
@@ -208,14 +208,14 @@ class FileHandler {
                 if (shouldUpdate) {
                     // 更新现有数据
                     existingData[duplicateIndex] = data;
-                    logger_1.default.info(`FileHandler: 更新重复影片数据，标题: ${data.title}，原因: ${updateReason}`);
+                    logger_1.default.debug(`FileHandler: 更新重复影片数据，标题: ${data.title}，原因: ${updateReason}`);
                     // 写入更新后的数据
                     const jsonData = JSON.stringify(existingData, null, 2);
                     fs_1.default.writeFileSync(filePath, jsonData);
-                    logger_1.default.info(`FileHandler: 影片数据更新成功写入文件: ${filePath}`);
+                    logger_1.default.debug(`FileHandler: 影片数据更新成功写入文件: ${filePath}`);
                 }
                 else {
-                    logger_1.default.info(`FileHandler: 跳过重复影片数据，标题: ${data.title}`);
+                    logger_1.default.debug(`FileHandler: 跳过重复影片数据，标题: ${data.title}`);
                 }
             }
         }

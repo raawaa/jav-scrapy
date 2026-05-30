@@ -8,9 +8,8 @@ const async_1 = __importDefault(require("async"));
 const logger_1 = __importDefault(require("./logger"));
 const requestHandler_1 = __importDefault(require("./requestHandler"));
 const fileHandler_1 = __importDefault(require("./fileHandler"));
-const parser_1 = __importDefault(require("./parser"));
+const parser_1 = require("./parser");
 const errorHandler_1 = require("../utils/errorHandler");
-const delayManager_1 = require("../utils/delayManager");
 var QueueEventType;
 (function (QueueEventType) {
     QueueEventType["INDEX_PAGE_START"] = "index_page_start";
@@ -162,7 +161,7 @@ class QueueManager {
                     if (response?.body) {
                         logger_1.default.debug(`QueueManager: [详情页] 成功获取页面内容，长度: ${response.body.length}`);
                         logger_1.default.debug(`QueueManager: [详情页] 开始解析元数据: ${task.link}`);
-                        const metadata = parser_1.default.parseMetadata(response.body);
+                        const metadata = (0, parser_1.parseMetadata)(response.body);
                         const parseTime = Date.now() - startTime;
                         logger_1.default.debug(`QueueManager: [详情页] 元数据解析完成: ${metadata.title} (总耗时: ${Math.round(parseTime / 1000)}s)`);
                         logger_1.default.debug(`QueueManager: [详情页] 开始获取磁力链接: ${metadata.title}`);
@@ -176,7 +175,7 @@ class QueueManager {
                             logger_1.default.warn(`QueueManager: [详情页] 磁力链接获取失败: ${metadata.title}`);
                         }
                         logger_1.default.debug(`QueueManager: [详情页] 开始解析影片数据: ${metadata.title}`);
-                        const filmData = parser_1.default.parseFilmData(metadata, task.link);
+                        const filmData = (0, parser_1.parseFilmData)(metadata, task.link);
                         // 添加结构化的磁力链接数据
                         if (magnetResult?.magnetLinks) {
                             filmData.magnetLinks = magnetResult.magnetLinks;
@@ -197,7 +196,7 @@ class QueueManager {
                 catch (error) {
                     const failedTime = Date.now() - startTime;
                     logger_1.default.error(`QueueManager: [详情页] 任务失败: ${task.link} (耗时: ${Math.round(failedTime / 1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);
-                    errorHandler_1.ErrorHandler.handleGenericError(error, `处理详情页 ${task.link}`);
+                    errorHandler_1.ErrorHandler.handleError(error, `处理详情页 ${task.link}`);
                     // 不中断队列处理，继续处理下一个任务
                 }
                 finally {
@@ -243,7 +242,7 @@ class QueueManager {
                         return;
                     }
                     logger_1.default.debug(`QueueManager: [索引页] 开始解析页面链接: ${task.url}`);
-                    const links = parser_1.default.parsePageLinks(response.body);
+                    const links = (0, parser_1.parsePageLinks)(response.body);
                     const parseTime = Date.now() - startTime;
                     logger_1.default.debug(`QueueManager: [索引页] 页面解析完成: ${task.url}，找到 ${links.length} 条链接 (总耗时: ${Math.round(parseTime / 1000)}s)`);
                     if (links.length === 0) {
@@ -322,17 +321,6 @@ class QueueManager {
             }
         };
     }
-    /**
-     * 检查是否所有队列都已完成
-     * @returns {boolean} 如果所有队列都已完成返回 true
-     */
-    areAllQueuesFinished() {
-        const stats = this.getQueueStats();
-        return (stats.indexPageQueue.waiting === 0 && stats.indexPageQueue.running === 0 &&
-            stats.detailPageQueue.waiting === 0 && stats.detailPageQueue.running === 0 &&
-            stats.fileWriteQueue.waiting === 0 && stats.fileWriteQueue.running === 0 &&
-            stats.imageDownloadQueue.waiting === 0 && stats.imageDownloadQueue.running === 0);
-    }
     emit(event) {
         const handlers = this.eventHandlers.get(event.type);
         handlers?.forEach(handler => handler(event));
@@ -375,9 +363,6 @@ class QueueManager {
     shutdown() {
         logger_1.default.info('QueueManager: 开始关闭队列管理器...');
         this.isShuttingDown = true;
-        // 关闭延迟管理器
-        logger_1.default.debug('QueueManager: 正在关闭延迟管理器...');
-        this.interruptAllDelays();
         if (this.queueStatsInterval) {
             clearInterval(this.queueStatsInterval);
             this.queueStatsInterval = null;
@@ -405,36 +390,6 @@ class QueueManager {
             }
         }
         logger_1.default.info('QueueManager: 队列管理器关闭完成');
-    }
-    /**
-     * 创建延迟任务
-     */
-    async createDelay(type, id) {
-        return delayManager_1.delayManager.createDelay(type, id);
-    }
-    /**
-     * 获取延迟统计信息
-     */
-    getDelayStats() {
-        return delayManager_1.delayManager.getDelayStats();
-    }
-    /**
-     * 检查是否有活跃的延迟
-     */
-    hasActiveDelays() {
-        return delayManager_1.delayManager.hasActiveDelays();
-    }
-    /**
-     * 等待所有延迟完成
-     */
-    async waitForDelays() {
-        await delayManager_1.delayManager.waitForAllDelays();
-    }
-    /**
-     * 中断所有延迟
-     */
-    interruptAllDelays() {
-        return delayManager_1.delayManager.interruptAllDelays();
     }
     /**
      * 改进的队列完成检查 - 区分实际工作和延迟

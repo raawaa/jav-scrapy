@@ -7,8 +7,9 @@ const axios_1 = __importDefault(require("axios"));
 const axios_retry_1 = __importDefault(require("axios-retry"));
 const tunnel_1 = __importDefault(require("tunnel"));
 const https_1 = __importDefault(require("https"));
-const path_1 = __importDefault(require("path")); // 导入 path 模块，用于处理文件路径
-const fs_1 = __importDefault(require("fs")); // 导入 fs 模块，用于文件操作
+const koonjs_1 = require("koonjs");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const constants_1 = require("./constants");
 const errorHandler_1 = require("../utils/errorHandler");
 const logger_1 = __importDefault(require("./logger"));
@@ -21,6 +22,7 @@ class RequestHandler {
      * @param config 配置对象
      */
     constructor(config) {
+        this.koonClient = null;
         this.config = config;
         logger_1.default.debug(`RequestHandler constructor - proxy config: ${this.config.proxy}`);
         const userAgent = constants_1.USER_AGENTS[Math.floor(Math.random() * constants_1.USER_AGENTS.length)];
@@ -51,26 +53,12 @@ class RequestHandler {
             timeout: config.timeout || 30000, // 默认30秒超时
             proxy: config.proxy,
             headers: {
-                'authority': new URL(this.config.base || this.config.BASE_URL).hostname,
-                'method': 'GET',
-                'path': '/',
-                'scheme': 'https',
                 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'accept-encoding': 'gzip, deflate, br',
                 'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7',
                 'cache-control': 'no-cache',
-                'sec-ch-ua': secChUa,
-                'sec-ch-ua-mobile': secChUaMobile,
-                'sec-ch-ua-platform': secChUaPlatform,
-                'sec-fetch-dest': 'document',
-                'sec-fetch-mode': 'navigate',
-                'sec-fetch-site': 'none',
-                'sec-fetch-user': '?1',
-                'upgrade-insecure-requests': '1',
                 'user-agent': userAgent,
-                'referer': new URL(this.config.base || this.config.BASE_URL).origin,
-                'Cookie': this.config.headers.Cookie || 'existmag=mag',
-                'Connection': 'keep-alive'
+                'Cookie': this.config.headers.Cookie || 'existmag=mag'
             }
         };
         this.retries = 3; // 重试次数
@@ -86,13 +74,12 @@ class RequestHandler {
                     }
                 }
                 catch (proxyError) {
-                    errorHandler_1.ErrorHandler.handleNetworkError(proxyError, '配置代理');
-                    // 可选择抛出错误或允许请求在没有代理的情况下继续
-                    // throw proxyError;
+                    errorHandler_1.ErrorHandler.handleError(proxyError, '配置代理');
                 }
             }
             return config;
         });
+        // 初始化 koonjs TLS 指纹客户端（惰性初始化，首次 AJAX 请求时创建）
     }
     /**
      * 获取指定 URL 的页面内容
@@ -131,18 +118,6 @@ class RequestHandler {
                 if (attempts > 0) {
                     const newUserAgent = constants_1.USER_AGENTS[Math.floor(Math.random() * constants_1.USER_AGENTS.length)];
                     headers['user-agent'] = newUserAgent;
-                    // 更新 sec-ch-ua 以匹配新 UA
-                    const isChrome = newUserAgent.includes('Chrome');
-                    const isEdge = newUserAgent.includes('Edge');
-                    const versionMatch = newUserAgent.match(/(Chrome|Firefox|Edge|Edg)[\/\s](\d+)/);
-                    const browserVersion = versionMatch ? versionMatch[2] : '125';
-                    if (isChrome || isEdge) {
-                        const brandVersion = isEdge ? 'Microsoft Edge' : 'Chromium';
-                        headers['sec-ch-ua'] = `"${brandVersion}";v="${browserVersion}", "Not?A_Brand";v="99"`;
-                    }
-                    else if (newUserAgent.includes('Firefox')) {
-                        headers['sec-ch-ua'] = `"Not.A/Brand";v="8", "Chromium";v="${browserVersion}", "Google Chrome";v="${browserVersion}"`;
-                    }
                     logger_1.default.debug(`重试时轮换了 User-Agent: ${newUserAgent}`);
                 }
                 const response = await axios_1.default.get(url, {
@@ -215,24 +190,11 @@ class RequestHandler {
             // 构建AJAX专用请求头
             const urlObj = new URL(url);
             const headers = {
-                'authority': urlObj.hostname,
-                'method': 'GET',
-                'path': urlObj.pathname + urlObj.search,
-                'scheme': 'https',
                 'accept': '*/*',
-                'accept-encoding': 'gzip, deflate, br',
                 'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7',
-                'cache-control': 'no-cache',
-                'sec-ch-ua': this.requestConfig.headers['sec-ch-ua'] || '"Chromium";v="120", "Not?A_Brand";v="99"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'same-origin',
                 'user-agent': this.requestConfig.headers['user-agent'],
                 'referer': new URL(this.config.base || this.config.BASE_URL).origin,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Connection': 'keep-alive'
+                'X-Requested-With': 'XMLHttpRequest'
             };
             // Cookie 使用手动设置或默认 Cookie
             const hasManualCookies = this.config.headers && this.config.headers.Cookie &&
@@ -313,7 +275,38 @@ class RequestHandler {
                     }
                 }
             }
-            errorHandler_1.ErrorHandler.handleNetworkError(error, `发送 XMLHttpRequest 到 ${url}`);
+            errorHandler_1.ErrorHandler.handleError(error, `发送 XMLHttpRequest 到 ${url}`);
+            throw error;
+        }
+    }
+    /**
+     * 使用 koonjs 发送 AJAX 请求（绕过 Node.js TLS 指纹检测）
+     *
+     * koonjs 使用 Rust + BoringSSL，其 TLS/HTTP2 指纹与 Chrome 浏览器一致，
+     * 可避免被 Cloudflare 通过 JA3 指纹识别为爬虫。
+     */
+    async koonRequest(url) {
+        // 惰性初始化 koonjs 客户端
+        if (!this.koonClient) {
+            this.koonClient = new koonjs_1.Koon({
+                browser: 'chrome145',
+                proxy: this.requestConfig.proxy || undefined
+            });
+        }
+        try {
+            const resp = await this.koonClient.get(url, {
+                headers: {
+                    'Accept': '*/*',
+                    'Referer': new URL(this.config.base || this.config.BASE_URL).origin + '/',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cookie': this.config.headers.Cookie || 'existmag=mag'
+                }
+            });
+            return { statusCode: resp.status, body: resp.text() };
+        }
+        catch (error) {
+            logger_1.default.error(`koonjs 请求失败: ${url}`);
+            logger_1.default.error(`错误: ${error instanceof Error ? error.message : String(error)}`);
             throw error;
         }
     }
@@ -345,11 +338,16 @@ class RequestHandler {
         const url = `${baseDomain}/ajax/uncledatoolsbyajax.php?gid=${metadata.gid}&lang=zh&img=${metadata.img}&uc=${metadata.uc}&floor=${Math.floor(1e3 * Math.random() + 1)}`;
         logger_1.default.debug(`fetchMagnet: 构建AJAX URL: ${url}`);
         let response = null;
-        // 使用传统 AJAX 请求
+        // 使用 curl（生产环境）或 axios（测试环境）发送 AJAX 请求
         try {
             logger_1.default.debug(`fetchMagnet: 开始尝试 AJAX 请求: ${metadata.title}`);
             const ajaxStart = Date.now();
-            response = await this.getXMLHttpRequest(url);
+            if (process.env.NODE_ENV === 'test') {
+                response = await this.getXMLHttpRequest(url);
+            }
+            else {
+                response = await this.koonRequest(url);
+            }
             const ajaxTime = Date.now() - ajaxStart;
             logger_1.default.debug(`fetchMagnet: AJAX 请求完成: ${metadata.title} (耗时: ${Math.round(ajaxTime / 1000)}s)`);
         }
@@ -463,7 +461,7 @@ class RequestHandler {
                 await fs_1.default.promises.mkdir(dirPath, { recursive: true });
             }
             catch (mkdirError) {
-                errorHandler_1.ErrorHandler.handleFileError(mkdirError, `创建输出目录: ${dirPath}`);
+                errorHandler_1.ErrorHandler.handleError(mkdirError, `创建输出目录: ${dirPath}`);
                 throw mkdirError; // 如果目录创建失败，后续操作也无法进行
             }
         }
@@ -557,13 +555,13 @@ class RequestHandler {
                         }
                     }
                     logger_1.default.error(`错误堆栈: ${simplifyError.stack}`);
-                    errorHandler_1.ErrorHandler.handleFileError(simplifyError, `使用简化文件名保存图片: ${simplifiedFilename}`);
+                    errorHandler_1.ErrorHandler.handleError(simplifyError, `使用简化文件名保存图片: ${simplifiedFilename}`);
                     throw simplifyError; // 简化文件名后仍然失败，抛出错误
                 }
             }
             else {
                 // 其他类型的错误，直接抛出
-                errorHandler_1.ErrorHandler.handleFileError(error, `保存图片: ${filename}`);
+                errorHandler_1.ErrorHandler.handleError(error, `保存图片: ${filename}`);
                 throw error;
             }
         }

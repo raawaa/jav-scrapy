@@ -24,7 +24,6 @@ interface Config {
   output: string;
   search: string | null;
   base: string | null;
-  nomag: boolean;
   allmag: boolean;
   nopic: boolean;
   timeout?: number;

@@ -21,7 +21,6 @@ const logger_1 = __importDefault(require("./logger")); // 引入日志记录器�
 const fs_1 = __importDefault(require("fs")); // 引入文件系统模块
 const chalk_1 = __importDefault(require("chalk")); // 引入 chalk 库用于美化输出
 const constants_1 = require("./constants");
-const errorHandler_1 = require("../utils/errorHandler");
 const paths_1 = require("./paths");
 class ConfigManager {
     constructor() {
@@ -39,7 +38,6 @@ class ConfigManager {
             timeout: constants_1.DEFAULT_CONFIG.timeout,
             search: null,
             base: null,
-            nomag: false,
             allmag: false,
             nopic: false,
             limit: 0,
@@ -47,7 +45,6 @@ class ConfigManager {
             strictSSL: constants_1.DEFAULT_CONFIG.strictSSL, // 是否严格验证SSL证书
             proxy: undefined,
         };
-        this.configPath = `${process.env.HOME}/.config.json`; // 配置文件路径
     }
     async updateFromProgram(program) {
         // 先读取系统代理设置
@@ -113,9 +110,6 @@ class ConfigManager {
                 // 保持原有Referer
             }
         }
-        if (program.opts().nomag !== undefined && program.opts().nomag !== null) {
-            this.config.nomag = program.opts().nomag;
-        }
         if (program.opts().allmag !== undefined && program.opts().allmag !== null) {
             this.config.allmag = program.opts().allmag;
         }
@@ -138,17 +132,6 @@ class ConfigManager {
             if (!this.config.strictSSL) {
                 logger_1.default.warn('已禁用SSL证书严格验证，可能存在安全风险');
             }
-        }
-    }
-    updateConfig(newConfig) {
-        logger_1.default.debug(`正在保存配置到: ${this.configPath}`);
-        this.config = { ...this.config, ...newConfig };
-        try {
-            fs_1.default.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
-            logger_1.default.debug('配置保存成功');
-        }
-        catch (error) {
-            errorHandler_1.ErrorHandler.handleFileError(error, '更新配置文件');
         }
     }
     getConfig() {

@@ -45,7 +45,7 @@ const queueManager_1 = __importDefault(require("./core/queueManager"));
 const queueManager_2 = require("./core/queueManager");
 const cliProgress = __importStar(require("cli-progress"));
 const chalk_1 = __importDefault(require("chalk"));
-const parser_1 = __importDefault(require("./core/parser"));
+const parser_1 = require("./core/parser");
 const requestHandler_1 = __importDefault(require("./core/requestHandler"));
 const systemProxy_1 = require("./utils/systemProxy");
 const fs_1 = __importDefault(require("fs"));
@@ -53,14 +53,24 @@ const path = __importStar(require("path"));
 const os_1 = __importDefault(require("os"));
 const errorHandler_1 = require("./utils/errorHandler");
 const constants_1 = require("./core/constants");
-const delayManager_1 = require("./utils/delayManager");
 const output_1 = require("./output");
+const versionCheck_1 = require("./core/versionCheck");
 // 版本号 - 从package.json动态读取
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
 const packageJson = JSON.parse(fs_1.default.readFileSync(packageJsonPath, 'utf-8'));
 const version = packageJson.version;
 commander_1.program
-    .version(version);
+    .version(version)
+    .option('--offline', '跳过版本更新检查');
+// 版本更新检查（非阻塞，后台运行）
+if (!(0, versionCheck_1.isOfflineMode)() && !(0, versionCheck_1.isAuxiliaryCommand)() && !(0, versionCheck_1.isHelpOrVersion)()) {
+    (0, versionCheck_1.checkLatestVersion)(version).then(latest => {
+        if (latest) {
+            console.log(chalk_1.default.yellow(`\n⚠ 新版本 ${latest} 可用！运行以下命令升级:`));
+            console.log(chalk_1.default.cyan('  npm install -g raawaa/jav-scrapy\n'));
+        }
+    });
+}
 commander_1.program
     .command('crawl', { isDefault: true })
     .description('启动爬虫')
@@ -72,7 +82,6 @@ commander_1.program
     .option('-b, --base <url>', '自定义抓取的起始页')
     .option('-x, --proxy <url>', '使用代理服务器, 例：-x http://127.0.0.1:8087')
     .option('-d, --delay <num>', '设置请求间隔时间(秒)。默认值：2秒')
-    .option('-n, --nomag', '是否抓取尚无磁链的影片')
     .option('-a, --allmag', '是否抓取影片的所有磁链(默认只抓取文件体积最大的磁链)')
     .option('-N, --nopic', '不抓取图片')
     .option('-c, --cookies <string>', '手动设置Cookies，格式: "key1=value1; key2=value2"')
@@ -101,10 +110,11 @@ commander_1.program
     const scraper = new JavScraper(PROGRAM_CONFIG, requestHandler);
     try {
         await scraper.mainExecution();
+        await scraper.destroy();
     }
     catch (error) {
-        errorHandler_1.ErrorHandler.handleGenericError(error, '程序执行');
-        scraper.destroy();
+        errorHandler_1.ErrorHandler.handleError(error, '程序执行');
+        await scraper.destroy();
         process.exit(1);
     }
 });
@@ -158,7 +168,7 @@ commander_1.program
     // 使用可能包含系统代理的 config 来创建 RequestHandler
     const requestHandler = new requestHandler_1.default(config);
     const pageData = await requestHandler.getPage(config.base || config.BASE_URL);
-    const antiBlockUrls = parser_1.default.extractAntiBlockUrls(pageData?.body || '');
+    const antiBlockUrls = (0, parser_1.extractAntiBlockUrls)(pageData?.body || '');
     // 防屏蔽地址文件路径（统一管理，包含旧位置迁移）
     const antiblockUrlsFilePath = (0, paths_1.getAntiBlockUrlsPath)();
     let existingUrls = [];
@@ -185,7 +195,7 @@ commander_1.program
             logger_1.default.success(`检测到 ${antiBlockUrls.length} 个新的防屏蔽地址，已更新到文件: ${chalk_1.default.underline.blue(antiblockUrlsFilePath)}`);
         }
         catch (error) {
-            errorHandler_1.ErrorHandler.handleFileError(error, '保存防屏蔽地址文件');
+            errorHandler_1.ErrorHandler.handleError(error, '保存防屏蔽地址文件');
         }
     }
     else if (existingUrls.length > 0) {
@@ -248,7 +258,6 @@ class JavScraper {
             limit: this.config.limit,
             timeout: this.config.timeout,
             proxy: this.config.proxy ? '[已设置]' : '未设置',
-            nomag: this.config.nomag,
             allmag: this.config.allmag,
             nopic: this.config.nopic,
             output: this.config.output,
@@ -437,8 +446,6 @@ class JavScraper {
         }
         const queueWaitTime = Math.round((Date.now() - queueWaitStart) / 1000);
         logger_1.default.info(`mainExecution: 工作队列完成 (耗时: ${queueWaitTime}s)`);
-        // 等待所有延迟完成
-        await queueManager.waitForDelays();
         const totalExecutionTime = Math.round((Date.now() - executionStartTime) / 1000);
         // 最终统计摘要
         const summary = {
@@ -468,16 +475,6 @@ class JavScraper {
             logger_1.default.debug(`mainExecution: 多进度条已停止`);
         }
         logger_1.default.debug(`mainExecution: 不需要关闭 RequestHandler (无需要清理的资源)`);
-        // 关闭延迟管理器
-        if (delayManager_1.delayManager) {
-            try {
-                delayManager_1.delayManager.shutdown();
-                logger_1.default.debug(`mainExecution: 延迟管理器已关闭`);
-            }
-            catch (error) {
-                logger_1.default.warn(`mainExecution: 关闭延迟管理器失败: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
         logger_1.default.debug(`mainExecution: 资源清理完成`);
     }
     async destroy() {
