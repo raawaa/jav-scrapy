@@ -40,6 +40,14 @@ jobs:
           echo "Dist directory contents:"
           ls -la dist/
 
+      - name: Package tarball for npm install
+        run: |
+          mkdir -p _release/package
+          cp -r dist package.json README.md LICENSE _release/package/ 2>/dev/null || true
+          cd _release && tar czf "../jav-scrapy-v${{ env.VERSION }}.tgz" package/
+          echo "Tarball created: jav-scrapy-v${{ env.VERSION }}.tgz"
+          ls -lh "../jav-scrapy-v${{ env.VERSION }}.tgz"
+
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,4 +59,5 @@ jobs:
           EOF
           gh release create "${{ github.ref }}" \
             --title "Release v${{ env.VERSION }}" \
-            --notes-file /tmp/release-notes.md
+            --notes-file /tmp/release-notes.md \
+            "jav-scrapy-v${{ env.VERSION }}.tgz"

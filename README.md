@@ -4,10 +4,22 @@
 
 ## 安装
 
-推荐全局安装，安装后终端可直接使用 `jav` 命令：
+> **要求**：Node.js 16+（推荐 18 LTS）。
+
+### macOS / Linux
+
+一行命令安装，自动下载最新版：
 
 ```bash
-npm install -g raawaa/jav-scrapy
+curl -fsSL https://raw.github.com/raawaa/jav-scrapy/main/install.sh | sh
+```
+
+安装完成后可直接使用 `jav` 命令。
+
+### Windows
+
+```bash
+npm install -g raawaa/jav-scrapy#v1.2.0
 ```
 
 如果只想临时尝鲜，无需安装：
@@ -16,7 +28,12 @@ npm install -g raawaa/jav-scrapy
 npx raawaa/jav-scrapy --help
 ```
 
-> **要求**：Node.js 16+（推荐 18 LTS）。
+### 升级
+
+```bash
+jav upgrade              # 自动升级到最新版
+jav upgrade v1.5.0       # 升级到指定版本
+```
 
 ## 快速开始
 
@@ -80,11 +97,11 @@ jav crawl [options]
 | `-v, --verbose` | 详细调试输出 | false |
 | `-q, --quiet` | 仅显示错误和最终摘要 | false |
 
-### `jav update` — 更新防屏蔽镜像地址
+### `jav refresh` — 刷新防屏蔽地址
 
-目标网站有多个防屏蔽镜像域名。运行此命令会从首页提取最新的可用镜像地址并缓存到本地。`jav crawl` 启动时会随机选用一个，避免单一域名被封导致爬取失败。建议每周运行一次，或发现爬取异常时先执行 `jav update`。
+目标网站有多个防屏蔽镜像域名。运行此命令会从首页提取最新的可用镜像地址并缓存到本地。`jav crawl` 启动时会随机选用一个，避免单一域名被封导致爬取失败。建议每周运行一次，或发现爬取异常时先执行 `jav refresh`。
 
-> 如果目标网站被 GFW 屏蔽，`jav update` 也需要代理才能访问首页提取镜像地址：`jav update --proxy http://127.0.0.1:8087`。未指定 `--proxy` 时会自动检测系统代理。
+> 如果目标网站被 GFW 屏蔽，`jav refresh` 也需要代理才能访问首页提取镜像地址：`jav refresh --proxy http://127.0.0.1:8087`。未指定 `--proxy` 时会自动检测系统代理。
 
 ### `jav logs` — 日志管理
 
@@ -132,7 +149,7 @@ jav logs --export     # 导出日志到当前目录
 
 | 问题 | 解决方案 |
 |------|----------|
-| 安装失败 | `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main` |
+| 安装失败 | `curl -fsSL https://raw.github.com/raawaa/jav-scrapy/main/install.sh | sh` 或 `npm install -g https://github.com/raawaa/jav-scrapy/tarball/main` |
 | 代理不工作 | 检查格式 `--proxy http://user:pass@host:port` 和代理连通性 |
 | 请求被屏蔽 | 增加延迟 `--delay 5` 或使用代理 |
 | 内存不足 | 降低并发 `--parallel 1` |

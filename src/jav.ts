@@ -13,12 +13,13 @@ import { extractAntiBlockUrls } from './core/parser';
 import RequestHandler from './core/requestHandler';
 import { getSystemProxy, parseProxyServer } from './utils/systemProxy';
 import fs from 'fs';
+import { execSync } from 'child_process';
 import * as path from 'path';
 import os from 'os';
 import { ErrorHandler } from './utils/errorHandler';
 import { getRandomDelay, getExponentialBackoffDelay } from './core/constants';
 import { Output } from './output';
-import { checkLatestVersion, isOfflineMode, isAuxiliaryCommand, isHelpOrVersion } from './core/versionCheck';
+import { checkLatestVersion, fetchLatestVersion, isOfflineMode, isAuxiliaryCommand, isHelpOrVersion } from './core/versionCheck';
 
 // 版本号 - 从package.json动态读取
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -35,7 +36,7 @@ if (!isOfflineMode() && !isAuxiliaryCommand() && !isHelpOrVersion()) {
     checkLatestVersion(version).then(latest => {
         if (latest) {
             console.log(chalk.yellow(`\n⚠ 新版本 ${latest} 可用！运行以下命令升级:`));
-            console.log(chalk.cyan('  npm install -g raawaa/jav-scrapy\n'));
+            console.log(chalk.cyan(`  jav upgrade\n`));
         }
     });
 }
@@ -131,9 +132,9 @@ program
     });
 
 program
-    .command('update')
-    .description('更新防屏蔽地址')
-    .option('-x, --proxy <url>', '通过代理更新，例：-x http://127.0.0.1:8087')
+    .command('refresh')
+    .description('刷新防屏蔽地址')
+    .option('-x, --proxy <url>', '通过代理刷新，例：-x http://127.0.0.1:8087')
     .action(async (options) => {
         const configManager = new ConfigManager();
         const config = configManager.getConfig();
@@ -196,6 +197,42 @@ program
         }
 
 
+    });
+
+program
+    .command('upgrade')
+    .description('更新到最新版本')
+    .argument('[version]', '要更新的版本号，不指定则自动更新到最新版')
+    .action(async (version) => {
+        const REPO = 'raawaa/jav-scrapy';
+
+        if (!version) {
+            console.log(chalk.cyan('正在查询最新版本...'));
+            const latest = await fetchLatestVersion();
+            if (!latest) {
+                console.error(chalk.red('无法获取最新版本信息，请检查网络连接。'));
+                console.error(chalk.gray('可手动指定版本: jav upgrade 1.0.0'));
+                process.exit(1);
+            }
+            version = latest;
+        }
+
+        version = version.replace(/^v/, '');
+        const tarballUrl = `https://github.com/${REPO}/releases/download/v${version}/jav-scrapy-v${version}.tgz`;
+
+        console.log(chalk.cyan(`正在更新到 v${version}...`));
+        console.log(chalk.gray(`源: ${tarballUrl}`));
+
+        try {
+            execSync(`npm install -g "${tarballUrl}"`, { stdio: 'inherit' });
+            console.log(chalk.green(`✅ 已更新到 v${version}！`));
+            console.log(chalk.gray('请重新运行 jav 命令。'));
+        } catch (error: any) {
+            console.error(chalk.red('更新失败。'));
+            console.error(chalk.gray('如果因权限问题，可尝试:'));
+            console.error(chalk.gray(`  npx ${REPO} --help`));
+            process.exit(1);
+        }
     });
 
 class JavScraper {

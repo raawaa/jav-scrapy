@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.fetchLatestVersion = fetchLatestVersion;
 exports.checkLatestVersion = checkLatestVersion;
 exports.isOfflineMode = isOfflineMode;
 exports.isAuxiliaryCommand = isAuxiliaryCommand;
@@ -95,14 +96,14 @@ function isOfflineMode() {
         process.argv.includes('--offline'));
 }
 /**
- * 判断当前命令是否是辅助命令（logs/update）。
+ * 判断当前命令是否是辅助命令（logs/refresh/upgrade）。
  * 这些命令不需要版本检查。
  */
 function isAuxiliaryCommand() {
     const cmd = process.argv[2];
     if (!cmd || cmd.startsWith('-'))
         return false;
-    return ['logs', 'update'].includes(cmd);
+    return ['logs', 'refresh', 'upgrade'].includes(cmd);
 }
 /**
  * 判断当前是否是查看帮助或版本信息。

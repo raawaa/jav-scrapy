@@ -11,7 +11,7 @@ interface VersionCache {
   checkedAt: number;
 }
 
-function fetchLatestVersion(): Promise<string | null> {
+export function fetchLatestVersion(): Promise<string | null> {
   return new Promise((resolve) => {
     const req = https.get(
       'https://api.github.com/repos/raawaa/jav-scrapy/releases/latest',
@@ -105,13 +105,13 @@ export function isOfflineMode(): boolean {
 }
 
 /**
- * 判断当前命令是否是辅助命令（logs/update）。
+ * 判断当前命令是否是辅助命令（logs/refresh/upgrade）。
  * 这些命令不需要版本检查。
  */
 export function isAuxiliaryCommand(): boolean {
   const cmd = process.argv[2];
   if (!cmd || cmd.startsWith('-')) return false;
-  return ['logs', 'update'].includes(cmd);
+  return ['logs', 'refresh', 'upgrade'].includes(cmd);
 }
 
 /**
