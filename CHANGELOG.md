@@ -1,3 +1,10 @@
+## 1.3.0 (2026-06-08)
+
+* feat(cli): 添加 upgrade 命令和 install.sh 安装脚本，重命名 update 为 refresh ([45b9a0e](https://github.com/raawaa/jav-scrapy/commit/45b9a0e))
+* fix(ci): 修复 GitHub Actions Release 创建的 --verify-tag 验证失败 ([5e9b273](https://github.com/raawaa/jav-scrapy/commit/5e9b273))
+
+
+
 ## 1.2.0 (2026-05-30)
 
 * chore: 取消追踪构建产物 dist/*.map ([c44dd44](https://github.com/raawaa/jav-scrapy/commit/c44dd44))
