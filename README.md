@@ -85,6 +85,8 @@ jav crawl [options]
 
 | 选项 | 描述 | 默认值 |
 |------|------|--------|
+| `-b, --base <url>` | 自定义抓取的起始页（替换默认根 URL） | — |
+| `-s, --search <keyword>` | 搜索关键词，只抓搜索结果 | — |
 | `--limit <n>` | 最大爬取影片数（0=无限制） | 0 |
 | `--parallel <n>` | 基础并发级别 | 2 |
 | `--delay <s>` | 请求间基础延迟（秒） | 2 |
@@ -93,6 +95,8 @@ jav crawl [options]
 | `--nomag` | 跳过无磁力链接的影片 | false |
 | `--allmag` | 获取所有磁力链接（默认仅最大） | false |
 | `--nopic` | 跳过图片下载 | false |
+| `--cookies <str>` | 手动设置 Cookies，格式: "key=value; key=value" | — |
+| `--no-strict-ssl` | 禁用 SSL 证书严格验证 | false |
 | `-o, --output <path>` | 输出目录（默认当前目录） | `process.cwd()` |
 | `-v, --verbose` | 详细调试输出 | false |
 | `-q, --quiet` | 仅显示错误和最终摘要 | false |
