@@ -1,3 +1,10 @@
+## <small>1.3.1 (2026-06-08)</small>
+
+* fix(core): 修复 star 页面分页 URL 格式错误及翻页死循环问题 ([7f1bf28](https://github.com/raawaa/jav-scrapy/commit/7f1bf28))
+* docs: 补充 crawl 命令缺失的选项说明（base、search、cookies、strict-ssl） ([3f14808](https://github.com/raawaa/jav-scrapy/commit/3f14808))
+
+
+
 ## 1.3.0 (2026-06-08)
 
 * feat(cli): 添加 upgrade 命令和 install.sh 安装脚本，重命名 update 为 refresh ([45b9a0e](https://github.com/raawaa/jav-scrapy/commit/45b9a0e))
