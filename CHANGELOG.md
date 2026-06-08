@@ -1,3 +1,9 @@
+## <small>1.3.2 (2026-06-08)</small>
+
+* fix(deps): 升级 axios 至 1.17.0 并修复传递依赖安全漏洞 ([6cff223](https://github.com/raawaa/jav-scrapy/commit/6cff223))
+
+
+
 ## <small>1.3.1 (2026-06-08)</small>
 
 * fix(core): 修复 star 页面分页 URL 格式错误及翻页死循环问题 ([7f1bf28](https://github.com/raawaa/jav-scrapy/commit/7f1bf28))
