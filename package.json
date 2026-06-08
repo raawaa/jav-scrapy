@@ -7,7 +7,7 @@
   "preferGlobal": true,
   "dependencies": {
     "async": "^3.2.6",
-    "axios": "1.13.2",
+    "axios": "1.17.0",
     "axios-retry": "^4.5.0",
     "chalk": "^4.1.2",
     "cheerio": "^1.1.2",
@@ -75,5 +75,9 @@
   "homepage": "https://github.com/raawaa/jav-scrapy#readme",
   "bugs": {
     "url": "https://github.com/raawaa/jav-scrapy/issues"
+  },
+  "overrides": {
+    "diff": "8.0.4",
+    "serialize-javascript": "7.0.5"
   }
 }
