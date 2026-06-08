@@ -267,7 +267,7 @@ class JavScraper {
 
         if (this.config.search) {
             return `${baseUrl}${this.config.searchUrl ? `/${this.config.searchUrl}` : ''}/${encodeURIComponent(this.config.search)}${pagePart}`;
-        } else if (baseUrl.includes('/genre/') || baseUrl.includes('/search/')) {
+        } else if (baseUrl.includes('/genre/') || baseUrl.includes('/search/') || baseUrl.includes('/star/')) {
             return `${baseUrl}${pagePart}`;
         } else {
             return `${baseUrl}${this.pageIndex === 1 ? '' : `/page${pagePart}`}`;
@@ -363,7 +363,9 @@ class JavScraper {
                 Output.pageProgress(this.pageIndex, links.length);
 
                 if (links.length === 0) {
-                    logger.warn(`第${this.pageIndex}页未找到任何影片，可能需要检查页面内容或代理设置`);
+                    logger.warn(`第${this.pageIndex}页未找到任何影片，停止翻页`);
+                    shouldStop = true;
+                    return;
                 }
 
                 // 计算剩余需要加入队列的影片数
