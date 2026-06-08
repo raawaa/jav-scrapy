@@ -22,6 +22,12 @@ Never try to install packages that download native binaries from GitHub releases
 ### 5. Clean up failed experiments
 Don't leave installed-but-unused packages in `package.json`. Each npm install adds to audit surface and lockfile churn. Uninstall promptly when switching approaches.
 
+### 6. `npm version` rejects dirty tracked files
+`npm version` requires a clean working tree. If you modify git-tracked files (like `dist/`) before calling it, it fails with "Git working directory not clean". **Build must happen inside the `version` hook**, not before `npm version` — files are then generated and staged within the commit lifecycle. See `package.json` `scripts.version` for the correct pattern.
+
+### 7. javbus star pages use different pagination URL
+Star pages paginate as `/star/xxx/2` (like genre/search), not `/star/xxx/page/2` (the main listing pattern). The URL construction in `getCurrentIndexPageUrl()` (`src/jav.ts`) needs explicit route detection per path prefix — `/star/` joins the same branch as `/genre/` and `/search/`, not the fallback `/page/N` branch.
+
 ## Quick Start
 
 ### Essential Development Commands
@@ -32,7 +38,7 @@ npm run dev                # Run TypeScript directly with ts-node
 npm run dev:watch          # Auto-restart on file changes
 
 # Testing
-npm test                   # Run tests with mocha (48 tests, 4 test suites)
+npm test                   # Run tests with mocha (122 tests, 8 test suites)
 
 # Version Management
 npm run release            # Run semantic-release
