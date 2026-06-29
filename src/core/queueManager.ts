@@ -1,10 +1,11 @@
 import async from 'async';
-import { FilmData, DetailPageTask, IndexPageTask, Metadata, MagnetResult } from '../types/interfaces';
+import { FilmData, DetailPageTask, IndexPageTask, Metadata } from '../types/interfaces';
 import { Config } from '../types/interfaces';
 import logger from './logger';
 import RequestHandler from './requestHandler';
 import FileHandler from './fileHandler';
-import { parsePageLinks, parseMetadata, parseFilmData } from './parser';
+import { parsePageLinks } from './parser';
+import DetailPagePipeline from './pipelines/detailPage';
 import { ErrorHandler } from '../utils/errorHandler';
 
 
@@ -32,6 +33,7 @@ class QueueManager {
     private config: Config;
     private requestHandler: RequestHandler;
     private fileHandler: FileHandler;
+    private detailPagePipeline: DetailPagePipeline;
 
     // 队列相关
     private fileWriteQueue: async.QueueObject<FilmData> | null = null;
@@ -56,6 +58,7 @@ class QueueManager {
     constructor(config: Config) {
         this.config = config;
         this.requestHandler = new RequestHandler(config);
+        this.detailPagePipeline = new DetailPagePipeline(this.requestHandler);
         this.fileHandler = new FileHandler(config.output);
 
         // 启动队列状态监控
@@ -178,56 +181,15 @@ class QueueManager {
                 const startTime = Date.now();
                 this.lastTaskStartTimes.set(taskKey, startTime);
 
-                logger.debug(`QueueManager: [详情页] 开始处理: ${task.link}`);
                 try {
                     this.emit({ type: QueueEventType.DETAIL_PAGE_START, data: { link: task.link } });
-                    logger.debug(`QueueManager: [详情页] 触发页面请求事件: ${task.link}`);
-
-                    logger.debug(`QueueManager: [详情页] 开始请求页面内容: ${task.link}`);
-                    const response = await this.requestHandler.getPage(task.link);
-                    const requestTime = Date.now() - startTime;
-                    logger.debug(`QueueManager: [详情页] 页面请求完成: ${task.link} (耗时: ${Math.round(requestTime/1000)}s)`);
-
-                    if (response?.body) {
-                        logger.debug(`QueueManager: [详情页] 成功获取页面内容，长度: ${response.body.length}`);
-
-                        logger.debug(`QueueManager: [详情页] 开始解析元数据: ${task.link}`);
-                        const metadata = parseMetadata(response.body);
-                        const parseTime = Date.now() - startTime;
-                        logger.debug(`QueueManager: [详情页] 元数据解析完成: ${metadata.title} (总耗时: ${Math.round(parseTime/1000)}s)`);
-
-                        logger.debug(`QueueManager: [详情页] 开始获取磁力链接: ${metadata.title}`);
-                        const magnetFetchStart = Date.now();
-                        const magnetResult = await this.requestHandler.fetchMagnet(metadata);
-                        const magnetFetchTime = Date.now() - magnetFetchStart;
-
-                        if (magnetResult) {
-                            logger.debug(`QueueManager: [详情页] 磁力链接获取成功: ${metadata.title} (耗时: ${Math.round(magnetFetchTime/1000)}s)`);
-                        } else {
-                            logger.warn(`QueueManager: [详情页] 磁力链接获取失败: ${metadata.title}`);
-                        }
-
-                        logger.debug(`QueueManager: [详情页] 开始解析影片数据: ${metadata.title}`);
-                        const filmData = parseFilmData(metadata, task.link);
-                        // 添加结构化的磁力链接数据
-                        if (magnetResult?.magnetLinks) {
-                            filmData.magnetLinks = magnetResult.magnetLinks;
-                        }
-                        logger.debug(`QueueManager: [详情页] 影片数据解析完成: ${metadata.title}`);
-
+                    const result = await this.detailPagePipeline.process(task.link);
+                    if (result) {
                         this.emit({
                             type: QueueEventType.DETAIL_PAGE_PROCESSED,
-                            data: { filmData, metadata }
+                            data: result
                         });
-
-                        logger.debug(`QueueManager: [详情页] 任务处理完成: ${task.link}`);
-                    } else {
-                        logger.warn(`QueueManager: [详情页] 页面响应为空: ${task.link}`);
                     }
-
-                    // 延迟由外部管理器处理，任务完成后立即释放
-                    logger.debug(`QueueManager: [详情页] 任务完成: ${task.link}`);
-
                 } catch (error) {
                     const failedTime = Date.now() - startTime;
                     logger.error(`QueueManager: [详情页] 任务失败: ${task.link} (耗时: ${Math.round(failedTime/1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);

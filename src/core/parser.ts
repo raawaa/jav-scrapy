@@ -141,6 +141,7 @@ export function parseActress($: any): Array<string> {
 export function parseFilmData(metadata: Metadata, link: string): FilmData {
   return {
     title: metadata.title,
+    originalLink: link,
     category: metadata.category,
     actress: metadata.actress
   };

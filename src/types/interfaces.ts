@@ -72,6 +72,7 @@ interface MagnetResult {
 
 interface FilmData {
   title: string;
+  originalLink?: string;
   magnetLinks?: MagnetLink[];
   category: string[];
   actress: string[];
