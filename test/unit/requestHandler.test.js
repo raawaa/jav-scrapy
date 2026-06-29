@@ -1,8 +1,10 @@
 /**
  * RequestHandler 单元测试
  *
- * 覆盖：构造函数、getPage、getXMLHttpRequest、fetchMagnet、downloadImage
+ * 覆盖：构造函数、getPage、fetchMagnet（元数据校验）、downloadImage
  * 注意：不使用 nock（Node v26 兼容性问题），改用 axios 请求拦截器模拟
+ * 注意：磁力链接解析逻辑已迁移至 parser.extractMagnetLinks（见 magnetExtraction.test.js），
+ *       此处仅保留 fetchMagnet 的元数据校验（校验在发起请求前发生，不依赖传输层）。
  */
 const assert = require('assert');
 const axios = require('axios');
@@ -221,34 +223,10 @@ describe('RequestHandler', function () {
     });
   });
 
-  // ─── getXMLHttpRequest ──────────────────────────
-  describe('getXMLHttpRequest', function () {
-    it('发送 AJAX 请求并返回结果', async function () {
-      intercept(BASE + '/ajax-endpoint', 200, 'ajax response body');
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.getXMLHttpRequest(BASE + '/ajax-endpoint');
-      assert.ok(result);
-      assert.strictEqual(result.statusCode, 200);
-      assert.strictEqual(result.body, 'ajax response body');
-    });
-
-    it('无效 URL 抛异常', async function () {
-      const rh = new RequestHandler(makeConfig());
-      await assert.rejects(
-        () => rh.getXMLHttpRequest('invalid-url'),
-        Error
-      );
-    });
-  });
-
-  // ─── fetchMagnet ────────────────────────────────
+  // ─── fetchMagnet（元数据校验） ──────────────────
+  // 解析逻辑已迁移至 parser.extractMagnetLinks；此处仅覆盖 fetchMagnet 在发起
+  // AJAX 请求前对 gid/img/uc 的校验（校验早于任何网络调用，故无需拦截器）。
   describe('fetchMagnet', function () {
-    const magnetBody = `
-      <tr><td><a href="magnet:?xt=urn:btih:AAA&dn=test1">test1</a></td><td>1.00GB</td></tr>
-      <tr><td><a href="magnet:?xt=urn:btih:BBB&dn=test2">test2</a></td><td>2.00GB</td></tr>
-      <tr><td><a href="magnet:?xt=urn:btih:CCC&dn=test3">test3</a></td><td>512.00MB</td></tr>
-    `;
-
     function makeMetadata(overrides = {}) {
       return {
         title: 'TEST-123 Test Film',
@@ -260,27 +238,6 @@ describe('RequestHandler', function () {
         ...overrides
       };
     }
-
-    beforeEach(function () {
-      intercept((url) => url.includes('ajax/uncledatoolsbyajax'), 200, magnetBody);
-    });
-
-    it('返回最大文件大小的磁力链接（默认模式）', async function () {
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.fetchMagnet(makeMetadata());
-      assert.ok(result);
-      assert.ok(result.magnet.includes('BBB'), '应选择最大的 2.00GB 磁链');
-      assert.ok(result.magnetLinks);
-      assert.strictEqual(result.magnetLinks.length, 1);
-    });
-
-    it('allmag=true 返回所有磁力链接', async function () {
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
-      assert.ok(result);
-      assert.ok(result.magnetLinks);
-      assert.strictEqual(result.magnetLinks.length, 3);
-    });
 
     it('无效 gid 返回 null', async function () {
       const rh = new RequestHandler(makeConfig());

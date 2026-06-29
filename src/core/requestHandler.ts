@@ -1,13 +1,13 @@
 import axios, { AxiosError } from 'axios';
-import axiosRetry from 'axios-retry';
 import tunnel from 'tunnel';
 import https from 'https';
 import { Koon } from 'koonjs';
-import { Config, Metadata, MagnetResult, MagnetLink } from '../types/interfaces';
+import { Config, Metadata, MagnetResult } from '../types/interfaces';
 import path from 'path';
 import fs from 'fs';
 import { USER_AGENTS } from './constants';
 import { ErrorHandler } from '../utils/errorHandler';
+import { extractMagnetLinks } from './parser';
 import logger from './logger';
 /**
  * 请求配置接口
@@ -196,108 +196,6 @@ class RequestHandler {
     return null;
   }
 
-  async getXMLHttpRequest(url: string, options: Record<string, any> = {}) {
-    // 验证URL格式，防止SSRF攻击
-    try {
-      new URL(url);
-    } catch (error) {
-      logger.error(`无效的URL格式: ${url}`);
-      throw new Error(`无效的URL格式: ${url}`);
-    }
-    try {
-
-      logger.debug(`开始发送AJAX请求: ${url}`);
-      // 构建AJAX专用请求头
-      const urlObj = new URL(url);
-      const headers: Record<string, string> = {
-        'accept': '*/*',
-        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7',
-        'user-agent': this.requestConfig.headers['user-agent'],
-        'referer': new URL(this.config.base || this.config.BASE_URL).origin,
-        'X-Requested-With': 'XMLHttpRequest'
-      };
-      // Cookie 使用手动设置或默认 Cookie
-      const hasManualCookies = this.config.headers && this.config.headers.Cookie &&
-                              this.config.headers.Cookie !== 'existmag=mag';
-      if (hasManualCookies) {
-
-        // 使用安全Cookie设置方法
-        this.setCookieHeader(headers, this.config.headers.Cookie!);
-        logger.debug(`在XMLHttpRequest中使用手动设置的 Cookies`);
-      } else {
-
-        headers.Cookie = 'existmag=mag';
-        logger.debug('在XMLHttpRequest中使用默认 Cookie: existmag=mag');
-      }
-      logger.debug(`AJAX请求头信息: ${JSON.stringify({ ...headers, Cookie: headers.Cookie ? '[已设置]' : '[未设置]' })}`);
-      // 构建请求配置
-      const requestConfig: any = {
-        timeout: this.requestConfig.timeout,
-        headers,
-        // 添加重试配置
-        'axios-retry': {
-          retries: this.retries,
-          retryDelay: (retryCount: number) => {
-            // AJAX请求使用更长的延迟，避免被检测
-            const baseDelay = Math.max(this.retryDelay, 4000); // 至少4秒基础延迟
-            const exponentialDelay = Math.min(baseDelay * Math.pow(1.8, retryCount), 25000); // 1.8倍指数增长
-            const randomDelay = Math.floor(Math.random() * 3000); // 0-3秒随机延迟
-            const totalDelay = exponentialDelay + randomDelay;
-            logger.debug(`AJAX重试延迟计算: 基础=${Math.round(baseDelay/1000)}秒, 指数增长=${Math.round(exponentialDelay/1000)}秒, 随机=${Math.round(randomDelay/1000)}秒, 总计=${Math.round(totalDelay/1000)}秒 (重试次数: ${retryCount})`);
-            return totalDelay;
-          },
-          retryCondition: (error: any) => {
-            const shouldRetry = axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-                             (error.response?.status && [500, 502, 503, 504, 429, 403].includes(error.response.status));
-            if (shouldRetry) {
-              const currentRetry = (error.config && error.config['axios-retry'] && error.config['axios-retry'].retryCount) || 0;
-              // 计算AJAX延迟时间
-              const baseDelay = Math.max(this.retryDelay, 4000);
-              const exponentialDelay = Math.min(baseDelay * Math.pow(1.8, currentRetry), 25000);
-              const randomDelay = Math.floor(Math.random() * 3000);
-              const totalDelay = exponentialDelay + randomDelay;
-              logger.warn(`AJAX请求失败，正在重试 (${currentRetry + 1}/3)，${Math.round(totalDelay / 1000)}秒后重试: ${url} - 错误: ${error.code || error.message}`);
-            }
-            return shouldRetry;
-          }
-        }
-      };
-      // 如果有代理配置，添加代理设置
-      if (this.requestConfig.proxy) {
-        try {
-          const agent = this.createProxyAgent(this.requestConfig.proxy);
-          if (agent) {
-            requestConfig.httpsAgent = agent;
-          }
-        } catch (proxyError) {
-          logger.warn(`AJAX请求代理配置失败: ${proxyError instanceof Error ? proxyError.message : String(proxyError)}`);
-        }
-      }
-      // 发送请求
-      const response = await axios.get(url, requestConfig);
-      logger.debug(`AJAX请求成功: ${url}, 状态码: ${response.status}`);
-      return { statusCode: response.status, body: response.data };
-    } catch (err) {
-      const error = err as AxiosError;
-      logger.error(`AJAX请求失败: ${url}`);
-      logger.error(`错误详情: ${error.message}`);
-      if (error.response) {
-        logger.error(`响应状态码: ${error.response.status}`);
-        logger.error(`响应头: ${JSON.stringify(error.response.headers)}`);
-        if (error.response.data) {
-          const responseData = error.response.data as any;
-          if (typeof responseData === 'string' && responseData.length < 500) {
-            logger.error(`响应内容: ${responseData}`);
-          } else if (typeof responseData === 'object') {
-            logger.error(`响应内容: ${JSON.stringify(responseData).substring(0, 500)}`);
-          }
-        }
-      }
-      ErrorHandler.handleError(error, `发送 XMLHttpRequest 到 ${url}`);
-      throw error;
-    }
-  }
-
   /**
    * 使用 koonjs 发送 AJAX 请求（绕过 Node.js TLS 指纹检测）
    *
@@ -361,17 +259,12 @@ class RequestHandler {
 
     logger.debug(`fetchMagnet: 构建AJAX URL: ${url}`);
 
-    let response: { statusCode: number; body: string } | null = null;
-
-    // 使用 curl（生产环境）或 axios（测试环境）发送 AJAX 请求
+    // 通过 koonjs（TLS 指纹客户端）发送 AJAX 请求
+    let response: { statusCode: number; body: string };
     try {
       logger.debug(`fetchMagnet: 开始尝试 AJAX 请求: ${metadata.title}`);
       const ajaxStart = Date.now();
-      if (process.env.NODE_ENV === 'test') {
-        response = await this.getXMLHttpRequest(url);
-      } else {
-        response = await this.koonRequest(url);
-      }
+      response = await this.koonRequest(url);
       const ajaxTime = Date.now() - ajaxStart;
       logger.debug(`fetchMagnet: AJAX 请求完成: ${metadata.title} (耗时: ${Math.round(ajaxTime/1000)}s)`);
     } catch (error) {
@@ -379,105 +272,22 @@ class RequestHandler {
       logger.warn(`fetchMagnet: AJAX 请求失败: ${metadata.title} (耗时: ${Math.round(failedTime/1000)}s), 错误: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
-    if (!response) {
-      const totalTime = Date.now() - fetchStartTime;
-      logger.error(`fetchMagnet: 响应为空，返回null (总耗时: ${Math.round(totalTime/1000)}s)`);
-      return null;
-    }
 
-    const responseTime = Date.now() - fetchStartTime;
-    logger.debug(`fetchMagnet: AJAX响应获取成功: ${metadata.title} (总耗时: ${Math.round(responseTime/1000)}s)`);
+    logger.debug(`fetchMagnet: AJAX响应获取成功: ${metadata.title} (总耗时: ${Math.round((Date.now() - fetchStartTime)/1000)}s)`);
     logger.debug(`fetchMagnet: AJAX响应内容长度: ${response.body.length}`);
     logger.debug(`fetchMagnet: AJAX响应内容前500字符: ${response.body.substring(0, 500)}`);
 
-    logger.debug(`fetchMagnet: 开始解析磁力链接: ${metadata.title}`);
-    const parseStartTime = Date.now();
+    // 解析逻辑委派给纯函数 extractMagnetLinks（无副作用、可独立测试）
+    const result = extractMagnetLinks(response.body, { allmag: this.config.allmag });
 
-    const magnetLinks = [...new Set(response.body.match(/magnet:\?xt=urn:btih:[A-F0-9]+&dn=[^&"']+/gi))];
-    const sizes = response.body.match(/\d+(\.\d+)?[GM]B/g);
-    const parseTime = Date.now() - parseStartTime;
-
-    logger.debug(`fetchMagnet: 解析完成: ${metadata.title} (耗时: ${Math.round(parseTime/1000)}s)`);
-    logger.debug(`fetchMagnet: 解析到 ${magnetLinks ? magnetLinks.length : 0} 个磁力链接`);
-    logger.debug(`fetchMagnet: 解析到 ${sizes ? sizes.length : 0} 个文件大小`);
-
-    if (!magnetLinks || !sizes) {
-      const totalTime = Date.now() - fetchStartTime;
-      logger.error(`fetchMagnet: 未找到磁力链接或文件大小: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
-      logger.debug(`fetchMagnet: 响应内容片段: ${response.body.substring(0, 500)}`);
-      return null;
-    }
-
-    // 打印所有解析到的磁力链接
-    magnetLinks.forEach((link, index) => {
-      logger.debug(`fetchMagnet: 磁力链接 ${index + 1}: ${link.substring(0, 100)}...`);
-    });
-
-    logger.debug(`fetchMagnet: 开始计算最大文件大小: ${metadata.title}`);
-    const calculateStartTime = Date.now();
-
-    const parsedPairs = magnetLinks.map((magnetLink, index) => {
-      const sizeStr = sizes[index];
-      const sizeValue = parseFloat(sizeStr.replace(/GB|MB/, ''));
-      const sizeInMB = sizeStr.includes('GB') ? sizeValue * 1024 : sizeValue;
-      return { magnetLink, size: sizeInMB };
-    });
-
-    const calculateTime = Date.now() - calculateStartTime;
     const totalTime = Date.now() - fetchStartTime;
-
-    logger.debug(`fetchMagnet: 磁力链接处理完成: ${metadata.title} (耗时: ${Math.round(calculateTime/1000)}s)`);
-
-    let result: MagnetResult | null = null;
-
-    if (this.config.allmag) {
-      // 返回所有磁力链接的结构化数据
-      const magnetLinks: MagnetLink[] = parsedPairs.map(pair => ({
-        link: pair.magnetLink,
-        size: this.formatFileSize(pair.size)
-      }));
-
-      result = {
-        magnet: parsedPairs.map(pair => pair.magnetLink).join('\n'), // 保持向后兼容
-        magnetLinks: magnetLinks
-      };
-
-      logger.debug(`fetchMagnet: 成功获取所有磁力链接: ${metadata.title} (共${parsedPairs.length}个) (总耗时: ${Math.round(totalTime/1000)}s)`);
+    if (result) {
+      logger.debug(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
     } else {
-      // 返回最大的磁力链接（默认行为）
-      const maxSizePair = parsedPairs.reduce((prev, current) => {
-        return (prev.size > current.size) ? prev : current;
-      }, parsedPairs[0]);
-
-      if (maxSizePair) {
-        result = {
-          magnet: maxSizePair.magnetLink,
-          magnetLinks: [{
-            link: maxSizePair.magnetLink,
-            size: this.formatFileSize(maxSizePair.size)
-          }]
-        };
-
-        logger.debug(`fetchMagnet: 成功获取磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
-      } else {
-        logger.error(`fetchMagnet: 未能确定最大磁力链接: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
-      }
+      logger.error(`fetchMagnet: 未找到磁力链接或文件大小: ${metadata.title} (总耗时: ${Math.round(totalTime/1000)}s)`);
     }
 
     return result;
-  }
-
-  /**
-   * 格式化文件大小显示
-   * @param sizeInMB 文件大小（MB为单位）
-   * @returns 格式化的文件大小字符串
-   */
-  private formatFileSize(sizeInMB: number): string {
-    if (sizeInMB >= 1024) {
-      return `${(sizeInMB / 1024).toFixed(2)}GB`;
-    } else {
-      return `${sizeInMB.toFixed(2)}MB`;
-    }
   }
 
   /**

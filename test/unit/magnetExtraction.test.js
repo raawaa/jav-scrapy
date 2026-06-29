@@ -1,11 +1,10 @@
 /**
- * Magnet extraction characterization tests (issue #91)
+ * extractMagnetLinks characterization tests (issues #91 → #92)
  *
- * These tests pin the EXACT current behavior of RequestHandler.fetchMagnet as
- * it exists today, BEFORE the magnet-extraction logic is refactored out into a
- * pure function. They are characterization tests: they document the current
- * contract on purpose — including the quirks — so that a later refactor can
- * prove it preserves behavior.
+ * Originally pinned RequestHandler.fetchMagnet's end-to-end behavior (issue #91,
+ * via the NODE_ENV='test' transport). Issue #92 extracted the pure parsing into
+ * parser.extractMagnetLinks; these tests now call that pure function DIRECTLY —
+ * same fixtures, same expected outputs, no HTTP transport, no fetchMagnet.
  *
  * Pinned behaviors:
  *  - Default mode selects the LARGEST magnet (file size normalized to MB;
@@ -20,97 +19,25 @@
  *      * Sizes present but no magnets  + allmag     -> { magnet:'', magnetLinks:[] }
  *      * Sizes present but no magnets  + default    -> null
  *
- * The test transport is exercised via the NODE_ENV='test' branch in
- * fetchMagnet, which routes through getXMLHttpRequest (axios). The fixture
- * test/fixtures/magnet-response.txt is real table-row HTML (~13KB).
+ * The fixture test/fixtures/magnet-response.txt is real table-row HTML (~13KB).
  *
- * DO NOT "fix" the quirks pinned here. A later slice will relocate these tests
- * onto a pure function.
+ * DO NOT "fix" the quirks pinned here.
  */
 const assert = require('assert');
-const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
-const RequestHandler = require('../../dist/core/requestHandler').default;
+const { extractMagnetLinks } = require('../../dist/core/parser');
 
-const BASE = 'https://www.javbus.com';
-
-/**
- * Build a RequestHandler config. Mirrors the shape used by the production code
- * path in fetchMagnet (base/BASE_URL/headers/Cookie/allmag).
- */
-function makeConfig(overrides = {}) {
-  return {
-    retryCount: 1,
-    retryDelay: 100,
-    BASE_URL: BASE + '/',
-    baseUrl: BASE + '/',
-    base: BASE + '/',
-    parallel: 2,
-    headers: { Referer: BASE + '/', Cookie: 'existmag=mag' },
-    output: os.tmpdir(),
-    search: null,
-    allmag: false,
-    nopic: false,
-    timeout: 5000,
-    searchUrl: '/search',
-    limit: 0,
-    delay: 1,
-    ...overrides
-  };
-}
-
-/** Valid metadata that passes the gid/img/uc validation guards in fetchMagnet. */
-function makeMetadata(overrides = {}) {
-  return {
-    title: 'TEST-123 Test Film',
-    gid: '1234567890',
-    img: 'pics/cover/test.jpg',
-    uc: 'abc123456',
-    category: [],
-    actress: [],
-    ...overrides
-  };
-}
-
-/**
- * Intercept the AJAX magnet endpoint and return `body` with HTTP 200.
- * The interceptor matches the uncledatoolsbyajax URL that fetchMagnet builds.
- */
-function interceptMagnetAjax(body) {
-  axios.interceptors.request.use((config) => {
-    const requestUrl = config.url || '';
-    if (!requestUrl.includes('ajax/uncledatoolsbyajax')) return config;
-    const response = {
-      data: body,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config,
-      request: {}
-    };
-    config.adapter = () => Promise.resolve(response);
-    return config;
-  });
-}
-
-describe('fetchMagnet magnet extraction (characterization, issue #91)', function () {
+describe('extractMagnetLinks (characterization, issues #91→#92)', function () {
   // The fixture is the source of truth for the "happy path" assertions below.
   const FIXTURE_PATH = path.join(__dirname, '..', 'fixtures', 'magnet-response.txt');
   const fixtureBody = fs.readFileSync(FIXTURE_PATH, 'utf8');
 
-  afterEach(function () {
-    axios.interceptors.request.clear();
-  });
-
   // ─── happy path: real fixture ──────────────────────────────────
   describe('default mode (largest magnet)', function () {
-    it('selects the largest magnet by file size (GB normalized to MB)', async function () {
-      interceptMagnetAjax(fixtureBody);
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('selects the largest magnet by file size (GB normalized to MB)', function () {
+      const result = extractMagnetLinks(fixtureBody, { allmag: false });
 
       // Largest in the fixture is the 9.13GB [4K] magnet (9349.12 MB).
       const LARGEST = 'magnet:?xt=urn:btih:9bf7cdd5ecd88146e5a59163b14e9fa487a54d3f&dn=SDMUA-088.%5B4K%5D';
@@ -121,16 +48,14 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
       assert.deepStrictEqual(result.magnetLinks[0], { link: LARGEST, size: '9.13GB' });
     });
 
-    it('formats size with GB suffix when >= 1024 MB', async function () {
+    it('formats size with GB suffix when >= 1024 MB', function () {
       // The largest (9.13GB) is well above 1024 MB → GB formatting path.
-      interceptMagnetAjax(fixtureBody);
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.fetchMagnet(makeMetadata());
+      const result = extractMagnetLinks(fixtureBody, { allmag: false });
       assert.ok(result.magnetLinks[0].size.endsWith('GB'));
       assert.strictEqual(result.magnetLinks[0].size, '9.13GB');
     });
 
-    it('prefers GB-sized magnet over larger-count MB-sized magnets', async function () {
+    it('prefers GB-sized magnet over larger-count MB-sized magnets', function () {
       // Hand-crafted body: the MB magnet (2048.00MB = 2GB) is larger than the
       // 1.50GB magnet but smaller than the 4.00GB magnet — confirms GB/MB are
       // normalized to a common MB unit before comparison.
@@ -139,18 +64,14 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
         '<a href="magnet:?xt=urn:btih:BBBB&dn=big-mb">x</a><td>2048.00MB</td>',
         '<a href="magnet:?xt=urn:btih:CCCC&dn=biggest-gb">x</a><td>4.00GB</td>'
       ].join('');
-      interceptMagnetAjax(body);
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.fetchMagnet(makeMetadata());
+      const result = extractMagnetLinks(body, { allmag: false });
       assert.strictEqual(result.magnet, 'magnet:?xt=urn:btih:CCCC&dn=biggest-gb');
     });
   });
 
   describe('allmag mode (every magnet)', function () {
-    it('returns every distinct magnet from the fixture (8 total)', async function () {
-      interceptMagnetAjax(fixtureBody);
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('returns every distinct magnet from the fixture (8 total)', function () {
+      const result = extractMagnetLinks(fixtureBody, { allmag: true });
 
       assert.ok(result);
       // The fixture contains 8 distinct btih hashes (3 href/onclick copies per
@@ -173,10 +94,8 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
       );
     });
 
-    it('preserves document order (positional magnets[i] <-> sizes[i] pairing)', async function () {
-      interceptMagnetAjax(fixtureBody);
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('preserves document order (positional magnets[i] <-> sizes[i] pairing)', function () {
+      const result = extractMagnetLinks(fixtureBody, { allmag: true });
 
       // The pairing quirk: each magnet is paired with the size at the SAME
       // index from an independent regex match over the body. Pinned here so a
@@ -194,10 +113,8 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
       assert.deepStrictEqual(result.magnetLinks, expectedPairs);
     });
 
-    it('produces the dead \'\\n\'-joined .magnet string (backward-compat field)', async function () {
-      interceptMagnetAjax(fixtureBody);
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('produces the dead \'\\n\'-joined .magnet string (backward-compat field)', function () {
+      const result = extractMagnetLinks(fixtureBody, { allmag: true });
 
       // .magnet has no production reader today, but its exact shape is pinned
       // because it is part of the public MagnetResult contract.
@@ -211,7 +128,7 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
 
   // ─── quirks ────────────────────────────────────────────────────
   describe('quirks (pinned, do not "fix")', function () {
-    it('dedups magnets via Set but does NOT dedup sizes (independent regexes)', async function () {
+    it('dedups magnets via Set but does NOT dedup sizes (independent regexes)', function () {
       // Two distinct magnets, but the size "1.00GB" appears twice. The size
       // regex is applied to the whole body, so duplicates are NOT removed.
       // sizes.length here is 2 while distinct magnets is 2 — but if a magnet
@@ -222,9 +139,7 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
         '<a href="magnet:?xt=urn:btih:AAAA&dn=dup">x</a><td>1.00GB</td>',
         '<a href="magnet:?xt=urn:btih:BBBB&dn=other">x</a><td>2.00GB</td>'
       ].join('');
-      interceptMagnetAjax(body);
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
+      const result = extractMagnetLinks(body, { allmag: true });
 
       // Set collapses the 3 hrefs to 2 distinct magnets; sizes regex yields 3.
       assert.strictEqual(result.magnetLinks.length, 2, 'distinct magnets after Set dedup');
@@ -237,49 +152,38 @@ describe('fetchMagnet magnet extraction (characterization, issue #91)', function
       assert.strictEqual(result.magnetLinks[1].size, '1.00GB', 'BBBB pairs with sizes[1], not sizes[2]');
     });
 
-    it('default-mode .magnet is a raw link string (NOT \'\\n\'-joined)', async function () {
-      interceptMagnetAjax(fixtureBody);
-      const rh = new RequestHandler(makeConfig()); // allmag=false
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('default-mode .magnet is a raw link string (NOT \'\\n\'-joined)', function () {
+      const result = extractMagnetLinks(fixtureBody, { allmag: false }); // allmag=false
       assert.ok(!result.magnet.includes('\n'), 'default .magnet must be a single link with no newline');
     });
   });
 
   // ─── edge cases ────────────────────────────────────────────────
   describe('edge cases', function () {
-    it('returns null when body contains no size string at all (default mode)', async function () {
-      interceptMagnetAjax('<html><body>no magnets, no sizes here</body></html>');
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('returns null when body contains no size string at all (default mode)', function () {
+      const result = extractMagnetLinks('<html><body>no magnets, no sizes here</body></html>', { allmag: false });
       assert.strictEqual(result, null);
     });
 
-    it('returns null when body contains no size string at all (allmag mode)', async function () {
-      interceptMagnetAjax('<html><body>no magnets, no sizes here</body></html>');
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('returns null when body contains no size string at all (allmag mode)', function () {
+      const result = extractMagnetLinks('<html><body>no magnets, no sizes here</body></html>', { allmag: true });
       assert.strictEqual(result, null);
     });
 
-    it('returns {magnet:"", magnetLinks:[]} when sizes present but no magnets + allmag', async function () {
-      // magnetLinks comes back as an empty array (NOT null) because of
-      // [...new Set(null-ish)] — wait: with no magnet match, .match returns
-      // null, [...new Set(null)] throws. In practice the guard is reached
-      // because magnetLinks=[] (empty) is truthy-or-falsy per `!magnetLinks`.
-      // Pinning the actual outcome: empty result object.
-      interceptMagnetAjax('<table><tr><td>4.87GB</td></tr><tr><td>1.00GB</td></tr></table>');
-      const rh = new RequestHandler(makeConfig({ allmag: true }));
-      const result = await rh.fetchMagnet(makeMetadata());
+    it('returns {magnet:"", magnetLinks:[]} when sizes present but no magnets + allmag', function () {
+      // body.match returns null when no magnet matches; new Set(null) is an
+      // empty Set, so [...it] === [] (truthy). The `!magnetLinks || !sizes`
+      // guard is therefore bypassed, and the allmag branch builds an empty
+      // result. Pinning the actual outcome: empty result object.
+      const result = extractMagnetLinks('<table><tr><td>4.87GB</td></tr><tr><td>1.00GB</td></tr></table>', { allmag: true });
       assert.deepStrictEqual(result, { magnet: '', magnetLinks: [] });
     });
 
-    it('returns null when sizes present but no magnets + default mode', async function () {
+    it('returns null when sizes present but no magnets + default mode', function () {
       // Default branch reduce()s over an empty parsedPairs with initial value
       // parsedPairs[0] === undefined; the `if (maxSizePair)` guard then leaves
       // result as null. Pinning that it does NOT throw and returns null.
-      interceptMagnetAjax('<table><tr><td>4.87GB</td></tr><tr><td>1.00GB</td></tr></table>');
-      const rh = new RequestHandler(makeConfig());
-      const result = await rh.fetchMagnet(makeMetadata());
+      const result = extractMagnetLinks('<table><tr><td>4.87GB</td></tr><tr><td>1.00GB</td></tr></table>', { allmag: false });
       assert.strictEqual(result, null);
     });
   });
