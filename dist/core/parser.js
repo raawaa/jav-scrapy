@@ -129,6 +129,7 @@ function parseActress($) {
 function parseFilmData(metadata, link) {
     return {
         title: metadata.title,
+        originalLink: link,
         category: metadata.category,
         actress: metadata.actress
     };

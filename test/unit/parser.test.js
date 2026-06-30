@@ -109,11 +109,13 @@ describe('Parser', function () {
   describe('parseFilmData', function () {
     it('从 Metadata 构造 FilmData', function () {
       const meta = parseMetadata(detailPageHtml);
-      const filmData = parseFilmData(meta, 'https://www.javbus.com/START-563');
+      const link = 'https://www.javbus.com/START-563';
+      const filmData = parseFilmData(meta, link);
       assert.ok(filmData, '应返回 FilmData 对象');
       assert.strictEqual(filmData.title, meta.title, '标题应一致');
       assert.deepStrictEqual(filmData.category, meta.category, '分类应一致');
       assert.deepStrictEqual(filmData.actress, meta.actress, '演员应一致');
+      assert.strictEqual(filmData.originalLink, link, 'originalLink 应保留来源详情页 link (ADR-0002)');
     });
   });
 
