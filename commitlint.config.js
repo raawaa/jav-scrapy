@@ -27,6 +27,7 @@ module.exports = {
         'handler',   // 处理器
         'config',    // 配置
         'cli',       // 命令行
+        'output',    // 输出层（JSON / CSV / XLSX 等输出格式）
         'deps',      // 依赖
         'release',   // 发布
       ],
