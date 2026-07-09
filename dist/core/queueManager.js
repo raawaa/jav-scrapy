@@ -44,7 +44,7 @@ class QueueManager {
         this.config = config;
         this.requestHandler = new requestHandler_1.default(config);
         this.detailPagePipeline = new detailPage_1.default(this.requestHandler);
-        this.fileHandler = new fileHandler_1.default(config.output);
+        this.fileHandler = new fileHandler_1.default(config.output, { format: config.format });
         // 启动队列状态监控
         this.startQueueMonitoring();
         logger_1.default.debug('QueueManager: 队列管理器初始化完成，已启动状态监控');

@@ -48,6 +48,7 @@ class ConfigManager {
             limit: 0,
             delay: 2, // 添加默认延迟参数
             strictSSL: DEFAULT_CONFIG.strictSSL, // 是否严格验证SSL证书
+            format: 'json', // #95 默认输出 JSON
             proxy: undefined,
         };
     }
@@ -134,6 +135,19 @@ class ConfigManager {
         }
         if(program.opts().delay!== undefined && program.opts().delay!== null){
             this.config.delay = parseInt(program.opts().delay);
+        }
+
+        // #95 输出格式选项
+        const rawFormat = program.opts().format;
+        if (typeof rawFormat === 'string') {
+            const normalized = rawFormat.toLowerCase();
+            if (normalized === 'json' || normalized === 'csv') {
+                this.config.format = normalized;
+                logger.info(`输出格式: ${this.config.format}`);
+            } else {
+                logger.warn(`未知的输出格式 "${rawFormat}"，回退到 json。可选值: json | csv`);
+                this.config.format = 'json';
+            }
         }
 
         // 处理SSL验证选项（--no-strict-ssl）

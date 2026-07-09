@@ -14,16 +14,65 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CSV_HEADER = void 0;
+exports.joinField = joinField;
+exports.buildCsvRow = buildCsvRow;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const logger_1 = __importDefault(require("./logger"));
+/**
+ * CSV 输出表头（#95 tracer bullet）。
+ *
+ * 字段顺序与 spec 一致：
+ *   title, original_link, magnets, actress, category
+ *
+ * tracer bullet 阶段不带 BOM，#94 才引入 RFC 4180 转义。
+ */
+exports.CSV_HEADER = 'title,original_link,magnets,actress,category';
+/**
+ * 将字符串数组用指定分隔符拼接。
+ *
+ * 导出是为了让 tracer bullet 逻辑可单测；也用于 buildCsvRow。
+ * 默认分隔符为 `|`（与 spec 一致）；允许传入自定义分隔符以备未来扩展。
+ */
+function joinField(arr, sep = '|') {
+    return arr.join(sep);
+}
+/**
+ * 将一条 FilmData 序列化为一行 CSV（不含表头）。
+ *
+ * 列顺序与 CSV_HEADER 对齐：
+ *   title, original_link, magnets, actress, category
+ *
+ * 数组字段使用 `|` 拼接；磁链使用 `${link} (${size})` 格式，多条 `|` 拼接。
+ * tracer bullet 阶段不带 BOM、不做 RFC 4180 转义（均划走至 #94）。
+ *
+ * @param data 影片数据
+ * @returns 以 `\n` 结尾的 CSV 行（不含 BOM、不含表头）
+ */
+function buildCsvRow(data) {
+    const magnets = (data.magnetLinks || [])
+        .map(m => `${m.link} (${m.size})`)
+        .join('|');
+    const cols = [
+        data.title,
+        data.originalLink ?? '',
+        magnets,
+        joinField(data.actress),
+        joinField(data.category)
+    ];
+    return cols.join(',') + '\n';
+}
 class FileHandler {
     /**
      * 创建 FileHandler 实例
      * @param {string} outputDir - 输出目录路径
+     * @param {Object} [options] - 额外选项
+     * @param {'json' | 'csv'} [options.format='json'] - 输出格式（#95 引入）。
+     *        当为 'csv' 时，writeFilmDataToFile 会额外同步写入 CSV。
      * @throws {Error} 如果 outputDir 不是非空字符串
      */
-    constructor(outputDir) {
+    constructor(outputDir, options = {}) {
         // 校验输入是否为非空字符串
         if (typeof outputDir !== 'string' || outputDir.trim() === '') {
             throw new Error(`Invalid output directory provided: "${outputDir}". Output directory must be a non-empty string.`);
@@ -31,6 +80,7 @@ class FileHandler {
         this.outputDir = outputDir;
         this.ensureOutputDirExists();
         this.filename = 'filmData.json'; // 定义默认文件名
+        this.format = options.format === 'csv' ? 'csv' : 'json';
     }
     /**
      * 确保输出目录存在，如果不存在则创建
@@ -165,6 +215,12 @@ class FileHandler {
                     ? data.magnetLinks.map(ml => ml.link).slice(0, 2).join('\n').substring(0, 100) + '...'
                     : '无';
                 logger_1.default.debug(`FileHandler: 磁力链接: ${magnetPreview}`);
+                // #95：JSON 实际写入后，同步追加 CSV（并存策略）。
+                // 与去重决策对齐：JSON 未写入的影片，CSV 也不会写入。
+                // 仅在初次新增路径触发；重复更新路径不重写 CSV（避免漂移）。
+                if (this.format === 'csv') {
+                    await this.writeFilmDataToCsv(data);
+                }
             }
             else {
                 // 如果是重复数据，智能检查是否需要更新
@@ -222,6 +278,36 @@ class FileHandler {
         catch (error) {
             logger_1.default.error(`FileHandler: 写入影片数据失败: ${error instanceof Error ? error.message : String(error)}`);
             logger_1.default.error(`FileHandler: 错误详情: ${error instanceof Error ? error.stack : String(error)}`);
+            throw error;
+        }
+    }
+    /**
+     * 将一条 FilmData 写入 CSV 文件（#95 tracer bullet）。
+     *
+     * 语义：
+     *   - filmData.csv 不存在 → 写入表头 + 一行数据
+     *   - 已存在 → 只追加一行数据（不重复表头）
+     *
+     * 调用者负责去重决策：本方法不会重新判断重复，
+     * 仅供 writeFilmDataToFile 在“实际写入”路径里调用，以避免与 JSON 内容漂移。
+     *
+     * tracer bullet 阶段不做 RFC 4180 转义、不加 BOM（均划走至 #94）。
+     *
+     * @param data 影片数据
+     */
+    async writeFilmDataToCsv(data) {
+        if (typeof data !== 'object' || data === null) {
+            throw new Error(`Invalid data provided: "${data}". Data must be a non-null object of type FilmData.`);
+        }
+        const filePath = path_1.default.join(this.outputDir, 'filmData.csv');
+        const isNew = !fs_1.default.existsSync(filePath);
+        const content = (isNew ? exports.CSV_HEADER + '\n' : '') + buildCsvRow(data);
+        try {
+            fs_1.default.appendFileSync(filePath, content);
+            logger_1.default.debug(`FileHandler: CSV 写入成功: ${filePath} (新增文件: ${isNew})`);
+        }
+        catch (error) {
+            logger_1.default.error(`FileHandler: CSV 写入失败: ${error instanceof Error ? error.message : String(error)}`);
             throw error;
         }
     }

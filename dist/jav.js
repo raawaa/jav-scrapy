@@ -89,6 +89,7 @@ commander_1.program
     .option('--no-strict-ssl', '禁用SSL证书严格验证（用于代理SSL证书问题）')
     .option('-v, --verbose', '显示详细调试信息')
     .option('-q, --quiet', '静默模式，只显示错误和最终摘要')
+    .option('-f, --format <format>', '输出格式: json | csv（默认 json，csv 为 JSON+CSV 并存）')
     .action(async (options, program) => {
     const configManager = new config_1.default();
     await configManager.updateFromProgram(program);

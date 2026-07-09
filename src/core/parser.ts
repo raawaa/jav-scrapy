@@ -136,14 +136,18 @@ export function parseActress($: any): Array<string> {
 
 
 /**
- * 将解析的元数据和磁力链接组合成影片数据对象
+ * 将解析的元数据和磁力链接组合成影片数据对象。
+ *
+ * @param metadata 从详情页脚本提取的影片元数据
+ * @param link 详情页原始链接，作为 FilmData.originalLink 投射下去（#95）
+ * @returns 含 originalLink 字段的 FilmData
  */
 export function parseFilmData(metadata: Metadata, link: string): FilmData {
   return {
     title: metadata.title,
-    originalLink: link,
     category: metadata.category,
-    actress: metadata.actress
+    actress: metadata.actress,
+    originalLink: link
   };
 }
 

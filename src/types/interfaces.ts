@@ -31,6 +31,11 @@ interface Config {
   limit: number;
   delay: number; // 添加延迟参数
   strictSSL?: boolean; // 是否严格验证SSL证书
+  /**
+   * 输出格式（#95 引入）。'json' 仅写 JSON；'csv' 为 JSON+CSV 并存。
+   * tracer bullet 阶段仅支持 json 与 csv；其他格式见后续 issue（#96 等）。
+   */
+  format: 'json' | 'csv';
 }
 
 interface IndexPageTask {

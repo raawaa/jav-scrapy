@@ -58,8 +58,8 @@ class QueueManager {
     constructor(config: Config) {
         this.config = config;
         this.requestHandler = new RequestHandler(config);
-        this.detailPagePipeline = new DetailPagePipeline(this.requestHandler);
-        this.fileHandler = new FileHandler(config.output);
+this.detailPagePipeline = new DetailPagePipeline(this.requestHandler);
+        this.fileHandler = new FileHandler(config.output, { format: config.format });
 
         // 启动队列状态监控
         this.startQueueMonitoring();

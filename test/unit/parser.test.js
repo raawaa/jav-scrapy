@@ -117,6 +117,20 @@ describe('Parser', function () {
       assert.deepStrictEqual(filmData.actress, meta.actress, '演员应一致');
       assert.strictEqual(filmData.originalLink, link, 'originalLink 应保留来源详情页 link (ADR-0002)');
     });
+
+    it('返回的 FilmData 携带 originalLink 字段，取自入参 link（#95）', function () {
+      const meta = {
+        title: 'TEST-001',
+        gid: 'gid',
+        uc: 'uc',
+        img: 'img',
+        category: ['サンプル'],
+        actress: ['浜崎 true']
+      };
+      const link = 'https://www.javbus.com/TEST-001';
+      const filmData = parseFilmData(meta, link);
+      assert.strictEqual(filmData.originalLink, link, 'originalLink 应等于入参 link');
+    });
   });
 
   // ─── extractAntiBlockUrls ──────────────────────────────
