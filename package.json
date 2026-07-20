@@ -7,7 +7,7 @@
   "preferGlobal": true,
   "dependencies": {
     "async": "^3.2.6",
-    "axios": "1.17.0",
+    "axios": "1.18.1",
     "axios-retry": "^4.5.0",
     "chalk": "^4.1.2",
     "cheerio": "^1.1.2",
